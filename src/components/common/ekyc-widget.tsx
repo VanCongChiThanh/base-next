@@ -27,17 +27,48 @@ interface EkycWidgetProps {
   onError?: (message: string) => void;
 }
 
+function buildScriptCandidates(
+  ...candidates: Array<string | undefined>
+): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const candidate of candidates) {
+    const normalizedCandidate = candidate?.trim();
+    if (!normalizedCandidate || seen.has(normalizedCandidate)) {
+      continue;
+    }
+
+    seen.add(normalizedCandidate);
+    result.push(normalizedCandidate);
+  }
+
+  return result;
+}
+
 const VNPT_DEPENDENCY_SCRIPT_CANDIDATES = {
-  vnpt_lottie: [
+  vnpt_lottie: buildScriptCandidates(
     "https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.7.4/lottie.min.js",
-  ],
-  oval_custom: ["https://ekyc-web.vnpt.vn/lib/VNPTBrowserSDKAppV2.3.3.js"],
-  vnpt_jsqr: ["https://ekyc-web.vnpt.vn/lib/jsQR.js"],
+  ),
+  oval_custom: buildScriptCandidates(
+    process.env.NEXT_PUBLIC_VNPT_OVAL_SCRIPT_URL,
+    "https://ekyc-web.vnpt.vn/lib/VNPTBrowserSDKAppV2.3.3.js",
+    "https://ekyc-web.icenter.ai/lib/VNPTBrowserSDKApp.js",
+    "/vendor/VNPTBrowserSDKApp.js",
+  ),
+  vnpt_jsqr: buildScriptCandidates(
+    process.env.NEXT_PUBLIC_VNPT_JSQR_SCRIPT_URL,
+    "https://ekyc-web.vnpt.vn/lib/jsQR.js",
+    "https://ekyc-web.icenter.ai/lib/jsQR.js",
+    "/vendor/jsQR.js",
+  ),
 } as const;
 
 const DEFAULT_INIT_CONFIG: Partial<VnptEkycInitConfig> = {
   FLOW_TAKEN: "DOCUMENT",
   HAS_RESULT_SCREEN: false,
+  USE_METHOD: "BOTH",
+  ADVANCE_LIVENESS_FACE: true,
   CHECK_LIVENESS_CARD: true,
   CHECK_LIVENESS_FACE: true,
   CHECK_MASKED_FACE: true,
@@ -47,7 +78,17 @@ const DEFAULT_INIT_CONFIG: Partial<VnptEkycInitConfig> = {
   DOCUMENT_TYPE_START: 999,
 };
 
-const SDK_SCRIPT_CANDIDATES = ["/vendor/web-sdk-version-3.0.js"];
+const SDK_SCRIPT_CANDIDATES = buildScriptCandidates(
+  process.env.NEXT_PUBLIC_VNPT_EKYC_SDK_SCRIPT_URL,
+  "/vendor/web-sdk-version-3.0.js",
+);
+
+const WEB_OVAL_URL_CANDIDATE =
+  process.env.NEXT_PUBLIC_VNPT_WEB_OVAL_URL?.trim();
+
+const MOBILE_OVAL_URL_CANDIDATE =
+  process.env.NEXT_PUBLIC_VNPT_MOBILE_OVAL_URL?.trim() ||
+  WEB_OVAL_URL_CANDIDATE;
 
 function loadScript(
   id: string,
@@ -79,8 +120,6 @@ function loadScript(
     document.head.appendChild(script);
   });
 }
-
-
 
 async function loadScriptWithFallback(
   id: string,
@@ -119,7 +158,28 @@ async function waitForGlobal(
   throw new Error("VNPT eKYC SDK chưa sẵn sàng");
 }
 
+function resolveOverrideToken(
+  overrides?: Partial<VnptEkycInitConfig>,
+): string | null {
+  const token = overrides?.AUTHORIZION || overrides?.ACCESS_TOKEN;
+  const normalizedToken = token?.trim();
 
+  return normalizedToken ? normalizedToken : null;
+}
+
+function normalizeSdkResult(result: VnptEkycResult): VnptEkycResult {
+  const normalizedResult = { ...result };
+
+  if (!normalizedResult.ocr && normalizedResult.orc) {
+    normalizedResult.ocr = normalizedResult.orc;
+  }
+
+  if (!normalizedResult.qr_code && normalizedResult.qrCode) {
+    normalizedResult.qr_code = normalizedResult.qrCode;
+  }
+
+  return normalizedResult;
+}
 
 export function EkycWidget({
   parentId = "ekyc_sdk_intergrated",
@@ -134,6 +194,21 @@ export function EkycWidget({
   const [error, setError] = useState<string | null>(null);
   const [retryToken, setRetryToken] = useState(0);
   const initializedRef = useRef(false);
+  const onResultRef = useRef(onResult);
+  const onAfterEndFlowRef = useRef(onAfterEndFlow);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onResultRef.current = onResult;
+  }, [onResult]);
+
+  useEffect(() => {
+    onAfterEndFlowRef.current = onAfterEndFlow;
+  }, [onAfterEndFlow]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   useEffect(() => {
     let isUnmounted = false;
@@ -185,33 +260,93 @@ export function EkycWidget({
 
         const sdkConfig = await ekycService.getSdkConfig();
 
-        let authToken: string | undefined;
-        if (!sdkConfig.ENABLE_GGCAPCHAR) {
+        let authToken = resolveOverrideToken(configOverrides);
+
+        if (!authToken) {
           const accessToken = await ekycService.getAccessToken();
-          authToken = accessToken.accessToken;
-        } else {
-          try {
-            const accessToken = await ekycService.getAccessToken();
-            authToken = accessToken.accessToken;
-          } catch {
-            // Optional when Google captcha mode is enabled by VNPT.
-            authToken = undefined;
-          }
+          authToken = accessToken.accessToken?.trim();
+        }
+
+        if (!authToken) {
+          throw new Error(
+            "Không lấy được access token từ backend. Vui lòng kiểm tra endpoint /ekyc/access-token và biến VNPT_EKYC_* trong backend.",
+          );
         }
 
         const handleResult = (result: VnptEkycResult) => {
-          onResult?.(result);
-          onAfterEndFlow?.(result);
+          const normalizedResult = normalizeSdkResult(result);
+          onResultRef.current?.(normalizedResult);
+        };
+
+        const handleEndFlowResult = (result: VnptEkycResult) => {
+          const normalizedResult = normalizeSdkResult(result);
+          onResultRef.current?.(normalizedResult);
+          onAfterEndFlowRef.current?.(normalizedResult);
+        };
+
+        const handleDocumentResult = (result: VnptEkycResult) => {
+          const normalizedResult = normalizeSdkResult(result);
+          
+          // ─── Lọc ảnh mờ/lé ngay lập tức trên Frontend ───
+          const ocr = (normalizedResult.ocr || normalizedResult.object) as Record<string, any>;
+          if (ocr) {
+            const warningMsg = String(ocr.warning_msg || "").toLowerCase();
+            const qFront = ocr.quality_front?.final_result;
+            const qBack = ocr.quality_back?.final_result;
+
+            if (
+              warningMsg.includes("mờ") || 
+              warningMsg.includes("chói") ||
+              warningMsg.includes("lóa") ||
+              qFront?.blurred_likelihood === "likely" ||
+              qBack?.blurred_likelihood === "likely" ||
+              qFront?.bad_luminance_likelihood === "likely" ||
+              qBack?.bad_luminance_likelihood === "likely"
+            ) {
+              const msg = "Ảnh giấy tờ bị mờ, lóa hoặc thiếu sáng. Vui lòng chụp lại hình ảnh rõ nét hơn!";
+              if (!isUnmounted) {
+                setError(msg);
+                setIsLoading(false);
+                initializedRef.current = false;
+                
+                // Cleanup current SDK container to stop the flow
+                const sdkContainer = document.getElementById(parentId);
+                if (sdkContainer) {
+                   sdkContainer.innerHTML = "";
+                }
+              }
+              onErrorRef.current?.(msg);
+              return; // Chặn không truyền tiếp data
+            }
+          }
+
+          onResultRef.current?.(normalizedResult);
         };
 
         const initConfig: VnptEkycInitConfig = {
           ...DEFAULT_INIT_CONFIG,
           ...sdkConfig,
           ...configOverrides,
+          PARRENT_ID: parentId,
+          AUTHORIZION: authToken,
           ACCESS_TOKEN: authToken,
+          ...(configOverrides?.URL_WEB_OVAL || WEB_OVAL_URL_CANDIDATE
+            ? {
+                URL_WEB_OVAL:
+                  configOverrides?.URL_WEB_OVAL || WEB_OVAL_URL_CANDIDATE,
+              }
+            : {}),
+          ...(configOverrides?.URL_MOBILE_OVAL || MOBILE_OVAL_URL_CANDIDATE
+            ? {
+                URL_MOBILE_OVAL:
+                  configOverrides?.URL_MOBILE_OVAL || MOBILE_OVAL_URL_CANDIDATE,
+              }
+            : {}),
           HAS_RESULT_SCREEN: showDefaultResult,
-          FLOW_TAKEN: continueToFaceAfterDocument ? "DOCUMENT_TO_FACE" : "DOCUMENT",
+          FLOW_TAKEN: continueToFaceAfterDocument ? "BOTH" : "DOCUMENT",
           CALL_BACK: handleResult,
+          CALL_BACK_END_FLOW: handleEndFlowResult,
+          CALL_BACK_DOCUMENT_RESULT: handleDocumentResult,
         } as VnptEkycInitConfig;
 
         window.SDK.launch(initConfig);
@@ -242,7 +377,7 @@ export function EkycWidget({
           setIsLoading(false);
         }
 
-        onError?.(message);
+        onErrorRef.current?.(message);
       }
     };
 
@@ -260,16 +395,13 @@ export function EkycWidget({
   }, [
     configOverrides,
     continueToFaceAfterDocument,
-    onError,
-    onAfterEndFlow,
-    onResult,
     parentId,
     retryToken,
     showDefaultResult,
   ]);
 
   return (
-    <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
       {isLoading && (
         <div className="mb-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700">
           Đang tải VNPT eKYC SDK...
@@ -292,7 +424,7 @@ export function EkycWidget({
         </div>
       )}
 
-      <div id={parentId} className="min-h-[520px] w-full" />
+      <div id={parentId} className="min-h-[440px] w-full sm:min-h-[520px]" />
     </div>
   );
 }

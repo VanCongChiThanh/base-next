@@ -1,5 +1,7 @@
 import apiClient from "@/lib/api-client";
 import {
+  CompleteEkycVerificationRequest,
+  CompleteEkycVerificationResponse,
   EkycAccessTokenResponse,
   EkycSdkConfigResponse,
   VerifyEkycSignatureRequest,
@@ -20,6 +22,15 @@ export const ekycService = {
   ): Promise<VerifyEkycSignatureResponse> {
     return apiClient.post<VerifyEkycSignatureResponse>(
       "/ekyc/verify-signature",
+      payload,
+    );
+  },
+
+  async completeVerification(
+    payload: CompleteEkycVerificationRequest,
+  ): Promise<CompleteEkycVerificationResponse> {
+    return apiClient.post<CompleteEkycVerificationResponse>(
+      "/ekyc/complete",
       payload,
     );
   },

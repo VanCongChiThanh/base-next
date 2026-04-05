@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts";
 import { userService, UpdateUserRequest } from "@/services/user.service";
@@ -9,7 +11,6 @@ import { AuthGuard } from "@/components";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { PrivacySettingsPanel } from "@/components/profile";
-import { EkycWidget } from "@/components/common";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
 import {
   ApiError,
@@ -49,6 +50,7 @@ const PROFILE_TABS: { key: ProfileTab; label: string; icon: string }[] = [
 
 function ProfileContent() {
   const { user, refreshUser } = useAuth();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<ProfileTab>("account");
 
   // Account state
@@ -60,8 +62,6 @@ function ProfileContent() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showEkycWidget, setShowEkycWidget] = useState(false);
-  const [ekycError, setEkycError] = useState("");
 
   // Worker profile state
   const [workerProfile, setWorkerProfile] = useState<WorkerProfile | null>(
@@ -313,6 +313,13 @@ function ProfileContent() {
       setActiveTab("account");
     }
   }, [activeTab, visibleTabKeys]);
+
+  useEffect(() => {
+    if (searchParams.get("ekyc") === "success") {
+      setSuccess("Xác thực eKYC thành công. Tài khoản đã được cập nhật.");
+      void refreshUser();
+    }
+  }, [refreshUser, searchParams]);
 
   const inputClass =
     "w-full px-4 py-2.5 rounded-xl border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-800 placeholder:text-gray-400 transition-all";
@@ -566,35 +573,13 @@ function ProfileContent() {
                             : "Bạn chưa xác thực eKYC. Hãy xác thực để mở thêm quyền đăng việc và tăng độ tin cậy."}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEkycError("");
-                          setShowEkycWidget((prev) => !prev);
-                        }}
+                      <Link
+                        href="/ekyc"
                         className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
                       >
-                        {showEkycWidget
-                          ? "Ẩn eKYC"
-                          : ekycVerified
-                            ? "Xem lại eKYC"
-                            : "Xác thực ngay"}
-                      </button>
+                        {ekycVerified ? "Xác thực lại" : "Xác thực ngay"}
+                      </Link>
                     </div>
-
-                    {showEkycWidget && (
-                      <div className="mt-4 space-y-3">
-                        {ekycError && (
-                          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                            {ekycError}
-                          </p>
-                        )}
-                        <EkycWidget
-                          showDefaultResult={false}
-                          onError={(message) => setEkycError(message)}
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
