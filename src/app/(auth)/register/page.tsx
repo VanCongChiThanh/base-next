@@ -33,12 +33,12 @@ export default function RegisterPage() {
     setSuccess("");
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      setError("Mật khẩu không khớp");
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError("Mật khẩu phải có ít nhất 6 ký tự");
       return;
     }
 
@@ -52,7 +52,7 @@ export default function RegisterPage() {
         lastName: formData.lastName,
       });
       setSuccess(
-        "Registration successful! Please check your email to verify your account.",
+        "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
       );
       setTimeout(() => {
         router.push("/login");
@@ -60,7 +60,7 @@ export default function RegisterPage() {
     } catch (err) {
       const apiError = err as ApiError;
       setError(
-        getErrorMessage(apiError) || "Registration failed. Please try again.",
+        getErrorMessage(apiError) || "Đăng ký thất bại. Vui lòng thử lại.",
       );
     } finally {
       setIsLoading(false);
@@ -72,7 +72,7 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div>
           <h2 className="text-center text-3xl font-bold text-gray-900">
-            Create your account
+            Tạo tài khoản mới
           </h2>
         </div>
 
@@ -96,7 +96,7 @@ export default function RegisterPage() {
                   htmlFor="firstName"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  First Name
+                  Tên
                 </label>
                 <input
                   id="firstName"
@@ -113,7 +113,7 @@ export default function RegisterPage() {
                   htmlFor="lastName"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Last Name
+                  Họ
                 </label>
                 <input
                   id="lastName"
@@ -131,7 +131,7 @@ export default function RegisterPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email address
+                Địa chỉ Email
               </label>
               <input
                 id="email"
@@ -149,7 +149,7 @@ export default function RegisterPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
               >
-                Password
+                Mật khẩu
               </label>
               <input
                 id="password"
@@ -166,7 +166,7 @@ export default function RegisterPage() {
                 htmlFor="confirmPassword"
                 className="block text-sm font-medium text-gray-700"
               >
-                Confirm Password
+                Xác nhận mật khẩu
               </label>
               <input
                 id="confirmPassword"
@@ -185,14 +185,14 @@ export default function RegisterPage() {
             disabled={isLoading}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {isLoading ? "Creating account..." : "Sign up"}
+            {isLoading ? "Đang tạo tài khoản..." : "Đăng ký"}
           </button>
         </form>
 
         <p className="mt-2 text-center text-sm text-gray-600">
-          Already have an account?{" "}
+          Đã có tài khoản?{" "}
           <Link href="/login" className="text-blue-600 hover:text-blue-500">
-            Sign in
+            Đăng nhập
           </Link>
         </p>
       </div>

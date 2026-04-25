@@ -1,5 +1,10 @@
 import apiClient from "@/lib/api-client";
-import { EntitlementSnapshot, PublicPlan, UsageSnapshotItem } from "@/types";
+import {
+  CheckoutResponse,
+  EntitlementSnapshot,
+  PublicPlan,
+  UsageSnapshotItem,
+} from "@/types";
 
 export const subscriptionService = {
   async getPublicPlans(scope?: string): Promise<PublicPlan[]> {
@@ -15,8 +20,10 @@ export const subscriptionService = {
     return apiClient.get<UsageSnapshotItem[]>("/subscriptions/me/usage");
   },
 
-  async createCheckout(planCode: string): Promise<{ checkoutUrl: string; paymentLinkId: string }> {
-    return apiClient.post<{ checkoutUrl: string; paymentLinkId: string }>("/subscriptions/checkout", { planCode });
+  async createCheckout(planCode: string): Promise<CheckoutResponse> {
+    return apiClient.post<CheckoutResponse>("/subscriptions/checkout", {
+      planCode,
+    });
   },
 
   async syncCheckoutStatus(orderCode: string | number): Promise<{ status: string }> {

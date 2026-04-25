@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { AuthGuard } from "@/components/auth-guard";
 import { JobStatusBadge, ApplicationStatusBadge } from "@/components/job";
+import { UpgradePrompt } from "@/components/common/upgrade-prompt";
 import { useAuth, useChat } from "@/contexts";
 import { jobService } from "@/services";
 import { Job, JobApplication, ApplicationStatus } from "@/types";
@@ -106,7 +107,8 @@ export default function DashboardPage() {
             </div>
           ) : activeTab === "posted" ? (
             /* My Posted Jobs */
-            <>
+            <div className="space-y-6">
+              <UpgradePrompt />
               {myJobs.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-4">
@@ -191,7 +193,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               )}
-            </>
+            </div>
           ) : (
             /* Worker History */
             <>

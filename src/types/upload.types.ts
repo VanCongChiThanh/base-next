@@ -6,6 +6,8 @@ export interface PresignedUrlRequest {
 
 export interface PresignedUrlResponse {
   uploadUrl: string;
-  fileUrl: string;
-  expiresIn: number;
+  signature: string;
+  timestamp: number;
+  apiKey: string;
+  folder: string;
 }

@@ -8,3 +8,4 @@ export * from "./api.types";
 export * from "./job.types";
 export * from "./ekyc.types";
 export * from "./subscription.types";
+export * from "./worker-service.types";

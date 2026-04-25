@@ -23,49 +23,70 @@ const SCOPE_TABS: { key: ScopeTab; label: string; description: string }[] = [
   },
 ];
 
-const HIGHLIGHT_FEATURES = [
+const EMPLOYER_HIGHLIGHT_KEYS = [
   "job.post.max_open_jobs",
   "job.apply.daily_limit",
+  "ai.job_chatbot.enabled",
   "ai.cv_screening.enabled",
   "ai.cv_screening.monthly_quota",
   "ai.interview_summary.enabled",
 ] as const;
 
+const ORGANIZATION_HIGHLIGHT_KEYS = [
+  "job.post.unlimited",
+  "ai.candidate_match.enabled",
+  "organization.member_management.enabled",
+  "job.apply.daily_limit",
+] as const;
+
 const FEATURE_LABELS: Record<string, string> = {
   "job.post.max_open_jobs": "Số tin tuyển dụng đồng thời",
   "job.apply.daily_limit": "Giới hạn ứng tuyển / ngày",
+  "ai.job_chatbot.enabled": "AI chatbot gợi ý việc làm phù hợp",
   "ai.cv_screening.enabled": "Sàng lọc CV bằng AI",
   "ai.cv_screening.monthly_quota": "Hạn mức AI sàng lọc / tháng",
   "ai.interview_summary.enabled": "Tóm tắt phỏng vấn AI",
+  "job.post.unlimited": "Đăng tin tuyển dụng không giới hạn / tháng",
+  "ai.candidate_match.enabled": "AI match ứng viên (pool đang rảnh)",
+  "organization.member_management.enabled": "Tạo tài khoản thành viên tổ chức",
 };
 
 const FEATURE_ICONS: Record<string, string> = {
   "job.post.max_open_jobs": "📋",
   "job.apply.daily_limit": "🎯",
+  "ai.job_chatbot.enabled": "💬",
   "ai.cv_screening.enabled": "🤖",
   "ai.cv_screening.monthly_quota": "📊",
   "ai.interview_summary.enabled": "📝",
+  "job.post.unlimited": "∞",
+  "ai.candidate_match.enabled": "🧭",
+  "organization.member_management.enabled": "👥",
 };
 
 const PLAN_VIETNAMESE_NAMES: Record<string, string> = {
   Free: "Miễn phí",
   Starter: "Khởi đầu",
   Growth: "Tăng trưởng",
-  Pro: "Chuyên nghiệp",
+  Pro: "Pro (59k)",
   "Business Lite": "Doanh nghiệp cơ bản",
   Business: "Doanh nghiệp",
+  "Employee Basic": "Tổ chức — Basic",
+  "Employee Unlimited": "Tổ chức — Unlimited",
 };
 
 const PLAN_DESCRIPTIONS: Record<string, string> = {
   Free: "Bắt đầu miễn phí, phù hợp cho cá nhân mới sử dụng",
   Starter: "Phù hợp cho cá nhân bắt đầu tuyển dụng thường xuyên",
   Growth: "Mở rộng quy mô tuyển dụng với công cụ AI hỗ trợ",
-  Pro: "Giải pháp toàn diện cho nhà tuyển dụng chuyên nghiệp",
+  Pro: "10 tin/tháng + AI chatbot tìm việc phù hợp",
   "Business Lite": "Giải pháp tiết kiệm cho doanh nghiệp vừa và nhỏ",
   Business: "Giải pháp không giới hạn cho doanh nghiệp lớn",
+  "Employee Basic": "10 tin tuyển/tháng cho tài khoản tổ chức",
+  "Employee Unlimited":
+    "Không giới hạn tin + AI match ứng viên + quản lý thành viên (299k sau trial)",
 };
 
-const POPULAR_PLANS = ["GROWTH", "BUSINESS_LITE"];
+const POPULAR_PLANS = ["PRO", "BUSINESS"];
 
 function formatVnd(price: number): string {
   if (!price) return "0đ";
@@ -112,7 +133,11 @@ function getPlanRenderKey(plan: PublicPlan, index: number): string {
 
 export default function PricingPage() {
   const { isAuthenticated, user } = useAuth();
-  const { entitlements, isLoading: entitlementLoading } = useEntitlements();
+  const {
+    entitlements,
+    isLoading: entitlementLoading,
+    refreshEntitlements,
+  } = useEntitlements();
   const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeScope, setActiveScope] = useState<ScopeTab>("EMPLOYER");
@@ -123,12 +148,22 @@ export default function PricingPage() {
     try {
       setCheckoutLoading(planCode);
       const res = await subscriptionService.createCheckout(planCode);
-      if (res && res.checkoutUrl) {
+      if (res.checkoutUrl) {
         window.location.href = res.checkoutUrl;
+        return;
       }
+      if (res.isTrialUpgrade) {
+        await refreshEntitlements();
+        alert(
+          "Đã kích hoạt gói Unlimited miễn phí trong giai đoạn dùng thử (3 tháng đầu kể từ ngày tạo tài khoản tổ chức).",
+        );
+        return;
+      }
+      alert("Không tạo được liên kết thanh toán. Vui lòng thử lại sau.");
     } catch (error) {
       console.error("Lỗi khi tạo thanh toán:", error);
       alert("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
+    } finally {
       setCheckoutLoading(null);
     }
   };
@@ -167,6 +202,14 @@ export default function PricingPage() {
   const sortedPlans = useMemo(
     () => [...plans].sort((a, b) => a.price - b.price),
     [plans],
+  );
+
+  const highlightKeys = useMemo(
+    () =>
+      activeScope === "ORGANIZATION"
+        ? ORGANIZATION_HIGHLIGHT_KEYS
+        : EMPLOYER_HIGHLIGHT_KEYS,
+    [activeScope],
   );
 
   const activeScopeData = SCOPE_TABS.find((t) => t.key === activeScope);
@@ -251,7 +294,7 @@ export default function PricingPage() {
         <section className="mx-auto max-w-6xl px-4 -mt-8 sm:px-6 lg:px-8 pb-16">
           {loading || (isAuthenticated && entitlementLoading) ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: activeScope === "EMPLOYER" ? 4 : 2 }).map(
+              {Array.from({ length: 2 }).map(
                 (_, i) => (
                   <div
                     key={i}
@@ -289,6 +332,9 @@ export default function PricingPage() {
                   PLAN_VIETNAMESE_NAMES[plan.name] ?? plan.name;
                 const description =
                   PLAN_DESCRIPTIONS[plan.name] ?? "";
+                const isUnlimitedPosts =
+                  Boolean(plan.featureConfig?.["job.post.unlimited"]) ||
+                  plan.maxPostsPerMonth >= 9999;
 
                 return (
                   <article
@@ -376,7 +422,12 @@ export default function PricingPage() {
                         </span>
                         <span>
                           Đăng tối đa{" "}
-                          <strong>{plan.maxPostsPerMonth}</strong> tin / tháng
+                          <strong>
+                            {isUnlimitedPosts
+                              ? "Không giới hạn"
+                              : plan.maxPostsPerMonth}
+                          </strong>{" "}
+                          tin / tháng
                         </span>
                       </div>
                       <div className="flex items-center gap-2.5 text-slate-700">
@@ -400,7 +451,7 @@ export default function PricingPage() {
 
                     {/* Feature List */}
                     <ul className="space-y-3 text-sm flex-1">
-                      {HIGHLIGHT_FEATURES.map((key) => (
+                      {highlightKeys.map((key) => (
                         <li
                           key={key}
                           className="flex items-start justify-between gap-3"

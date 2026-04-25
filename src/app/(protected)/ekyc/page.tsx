@@ -32,7 +32,6 @@ function decodeBase64Json(
     return undefined;
   }
 }
-
 function extractOcrSource(result: VnptEkycResult): Record<string, unknown> {
   if (result.ocr && typeof result.ocr === "object") {
     return result.ocr;

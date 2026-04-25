@@ -12,11 +12,12 @@ import {
   skillService,
   locationService,
 } from "@/services";
-import { JobCategory, Skill, Province, Ward, JobSalaryType } from "@/types";
+import { JobCategory, Skill, Province, Ward, JobSalaryType, JobType } from "@/types";
 import { getErrorMessage } from "@/lib/api-client";
 import { ApiError } from "@/types";
 import { cn } from "@/lib/utils";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
+import { UpgradePrompt } from "@/components/common/upgrade-prompt";
 
 const LocationPicker = dynamic(
   () => import("@/components/job/location-picker"),
@@ -31,8 +32,17 @@ export default function PostJobPage() {
   const [wards, setWards] = useState<Ward[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [hireId, setHireId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      setHireId(urlParams.get("hire_id"));
+    }
+  }, []);
 
   const [form, setForm] = useState({
+    jobType: "GIG" as JobType,
     title: "",
     description: "",
     categoryId: "",
@@ -47,6 +57,13 @@ export default function PostJobPage() {
     latitude: undefined as number | undefined,
     longitude: undefined as number | undefined,
     skillIds: [] as string[],
+    // Part-time fields
+    contractDuration: "",
+    workSchedule: "",
+    paymentNote: "",
+    // Online fields
+    totalBudget: "",
+    deliverableType: "",
   });
 
   useEffect(() => {
@@ -138,6 +155,18 @@ export default function PostJobPage() {
         latitude: form.latitude,
         longitude: form.longitude,
         skillIds: form.skillIds.length > 0 ? form.skillIds : undefined,
+        jobType: form.jobType,
+        // Part-time fields
+        ...(form.jobType === JobType.PART_TIME && {
+          contractDuration: form.contractDuration || undefined,
+          workSchedule: form.workSchedule || undefined,
+          paymentNote: form.paymentNote || undefined,
+        }),
+        // Online fields
+        ...(form.jobType === JobType.ONLINE && {
+          totalBudget: form.totalBudget ? Number(form.totalBudget) : undefined,
+          deliverableType: form.deliverableType || undefined,
+        }),
       });
       router.push(`/jobs/${job.id}`);
     } catch (err) {
@@ -162,12 +191,35 @@ export default function PostJobPage() {
               Đăng <span className="text-blue-600">việc mới</span>
             </h1>
             <p className="mt-2 text-gray-500">
-              Điền thông tin chi tiết để tìm được ứng viên phù hợp
+              {hireId 
+                ? "Tạo công việc mới dành riêng cho ứng viên bạn muốn thuê."
+                : "Điền thông tin chi tiết để tìm được ứng viên phù hợp"}
             </p>
           </div>
         </div>
 
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {hireId && (
+            <div className="mb-6 p-4 rounded-xl bg-indigo-50 border border-indigo-200 flex items-start gap-4">
+              <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg shrink-0">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-indigo-900 text-base">Tính năng Thuê Cá Nhân</h3>
+                <p className="text-sm text-indigo-700/80 mt-1">
+                  Công việc này dự kiến sẽ gửi lời mời / nhận diện ưu tiên đến cá nhân bạn chọn sau khi đăng. Việc hiển thị cho người khác tùy vào thiết lập tương lai.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Upgrade prompt - only shows when quota is low */}
+          <div className="mb-6">
+            <UpgradePrompt />
+          </div>
+
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
               {error}
@@ -175,6 +227,107 @@ export default function PostJobPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Job Type Selector */}
+            <div className="bg-white rounded-2xl border border-blue-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                  <span className="text-sm font-bold text-white">✦</span>
+                </div>
+                Loại công việc
+              </h2>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  {
+                    value: JobType.GIG,
+                    icon: "⚡",
+                    label: "Thời vụ",
+                    desc: "1 lần, ngắn hạn",
+                    color: "orange",
+                  },
+                  {
+                    value: JobType.PART_TIME,
+                    icon: "🕐",
+                    label: "Part-time",
+                    desc: "Dài hạn, nhiều ca",
+                    color: "purple",
+                  },
+                  {
+                    value: JobType.ONLINE,
+                    icon: "🌐",
+                    label: "Online",
+                    desc: "Từ xa, deliverable",
+                    color: "cyan",
+                  },
+                ].map((type) => {
+                  const isSelected = form.jobType === type.value;
+                  const colorMap: Record<string, { border: string; bg: string; text: string; ring: string }> = {
+                    orange: {
+                      border: "border-orange-400",
+                      bg: "bg-orange-50",
+                      text: "text-orange-700",
+                      ring: "ring-orange-200",
+                    },
+                    purple: {
+                      border: "border-purple-400",
+                      bg: "bg-purple-50",
+                      text: "text-purple-700",
+                      ring: "ring-purple-200",
+                    },
+                    cyan: {
+                      border: "border-cyan-400",
+                      bg: "bg-cyan-50",
+                      text: "text-cyan-700",
+                      ring: "ring-cyan-200",
+                    },
+                  };
+                  const c = colorMap[type.color];
+                  return (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => updateForm("jobType", type.value)}
+                      className={cn(
+                        "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
+                        isSelected
+                          ? `${c.border} ${c.bg} ring-2 ${c.ring} shadow-sm`
+                          : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm",
+                      )}
+                    >
+                      <div className="text-2xl mb-2">{type.icon}</div>
+                      <div
+                        className={cn(
+                          "font-semibold text-sm",
+                          isSelected ? c.text : "text-gray-800",
+                        )}
+                      >
+                        {type.label}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {type.desc}
+                      </div>
+                      {isSelected && (
+                        <div
+                          className={`absolute top-2 right-2 w-5 h-5 rounded-full ${c.bg} ${c.text} flex items-center justify-center`}
+                        >
+                          <svg
+                            className="w-3 h-3"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Basic Info */}
             <div className="bg-white rounded-2xl border border-blue-100 p-6 space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -314,6 +467,103 @@ export default function PostJobPage() {
                 </div>
               </div>
             </div>
+
+            {/* Part-time Extra Fields */}
+            {form.jobType === JobType.PART_TIME && (
+              <div className="bg-white rounded-2xl border border-purple-100 p-6 space-y-5">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <span className="text-sm">🕐</span>
+                  </div>
+                  Thông tin Part-time
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>
+                      Thời hạn hợp đồng
+                    </label>
+                    <input
+                      type="text"
+                      value={form.contractDuration}
+                      onChange={(e) => updateForm("contractDuration", e.target.value)}
+                      placeholder="VD: 3 tháng, không xác định"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      Lịch làm việc
+                    </label>
+                    <input
+                      type="text"
+                      value={form.workSchedule}
+                      onChange={(e) => updateForm("workSchedule", e.target.value)}
+                      placeholder="VD: T2-T6, 8h-12h"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>
+                    Ghi chú thanh toán
+                  </label>
+                  <input
+                    type="text"
+                    value={form.paymentNote}
+                    onChange={(e) => updateForm("paymentNote", e.target.value)}
+                    placeholder="VD: Trả vào ngày 5 hàng tháng"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Online Extra Fields */}
+            {form.jobType === JobType.ONLINE && (
+              <div className="bg-white rounded-2xl border border-cyan-100 p-6 space-y-5">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-cyan-100 flex items-center justify-center">
+                    <span className="text-sm">🌐</span>
+                  </div>
+                  Thông tin Online
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>
+                      Tổng ngân sách (đ)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={form.totalBudget}
+                      onChange={(e) => updateForm("totalBudget", e.target.value)}
+                      placeholder="VD: 5000000"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      Loại sản phẩm giao
+                    </label>
+                    <select
+                      value={form.deliverableType}
+                      onChange={(e) => updateForm("deliverableType", e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="">Chọn loại</option>
+                      <option value="FILE">File (thiết kế, document...)</option>
+                      <option value="LINK">Link (website, demo...)</option>
+                      <option value="TEXT">Text (bài viết, dịch thuật...)</option>
+                      <option value="OTHER">Khác</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
 
             {/* Location */}
             <div className="bg-white rounded-2xl border border-blue-100 p-6 space-y-5">

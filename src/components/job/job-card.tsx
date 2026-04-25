@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Job, JobStatus, EmployerBadge } from "@/types";
+import { Job, JobStatus, EmployerBadge, JobType } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 import { JobStatusBadge } from "./status-badge";
 
@@ -86,13 +86,30 @@ export function JobCard({ job }: JobCardProps) {
 
         {/* Category */}
         {job.category && (
-          <div className="mb-3">
+          <div className="flex flex-wrap gap-1.5 mb-3">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700">
               {job.category.icon && (
                 <span className="mr-1">{job.category.icon}</span>
               )}
               {job.category.name}
             </span>
+            {job.jobType && (
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-semibold ${
+                  job.jobType === JobType.GIG
+                    ? "bg-orange-50 text-orange-700 border border-orange-200"
+                    : job.jobType === JobType.PART_TIME
+                      ? "bg-purple-50 text-purple-700 border border-purple-200"
+                      : "bg-cyan-50 text-cyan-700 border border-cyan-200"
+                }`}
+              >
+                {job.jobType === JobType.GIG
+                  ? "⚡ Thời vụ"
+                  : job.jobType === JobType.PART_TIME
+                    ? "🕐 Part-time"
+                    : "🌐 Online"}
+              </span>
+            )}
           </div>
         )}
 

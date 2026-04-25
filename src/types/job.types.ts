@@ -6,6 +6,7 @@ import {
   PaymentType,
   DisputeStatus,
   EmployerBadge,
+  JobType,
 } from "./enums";
 
 export type PrivacyVisibility = "PUBLIC" | "ACCEPTED_ONLY" | "PRIVATE";
@@ -135,6 +136,14 @@ export interface Job {
   applications?: JobApplication[];
   employerProfile?: EmployerProfileInfo | null;
   distance?: number;
+  jobType?: JobType;
+  // Part-time fields
+  contractDuration?: string;
+  workSchedule?: string;
+  paymentNote?: string;
+  // Online fields
+  totalBudget?: number;
+  deliverableType?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -274,6 +283,14 @@ export interface CreateJobRequest {
   latitude?: number;
   longitude?: number;
   skillIds?: string[];
+  jobType?: JobType;
+  // Part-time fields
+  contractDuration?: string;
+  workSchedule?: string;
+  paymentNote?: string;
+  // Online fields
+  totalBudget?: number;
+  deliverableType?: string;
 }
 
 export interface ApplyJobRequest {
@@ -292,6 +309,7 @@ export interface JobFilterParams {
   latitude?: number;
   longitude?: number;
   radius?: number;
+  jobType?: JobType;
 }
 
 export interface CreateReviewRequest {

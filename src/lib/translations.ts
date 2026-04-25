@@ -33,7 +33,15 @@ export const ERROR_MESSAGES_VI: Record<string, string> = {
 export function translateErrorMessage(message: string): string {
   if (!message) return "Đã xảy ra lỗi hệ thống.";
   
-  // Exact match
+  let lang = "vi";
+  if (typeof window !== "undefined") {
+    lang = localStorage.getItem("lang") || "vi";
+  }
+
+  // If language is English, just return message 
+  if (lang === "en") return message;
+  
+  // Exact match VI
   if (ERROR_MESSAGES_VI[message]) {
     return ERROR_MESSAGES_VI[message];
   }
@@ -45,6 +53,5 @@ export function translateErrorMessage(message: string): string {
   if (lowerMsg.includes("should not be empty")) return "Vui lòng nhập đầy đủ các trường bắt buộc.";
   if (lowerMsg.includes("must be a valid phone number")) return "Số điện thoại không hợp lệ.";
   
-  // Return original if no translation matches
   return message;
 }

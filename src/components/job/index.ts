@@ -6,3 +6,5 @@ export { ApplicationChatPanel } from "./application-chat-panel";
 export { WorkerQuickStats, UpcomingShiftsWidget, ApplicantPipelineWidget } from "./dashboard-widgets";
 export { ReportModal } from "./report-modal";
 export { ChatDrawer } from "./chat-drawer";
+export { ReviewSection } from "./review-section";
+
