@@ -16,8 +16,15 @@ import { getErrorMessage } from "@/lib/api-client";
 
 const ROLE_OPTIONS = [
   { value: Role.USER, label: "User" },
+  { value: Role.ORGANIZATION, label: "Organization" },
   { value: Role.ADMIN, label: "Admin" },
 ];
+
+function getNextRole(current: Role): Role {
+  if (current === Role.ADMIN) return Role.USER;
+  if (current === Role.USER) return Role.ORGANIZATION;
+  return Role.ADMIN;
+}
 
 const VERIFIED_OPTIONS = [
   { value: "true", label: "Verified" },
@@ -112,8 +119,7 @@ export default function AdminUsersPage() {
   const handleRoleChange = async () => {
     if (!roleChangeTarget) return;
     setIsChangingRole(true);
-    const newRole =
-      roleChangeTarget.role === Role.ADMIN ? Role.USER : Role.ADMIN;
+    const newRole = getNextRole(roleChangeTarget.role);
     try {
       await adminService.updateUserRole(roleChangeTarget.id, newRole);
       showToast(`Role updated to ${newRole}`, "success");
@@ -154,7 +160,15 @@ export default function AdminUsersPage() {
       label: "Role",
       sortable: true,
       render: (user: User) => (
-        <Badge variant={user.role === Role.ADMIN ? "purple" : "info"}>
+        <Badge
+          variant={
+            user.role === Role.ADMIN
+              ? "purple"
+              : user.role === Role.ORGANIZATION
+                ? "success"
+                : "info"
+          }
+        >
           {user.role}
         </Badge>
       ),
@@ -313,7 +327,7 @@ export default function AdminUsersPage() {
         onClose={() => setRoleChangeTarget(null)}
         onConfirm={handleRoleChange}
         title="Change Role"
-        message={`Change "${roleChangeTarget?.firstName} ${roleChangeTarget?.lastName}" role from ${roleChangeTarget?.role} to ${roleChangeTarget?.role === Role.ADMIN ? Role.USER : Role.ADMIN}?`}
+        message={`Change "${roleChangeTarget?.firstName} ${roleChangeTarget?.lastName}" role from ${roleChangeTarget?.role} to ${roleChangeTarget ? getNextRole(roleChangeTarget.role) : ""}?`}
         confirmText="Confirm"
         variant="warning"
         isLoading={isChangingRole}

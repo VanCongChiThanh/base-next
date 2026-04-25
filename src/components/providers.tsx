@@ -6,20 +6,30 @@ import {
   ChatProvider,
   EntitlementProvider,
   NotificationProvider,
+  LanguageProvider,
 } from "@/contexts";
 
 interface ProvidersProps {
   children: ReactNode;
 }
 
+import { Toaster } from "react-hot-toast";
+import { AiChatWidget } from "@/components/ai/ai-chat-widget";
+
 export function Providers({ children }: ProvidersProps) {
   return (
-    <AuthProvider>
-      <EntitlementProvider>
-        <NotificationProvider>
-          <ChatProvider>{children}</ChatProvider>
-        </NotificationProvider>
-      </EntitlementProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <EntitlementProvider>
+          <NotificationProvider>
+            <ChatProvider>
+              {children}
+              <Toaster position="top-right" />
+              <AiChatWidget />
+            </ChatProvider>
+          </NotificationProvider>
+        </EntitlementProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

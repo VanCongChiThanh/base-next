@@ -29,6 +29,7 @@ export const jobService = {
     if (params.latitude !== undefined) searchParams.set("latitude", String(params.latitude));
     if (params.longitude !== undefined) searchParams.set("longitude", String(params.longitude));
     if (params.radius !== undefined) searchParams.set("radius", String(params.radius));
+    if (params.jobType) searchParams.set("jobType", params.jobType);
 
     const qs = searchParams.toString();
     return apiClient.getFull<Job[]>(`/jobs${qs ? `?${qs}` : ""}`);

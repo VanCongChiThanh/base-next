@@ -12,4 +12,5 @@ export { reviewService } from "./review.service";
 export { paymentService } from "./payment.service";
 export { ekycService } from "./ekyc.service";
 export { subscriptionService } from "./subscription.service";
+export { workerServiceAPI } from "./worker-service.service";
 export * from "./report.service";

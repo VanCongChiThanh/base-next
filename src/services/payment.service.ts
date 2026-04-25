@@ -18,8 +18,8 @@ export const paymentService = {
   },
 
   // Get worker's own payments
-  getMyPayments() {
-    return apiClient.get<PaymentConfirmation[]>("/worker/payments");
+  getMyPayments(page = 1, limit = 10) {
+    return apiClient.get<{ data: PaymentConfirmation[], total: number }>(`/worker/payments?page=${page}&limit=${limit}`);
   },
 
   // Create a dispute for a job

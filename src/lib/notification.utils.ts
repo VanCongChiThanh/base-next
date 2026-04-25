@@ -145,6 +145,11 @@ function formatTemplate(
  */
 export function getNotificationTitle(notification: Notification): string {
   if (!notification?.type) return "Thông báo";
+  
+  if (notification.type === NotificationType.SYSTEM && notification.data?.title) {
+    return String(notification.data.title);
+  }
+
   const template = NOTIFICATION_TEMPLATES[notification.type];
   if (!template) return "Thông báo";
   return formatTemplate(template.title, notification.data);
@@ -155,6 +160,12 @@ export function getNotificationTitle(notification: Notification): string {
  */
 export function getNotificationMessage(notification: Notification): string {
   if (!notification?.type) return "";
+
+  if (notification.type === NotificationType.SYSTEM) {
+    if (notification.data?.message) return String(notification.data.message);
+    if (notification.data?.content) return String(notification.data.content);
+  }
+
   const template = NOTIFICATION_TEMPLATES[notification.type];
   if (!template) return "";
   return formatTemplate(template.message, notification.data);

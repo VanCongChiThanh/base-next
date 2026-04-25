@@ -6,11 +6,11 @@ export const reviewService = {
     return apiClient.post<Review>("/reviews", data);
   },
 
-  async getByJob(jobId: string): Promise<Review[]> {
-    return apiClient.get<Review[]>(`/reviews/job/${jobId}`);
+  async getByJob(jobId: string, page = 1, limit = 10) {
+    return apiClient.get<{ data: Review[], total: number }>(`/reviews/job/${jobId}?page=${page}&limit=${limit}`);
   },
 
-  async getByUser(userId: string): Promise<Review[]> {
-    return apiClient.get<Review[]>(`/reviews/user/${userId}`);
+  async getByUser(userId: string, page = 1, limit = 10) {
+    return apiClient.get<{ data: Review[], total: number }>(`/reviews/user/${userId}?page=${page}&limit=${limit}`);
   },
 };

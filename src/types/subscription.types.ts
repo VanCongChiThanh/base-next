@@ -28,3 +28,12 @@ export interface UsageSnapshotItem {
   periodKey: string;
   count: number;
 }
+
+/** POST /subscriptions/checkout — có thể redirect PayOS hoặc kích hoạt trial không thanh toán */
+export interface CheckoutResponse {
+  checkoutUrl: string | null;
+  paymentLinkId: string | null;
+  isTrialUpgrade?: boolean;
+  startsAt?: string;
+  endsAt?: string;
+}

@@ -15,7 +15,7 @@ interface SearchInputProps {
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Search...",
+  placeholder = "Tìm kiếm...",
   debounceMs = 400,
   className,
 }: SearchInputProps) {

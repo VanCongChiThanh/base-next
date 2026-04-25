@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { JobCategory, Province, ProvinceDetail } from "@/types";
+import { JobCategory, Province, ProvinceDetail, JobType } from "@/types";
 import { categoryService, locationService } from "@/services";
 import { useDebounceValue } from "@/hooks/use-debounce-value";
 import { cn } from "@/lib/utils";
@@ -18,12 +18,14 @@ interface JobFiltersProps {
     latitude?: number;
     longitude?: number;
     radius?: number;
+    jobType?: JobType;
   }) => void;
 }
 
 export function JobFilters({ onFilterChange }: JobFiltersProps) {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [jobType, setJobType] = useState<JobType | "">("")
   const [provinceCode, setProvinceCode] = useState("");
   const [wardCode, setWardCode] = useState("");
   const [salaryMin, setSalaryMin] = useState("");
@@ -78,10 +80,12 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
       latitude: isNearMe && userLocation ? userLocation.lat : undefined,
       longitude: isNearMe && userLocation ? userLocation.lng : undefined,
       radius: isNearMe ? Number(radius) : undefined,
+      jobType: jobType || undefined,
     });
   }, [
     debouncedSearch,
     categoryId,
+    jobType,
     provinceCode,
     wardCode,
     salaryMin,
@@ -99,6 +103,7 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
   const clearFilters = () => {
     setSearch("");
     setCategoryId("");
+    setJobType("");
     setProvinceCode("");
     setWardCode("");
     setSalaryMin("");
@@ -111,6 +116,7 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
   const hasFilters =
     search ||
     categoryId ||
+    jobType ||
     provinceCode ||
     wardCode ||
     salaryMin ||
@@ -201,6 +207,37 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
           className="w-full pl-11 pr-4 py-3 rounded-xl border border-blue-100 bg-blue-50/30 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all"
         />
       </div>
+
+      {/* Job Type Filter */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { value: "" as const, label: "Tất cả", icon: "💼" },
+          { value: JobType.GIG, label: "Thời vụ", icon: "⚡" },
+          { value: JobType.PART_TIME, label: "Part-time", icon: "🕐" },
+          { value: JobType.ONLINE, label: "Online", icon: "🌐" },
+        ].map((type) => (
+          <button
+            key={type.value}
+            onClick={() => setJobType(type.value)}
+            className={cn(
+              "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all border",
+              jobType === type.value
+                ? type.value === JobType.GIG
+                  ? "bg-orange-50 text-orange-700 border-orange-300"
+                  : type.value === JobType.PART_TIME
+                    ? "bg-purple-50 text-purple-700 border-purple-300"
+                    : type.value === JobType.ONLINE
+                      ? "bg-cyan-50 text-cyan-700 border-cyan-300"
+                      : "bg-blue-50 text-blue-700 border-blue-300"
+                : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 hover:border-gray-300",
+            )}
+          >
+            <span>{type.icon}</span>
+            {type.label}
+          </button>
+        ))}
+      </div>
+
 
       {/* Primary Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
