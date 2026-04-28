@@ -265,7 +265,7 @@ export default function AdminAiPage() {
   );
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const syncTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const loadFaq = useCallback(async () => {
     setLoadingFaq(true);
