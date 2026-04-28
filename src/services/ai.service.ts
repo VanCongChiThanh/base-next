@@ -216,10 +216,10 @@ export async function syncJobsToVectorDb() {
 
 export type SyncTarget = "jobs" | "workers" | "faq";
 
+/** Trả về từ POST /ai/sync (yêu cầu đã xếp hàng, chưa phải job chạy xong) */
 export interface SyncStatus {
-  success: boolean;
-  message?: string;
-  jobId?: string;
+  message: string;
+  targets: SyncTarget[];
 }
 
 export async function triggerSelectiveSync(
