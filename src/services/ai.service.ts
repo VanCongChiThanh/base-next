@@ -43,6 +43,17 @@ export interface ChatSession {
   createdAt: string;
 }
 
+export interface ChatStreamChunk {
+  chunk?: string;
+  metadata?: {
+    sessionId?: string;
+    references?: ChatReference[];
+    [key: string]: unknown;
+  };
+  isDone?: boolean;
+  [key: string]: unknown;
+}
+
 export interface ScamAnalysisResult {
   scamScore: number;
   riskLevel: "safe" | "low" | "medium" | "high" | "critical";
@@ -50,6 +61,24 @@ export interface ScamAnalysisResult {
   recommendation: string;
   matchedPatterns: string[];
   aiAnalysis: string;
+}
+
+interface ApiErrorPayload {
+  errorCode?: string;
+  message?: string;
+  details?: unknown;
+}
+
+export class ApiStreamError extends Error {
+  errorCode?: string;
+  details?: unknown;
+
+  constructor(payload: ApiErrorPayload) {
+    super(payload.message || "Failed to start stream");
+    this.name = "ApiStreamError";
+    this.errorCode = payload.errorCode;
+    this.details = payload.details;
+  }
 }
 
 // ─── AI Chat ───
@@ -64,7 +93,7 @@ export async function sendChatMessage(
 export async function* sendChatMessageStream(
   message: string,
   sessionId?: string
-): AsyncGenerator<{ chunk?: string; metadata?: any; isDone?: boolean }> {
+): AsyncGenerator<ChatStreamChunk> {
   const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
   
@@ -78,7 +107,22 @@ export async function* sendChatMessageStream(
   });
 
   if (!response.ok || !response.body) {
-    throw new Error("Failed to start stream");
+    let payload: ApiErrorPayload = {
+      message: "Failed to start stream",
+    };
+
+    try {
+      const data = await response.json();
+      payload = {
+        errorCode: data?.errorCode,
+        message: data?.message || payload.message,
+        details: data?.details,
+      };
+    } catch {
+      // keep fallback payload
+    }
+
+    throw new ApiStreamError(payload);
   }
 
   const reader = response.body.getReader();
@@ -104,9 +148,9 @@ export async function* sendChatMessageStream(
             return;
           }
           try {
-            const parsed = JSON.parse(dataStr);
+            const parsed = JSON.parse(dataStr) as ChatStreamChunk;
             yield parsed;
-          } catch (e) {
+          } catch {
             console.error("Failed to parse stream chunk:", dataStr);
           }
         }

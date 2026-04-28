@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
-import { sendChatMessageStream, getChatSuggestions } from "@/services/ai.service";
+import { sendChatMessageStream, getChatSuggestions, ApiStreamError } from "@/services/ai.service";
 import type { ChatReference, JobReference, WorkerReference, PlatformLink } from "@/services/ai.service";
 import { useAuth } from "@/contexts";
 import Link from "next/link";
@@ -411,6 +411,7 @@ export function AiChatWidget() {
   const [showPulse, setShowPulse] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const SUBSCRIPTION_FEATURE_NOT_ENABLED = "SUBSCRIPTION_FEATURE_NOT_ENABLED";
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -471,12 +472,28 @@ export function AiChatWidget() {
             });
           }
         }
-      } catch {
+      } catch (error) {
+        const apiError = error instanceof ApiStreamError ? error : null;
+        const isSubscriptionLocked =
+          apiError?.errorCode === SUBSCRIPTION_FEATURE_NOT_ENABLED;
+
         setMessages((prev) => {
           const newMsgs = [...prev];
           newMsgs[newMsgs.length - 1] = {
             role: "assistant",
-            content: "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.",
+            content: isSubscriptionLocked
+              ? "Chức năng không khả dụng trong gói hiện tại của bạn, vui lòng nâng cấp gói."
+              : "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.",
+            references: isSubscriptionLocked
+              ? [
+                  {
+                    type: "platform",
+                    title: "Nâng cấp gói ngay",
+                    url: "/pricing",
+                    description: "Mở khóa AI Chatbot cho tài khoản của bạn",
+                  },
+                ]
+              : undefined,
           };
           return newMsgs;
         });
