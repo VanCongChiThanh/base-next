@@ -213,3 +213,50 @@ export async function checkJobSaved(
 export async function syncJobsToVectorDb() {
   return apiClient.postFull("/ai/dev-sync");
 }
+
+export type SyncTarget = "jobs" | "workers" | "faq";
+
+export interface SyncStatus {
+  success: boolean;
+  message?: string;
+  jobId?: string;
+}
+
+export async function triggerSelectiveSync(
+  targets: SyncTarget[]
+): Promise<SyncStatus> {
+  return apiClient.post<SyncStatus>("/ai/sync", { targets });
+}
+
+// ─── FAQ / Knowledge Base (admin) ───
+
+export type FaqNodeType = "faq" | "guide" | "policy" | "safety" | "general";
+
+export interface FaqNode {
+  id: string;
+  sourceId: string;
+  nodeType: FaqNodeType;
+  title: string;
+  content: string;
+  hasEmbedding: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function listFaqNodes(): Promise<FaqNode[]> {
+  return apiClient.get<FaqNode[]>("/ai/faq");
+}
+
+export async function upsertFaqNode(data: {
+  id?: string;
+  nodeType: FaqNodeType;
+  title: string;
+  content: string;
+}): Promise<{ id: string; sourceId: string }> {
+  return apiClient.post("/ai/faq", data);
+}
+
+export async function deleteFaqNode(id: string): Promise<void> {
+  return apiClient.delete(`/ai/faq/${id}`);
+}
