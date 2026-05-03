@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import { MatchedCandidate } from "@/types";
 
 // ─── Types ───
 
@@ -170,6 +171,13 @@ export async function getChatHistory(
   limit = 10
 ): Promise<{ data: ChatSession[]; total: number }> {
   return apiClient.get(`/ai/chat/history?page=${page}&limit=${limit}`);
+}
+
+// ─── AI Candidate Match ───
+
+export async function matchCandidates(jobId: string, limit?: number): Promise<MatchedCandidate[]> {
+  const limitQuery = limit ? `?limit=${limit}` : "";
+  return apiClient.get<MatchedCandidate[]>(`/ai/match-candidates/${jobId}${limitQuery}`);
 }
 
 // ─── Scam Detection ───

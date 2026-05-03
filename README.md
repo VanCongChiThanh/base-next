@@ -1,226 +1,49 @@
-# Next.js Base Project
+# 🌐 GigWork Frontend — High-Performance Job Marketplace
 
-Base project Next.js với tích hợp NestJS backend API.
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-## Features
+**GigWork Frontend** is a modern, responsive user interface designed for a professional gig economy. Built with Next.js 16, it supports complex recruitment workflows, escrow-based financial management, and interactive AI features.
 
-- ✅ **Authentication**: Login, Register, Logout, Forgot/Reset Password
-- ✅ **Token Management**: Auto refresh access token khi hết hạn
-- ✅ **User Profile**: Xem và cập nhật thông tin profile, upload avatar
-- ✅ **Notifications**: Hệ thống thông báo với phân trang
-- ✅ **File Upload**: Upload file qua presigned URL (S3)
-- ✅ **Role-based Access**: AuthGuard và RoleGuard components
-- ✅ **Google OAuth**: Đăng nhập bằng Google
+---
 
-## Project Structure
+## ✨ Key UX Features
 
-```
-src/
-├── app/                    # App Router pages
-│   ├── (auth)/            # Auth pages (login, register, ...)
-│   ├── (protected)/       # Protected pages (profile, notifications)
-│   ├── unauthorized/      # Unauthorized page
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   ├── auth-guard.tsx     # Auth protection component
-│   ├── role-guard.tsx     # Role-based protection
-│   └── providers.tsx      # Context providers
-├── contexts/              # React contexts
-│   ├── auth-context.tsx   # Authentication state
-│   └── notification-context.tsx
-├── hooks/                 # Custom hooks
-│   ├── use-upload.ts      # File upload hook
-│   ├── use-debounce.ts    # Debounce hook
-│   ├── use-local-storage.ts
-│   └── use-paginated-data.ts
-├── lib/                   # Utilities
-│   ├── api-client.ts      # HTTP client with auto token refresh
-│   └── utils.ts           # Helper functions
-├── services/              # API services
-│   ├── auth.service.ts
-│   ├── user.service.ts
-│   ├── notification.service.ts
-│   └── upload.service.ts
-├── types/                 # TypeScript types
-│   └── index.ts           # All types/interfaces
-└── middleware.ts          # Next.js middleware
-```
+### 🏢 Bifurcated Recruitment Workflows
+- **GIG & PART-TIME:** Optimized for local, physical jobs with check-in systems and status tracking.
+- **ONLINE & FREELANCE:** Professional **Upwork-style** interface for remote tasks, featuring Milestone management and Escrow funding.
 
-## Setup
+### 🤖 Intelligent AI UI
+- **AI Matcher Dashboard:** A dedicated interface for employers to discover and rank the best-fit workers using GraphRAG results.
+- **Integrated RAG Chatbot:** A smart widget providing instant answers and job/worker recommendations via natural language.
+- **Scam Protection UI:** Visual warnings and trust scores based on real-time AI analysis.
 
-1. Install dependencies:
+### 💳 Financial Dashboard (Escrow & Wallet)
+- **Interactive Milestone Tracker:** Real-time monitoring of task progress (Funded -> Submitted -> Approved -> Released).
+- **Internal Wallet Management:** Secure UI for tracking balances, depositing via QR, and reviewing transaction history.
 
-```bash
-npm install
-```
+### 🆔 Identity Verification (eKYC)
+- **In-browser eKYC:** Integrated VNPT SDK for seamless Face Matching and ID Card OCR verification.
 
-2. Create `.env.local` file:
+---
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3000
+## 🛠️ Technical Implementation
 
-# VNPT eKYC script overrides (optional)
-# Set these when VNPT default script URLs fail due to SSL/network issues.
-NEXT_PUBLIC_VNPT_OVAL_SCRIPT_URL=
-NEXT_PUBLIC_VNPT_JSQR_SCRIPT_URL=
-NEXT_PUBLIC_VNPT_WEB_OVAL_URL=
-NEXT_PUBLIC_VNPT_MOBILE_OVAL_URL=
-NEXT_PUBLIC_VNPT_EKYC_SDK_SCRIPT_URL=
-NEXT_PUBLIC_VNPT_EKYC_SDK_STYLE_URL=
-```
+- **Framework:** Next.js 16 (App Router)
+- **Styling:** Tailwind CSS with premium dark/glassmorphism aesthetics.
+- **State Management:** Custom Context providers for Auth, Notifications, and Escrow states.
+- **Performance:** Dynamic imports for heavy SDKs (eKYC, Maps) and optimized image handling.
+- **SEO:** Dynamic metadata generation for job listings and public profiles.
 
-3. Run development server:
+---
 
-```bash
-npm run dev
-```
+## 🚀 Getting Started
 
-## API Integration
+1. **Install:** `npm install`
+2. **Environment:** Setup `.env.local` with your backend API URL and VNPT SDK script links.
+3. **Run:** `npm run dev`
 
-### API Client
-
-```typescript
-import { apiClient } from "@/lib/api-client";
-
-// Auto includes auth token and handles refresh
-const data = await apiClient.get("/endpoint");
-const result = await apiClient.post("/endpoint", { body });
-```
-
-### Services
-
-```typescript
-import { authService, userService } from "@/services";
-
-// Login
-await authService.login({ email, password });
-
-// Get profile
-const user = await userService.getProfile();
-```
-
-### Hooks
-
-```typescript
-import { useAuth, useNotifications } from "@/contexts";
-import { useUpload, useDebounce, usePaginatedData } from "@/hooks";
-
-// Auth
-const { user, login, logout, isAuthenticated } = useAuth();
-
-// Notifications
-const { notifications, unreadCount, markAsRead } = useNotifications();
-
-// Upload file
-const { upload, isUploading, progress } = useUpload({
-  maxSize: 5 * 1024 * 1024,
-  allowedTypes: ["image/jpeg", "image/png"],
-});
-```
-
-### Protected Routes
-
-```typescript
-import { AuthGuard, RoleGuard } from '@/components';
-import { Role } from '@/types';
-
-// Require authentication
-<AuthGuard>
-  <ProtectedContent />
-</AuthGuard>
-
-// Require specific roles
-<RoleGuard allowedRoles={[Role.ADMIN]}>
-  <AdminContent />
-</RoleGuard>
-```
-
-## Backend API Endpoints
-
-### Auth
-
-- `POST /auth/register` - Đăng ký
-- `POST /auth/login` - Đăng nhập
-- `POST /auth/refresh` - Refresh token
-- `POST /auth/logout` - Đăng xuất
-- `GET /auth/verify-email?token=` - Xác thực email
-- `POST /auth/forgot-password` - Quên mật khẩu
-- `POST /auth/reset-password` - Reset mật khẩu
-- `GET /auth/google` - Google OAuth
-
-### User
-
-- `GET /users/me` - Get current profile
-- `PATCH /users/me` - Update profile
-
-### Notifications
-
-- `GET /notifications` - Get notifications (paginated)
-- `PATCH /notifications/:id/read` - Mark as read
-- `PATCH /notifications/read-all` - Mark all as read
-- `DELETE /notifications/:id` - Delete notification
-
-### Upload
-
-- `POST /uploads/presigned-url` - Get presigned URL for upload
-
-## Adding New Features
-
-### 1. Add new type
-
-```typescript
-// src/types/index.ts
-export interface NewEntity {
-  id: string;
-  // ...
-}
-```
-
-### 2. Add new service
-
-```typescript
-// src/services/new.service.ts
-import apiClient from "@/lib/api-client";
-
-export const newService = {
-  async getAll() {
-    return apiClient.get("/endpoint");
-  },
-};
-```
-
-### 3. Add new page
-
-```typescript
-// src/app/(protected)/new-page/page.tsx
-'use client';
-
-import { AuthGuard } from '@/components';
-
-function NewPageContent() {
-  return <div>Content</div>;
-}
-
-export default function NewPage() {
-  return (
-    <AuthGuard>
-      <NewPageContent />
-    </AuthGuard>
-  );
-}
-```
-
-## Tech Stack
-
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State**: React Context
-- **HTTP Client**: Fetch API
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+## 📝 License
+Licensed under MIT.

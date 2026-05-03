@@ -123,6 +123,44 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
     title: "Đã giải quyết Khiếu nại",
     message: "Khiếu nại về công việc {jobTitle} đã được xử lý xong.",
   },
+
+  // Escrow / Milestones
+  [NotificationType.ESCROW_DEPOSITED]: {
+    title: "Ký quỹ thành công",
+    message: "Đã ký quỹ thành công cho công việc {jobTitle}.",
+  },
+  [NotificationType.ESCROW_RELEASED]: {
+    title: "Tiền đã được giải ngân",
+    message: "Tiền đã được giải ngân thành công cho {milestoneTitle}.",
+  },
+  [NotificationType.ESCROW_REFUNDED]: {
+    title: "Hoàn tiền ký quỹ",
+    message: "Tiền ký quỹ đã được hoàn lại cho nhà tuyển dụng.",
+  },
+  [NotificationType.MILESTONE_SUBMITTED]: {
+    title: "Milestone đã được nộp",
+    message: "Worker đã nộp kết quả công việc cho milestone {milestoneTitle}.",
+  },
+  [NotificationType.MILESTONE_PROPOSED]: {
+    title: "Đề xuất Milestone mới",
+    message: "Worker đã đề xuất một milestone mới cho công việc {jobTitle}.",
+  },
+  [NotificationType.MILESTONE_PROPOSAL_RESPONDED]: {
+    title: "Phản hồi đề xuất Milestone",
+    message: "Nhà tuyển dụng đã phản hồi về đề xuất milestone của bạn.",
+  },
+  [NotificationType.MILESTONE_APPROVED]: {
+    title: "Milestone được chấp nhận",
+    message: "Nhà tuyển dụng đã chấp nhận kết quả milestone {milestoneTitle}.",
+  },
+  [NotificationType.MILESTONE_RELEASED]: {
+    title: "Milestone đã giải ngân",
+    message: "Tiền của milestone {milestoneTitle} đã được giải ngân.",
+  },
+  [NotificationType.MILESTONE_REVISION_REQUESTED]: {
+    title: "Yêu cầu chỉnh sửa",
+    message: "Nhà tuyển dụng yêu cầu chỉnh sửa milestone {milestoneTitle}.",
+  },
 };
 
 /**
