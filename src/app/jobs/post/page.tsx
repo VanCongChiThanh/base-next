@@ -12,7 +12,7 @@ import {
   skillService,
   locationService,
 } from "@/services";
-import { JobCategory, Skill, Province, Ward, JobSalaryType, JobType } from "@/types";
+import { JobCategory, Skill, Province, Ward, JobSalaryType, JobType, OnlinePaymentType, ExperienceLevel } from "@/types";
 import { getErrorMessage } from "@/lib/api-client";
 import { ApiError } from "@/types";
 import { cn } from "@/lib/utils";
@@ -62,8 +62,14 @@ export default function PostJobPage() {
     workSchedule: "",
     paymentNote: "",
     // Online fields
+    onlinePaymentType: OnlinePaymentType.FIXED_PRICE,
     totalBudget: "",
+    hourlyRateMin: "",
+    hourlyRateMax: "",
+    deadline: "",
+    experienceLevel: "" as ExperienceLevel | "",
     deliverableType: "",
+    projectScope: "",
   });
 
   useEffect(() => {
@@ -134,40 +140,55 @@ export default function PostJobPage() {
       setError("Vui lòng chọn danh mục.");
       return;
     }
-    if (!form.provinceCode || !form.wardCode) {
-      setError("Vui lòng chọn tỉnh/thành và phường/xã.");
-      return;
+    if (form.jobType !== JobType.ONLINE) {
+      if (!form.provinceCode || !form.wardCode) {
+        setError("Vui lòng chọn tỉnh/thành và phường/xã.");
+        return;
+      }
     }
     setIsSubmitting(true);
     try {
-      const job = await jobService.createJob({
+      const payload: any = {
         title: form.title,
         description: form.description,
         categoryId: form.categoryId,
-        salaryPerHour: Number(form.salaryPerHour),
-        salaryType: form.salaryType,
-        requiredWorkers: Number(form.requiredWorkers),
-        startTime: new Date(form.startTime).toISOString(),
-        endTime: new Date(form.endTime).toISOString(),
-        provinceCode: form.provinceCode,
-        wardCode: form.wardCode,
-        address: form.address,
-        latitude: form.latitude,
-        longitude: form.longitude,
         skillIds: form.skillIds.length > 0 ? form.skillIds : undefined,
         jobType: form.jobType,
+      };
+
+      if (form.jobType === JobType.ONLINE) {
+        payload.onlinePaymentType = form.onlinePaymentType;
+        if (form.onlinePaymentType === OnlinePaymentType.FIXED_PRICE) {
+          payload.totalBudget = Number(form.totalBudget);
+        } else {
+          payload.hourlyRateMin = Number(form.hourlyRateMin);
+          if (form.hourlyRateMax) payload.hourlyRateMax = Number(form.hourlyRateMax);
+        }
+        payload.deadline = new Date(form.deadline).toISOString();
+        if (form.experienceLevel) payload.experienceLevel = form.experienceLevel;
+        if (form.deliverableType) payload.deliverableType = form.deliverableType;
+        if (form.projectScope) payload.projectScope = form.projectScope;
+      } else {
+        payload.salaryPerHour = Number(form.salaryPerHour);
+        payload.salaryType = form.salaryType;
+        payload.requiredWorkers = Number(form.requiredWorkers);
+        payload.startTime = new Date(form.startTime).toISOString();
+        payload.endTime = new Date(form.endTime).toISOString();
+        payload.provinceCode = form.provinceCode;
+        payload.wardCode = form.wardCode;
+        payload.address = form.address;
+        payload.latitude = form.latitude;
+        payload.longitude = form.longitude;
+
         // Part-time fields
-        ...(form.jobType === JobType.PART_TIME && {
-          contractDuration: form.contractDuration || undefined,
-          workSchedule: form.workSchedule || undefined,
-          paymentNote: form.paymentNote || undefined,
-        }),
-        // Online fields
-        ...(form.jobType === JobType.ONLINE && {
-          totalBudget: form.totalBudget ? Number(form.totalBudget) : undefined,
-          deliverableType: form.deliverableType || undefined,
-        }),
-      });
+        if (form.jobType === JobType.PART_TIME) {
+          payload.contractDuration = form.contractDuration || undefined;
+          payload.workSchedule = form.workSchedule || undefined;
+          payload.paymentNote = form.paymentNote || undefined;
+        }
+      }
+
+      const job = await jobService.createJob(payload);
       router.push(`/jobs/${job.id}`);
     } catch (err) {
       setError(getErrorMessage(err as ApiError));
@@ -397,7 +418,8 @@ export default function PostJobPage() {
               </div>
             </div>
 
-            {/* Salary & Time */}
+            {/* Salary & Time - Hidden for ONLINE */}
+            {form.jobType !== JobType.ONLINE && (
             <div className="bg-white rounded-2xl border border-blue-100 p-6 space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -467,6 +489,7 @@ export default function PostJobPage() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Part-time Extra Fields */}
             {form.jobType === JobType.PART_TIME && (
@@ -520,43 +543,117 @@ export default function PostJobPage() {
               </div>
             )}
 
-            {/* Online Extra Fields */}
+            {/* Online Fields (Upwork-style) */}
             {form.jobType === JobType.ONLINE && (
               <div className="bg-white rounded-2xl border border-cyan-100 p-6 space-y-5">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-cyan-100 flex items-center justify-center">
                     <span className="text-sm">🌐</span>
                   </div>
-                  Thông tin Online
+                  Thông tin dự án Online
                 </h2>
+
+                <div>
+                  <label className={labelClass}>Phạm vi công việc (Scope)</label>
+                  <input
+                    type="text"
+                    value={form.projectScope}
+                    onChange={(e) => updateForm("projectScope", e.target.value)}
+                    placeholder="VD: Xây dựng landing page cho sự kiện..."
+                    className={inputClass}
+                  />
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>
-                      Tổng ngân sách (đ)
-                    </label>
+                    <label className={labelClass}>Hình thức thanh toán</label>
+                    <select
+                      value={form.onlinePaymentType}
+                      onChange={(e) => updateForm("onlinePaymentType", e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value={OnlinePaymentType.FIXED_PRICE}>Khoán toàn bộ (Fixed-price)</option>
+                      <option value={OnlinePaymentType.HOURLY_RATE}>Trả theo giờ (Hourly-rate)</option>
+                    </select>
+                  </div>
+                  {form.onlinePaymentType === OnlinePaymentType.FIXED_PRICE ? (
+                    <div>
+                      <label className={labelClass}>Ngân sách dự kiến (đ)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        required
+                        value={form.totalBudget}
+                        onChange={(e) => updateForm("totalBudget", e.target.value)}
+                        placeholder="VD: 5000000"
+                        className={inputClass}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className={labelClass}>Rate tối thiểu (đ/h)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          required
+                          value={form.hourlyRateMin}
+                          onChange={(e) => updateForm("hourlyRateMin", e.target.value)}
+                          placeholder="VD: 100000"
+                          className={inputClass}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className={labelClass}>Rate tối đa (đ/h)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={form.hourlyRateMax}
+                          onChange={(e) => updateForm("hourlyRateMax", e.target.value)}
+                          placeholder="VD: 500000"
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className={labelClass}>Deadline</label>
                     <input
-                      type="number"
-                      min={0}
-                      value={form.totalBudget}
-                      onChange={(e) => updateForm("totalBudget", e.target.value)}
-                      placeholder="VD: 5000000"
+                      type="datetime-local"
+                      required
+                      value={form.deadline}
+                      onChange={(e) => updateForm("deadline", e.target.value)}
                       className={inputClass}
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>
-                      Loại sản phẩm giao
-                    </label>
+                    <label className={labelClass}>Yêu cầu kinh nghiệm</label>
+                    <select
+                      value={form.experienceLevel}
+                      onChange={(e) => updateForm("experienceLevel", e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="">Không yêu cầu</option>
+                      <option value={ExperienceLevel.ENTRY}>Mới bắt đầu (Junior)</option>
+                      <option value={ExperienceLevel.INTERMEDIATE}>Có kinh nghiệm (Mid)</option>
+                      <option value={ExperienceLevel.EXPERT}>Chuyên gia (Senior)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Loại sản phẩm bàn giao</label>
                     <select
                       value={form.deliverableType}
                       onChange={(e) => updateForm("deliverableType", e.target.value)}
                       className={inputClass}
                     >
                       <option value="">Chọn loại</option>
-                      <option value="FILE">File (thiết kế, document...)</option>
-                      <option value="LINK">Link (website, demo...)</option>
-                      <option value="TEXT">Text (bài viết, dịch thuật...)</option>
+                      <option value="FILE">File (Thiết kế, Docs...)</option>
+                      <option value="LINK">Link (Web, Demo...)</option>
+                      <option value="CODE">Source Code</option>
+                      <option value="TEXT">Văn bản (Dịch thuật...)</option>
                       <option value="OTHER">Khác</option>
                     </select>
                   </div>
@@ -565,7 +662,8 @@ export default function PostJobPage() {
             )}
 
 
-            {/* Location */}
+            {/* Location - Hidden for ONLINE */}
+            {form.jobType !== JobType.ONLINE && (
             <div className="bg-white rounded-2xl border border-blue-100 p-6 space-y-5">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -640,6 +738,7 @@ export default function PostJobPage() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Skills */}
             {skills.length > 0 && (

@@ -29,7 +29,7 @@ export function Navbar() {
 
   const userLinks = isAuthenticated
     ? [
-        { href: "/dashboard", label: "Bảng điều khiển" },
+        { href: "/dashboard", label: "Quản lý việc làm" },
         { href: "/saved-jobs", label: "Việc đã lưu" },
         { href: "/profile", label: "Hồ sơ" },
       ]

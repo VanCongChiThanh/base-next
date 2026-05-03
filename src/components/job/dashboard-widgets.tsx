@@ -59,8 +59,8 @@ interface UpcomingShiftsProps {
 
 export function UpcomingShiftsWidget({ applications, onCheckIn }: UpcomingShiftsProps) {
   const upcoming = applications
-    .filter((a) => a.status === ApplicationStatus.ACCEPTED && a.job && isFuture(new Date(a.job.startTime)))
-    .sort((a, b) => new Date(a.job.startTime).getTime() - new Date(b.job.startTime).getTime())
+    .filter((a) => a.status === ApplicationStatus.ACCEPTED && a.job && a.job.startTime && isFuture(new Date(a.job.startTime)))
+    .sort((a, b) => new Date(a.job.startTime || 0).getTime() - new Date(b.job.startTime || 0).getTime())
     .slice(0, 3);
 
   if (upcoming.length === 0) return null;
@@ -76,7 +76,7 @@ export function UpcomingShiftsWidget({ applications, onCheckIn }: UpcomingShifts
       </div>
       <div className="space-y-3">
         {upcoming.map((app) => {
-          const start = new Date(app.job.startTime);
+          const start = new Date(app.job.startTime || 0);
           const isClose = start.getTime() - Date.now() < 2 * 3600 * 1000; // within 2 hours
           return (
             <div

@@ -1,34 +1,59 @@
 import { apiClient } from "@/lib/api-client";
-import { PaymentConfirmation, Dispute } from "@/types";
+import { PaymentConfirmation, Dispute, Escrow, Milestone } from "@/types";
 
 export const paymentService = {
-  // Worker confirms receiving final payment
+  // ==================== PAYMENT CONFIRMATION (GIG / PART-TIME) ====================
   confirmPayment(jobId: string, note?: string) {
     return apiClient.post<PaymentConfirmation>(
       `/jobs/${jobId}/confirm-payment`,
-      {
-        note,
-      },
+      { note },
     );
   },
 
-  // Get payment confirmations for a job
   getJobPayments(jobId: string) {
     return apiClient.get<PaymentConfirmation[]>(`/jobs/${jobId}/payments`);
   },
 
-  // Get worker's own payments
   getMyPayments(page = 1, limit = 10) {
     return apiClient.get<{ data: PaymentConfirmation[], total: number }>(`/worker/payments?page=${page}&limit=${limit}`);
   },
 
-  // Create a dispute for a job
+  // ==================== DISPUTES ====================
   createDispute(jobId: string, reason: string) {
     return apiClient.post<Dispute>(`/jobs/${jobId}/disputes`, { reason });
   },
 
-  // Get disputes for a job
   getJobDisputes(jobId: string) {
     return apiClient.get<Dispute[]>(`/jobs/${jobId}/disputes`);
   },
+
+  // ==================== ESCROW (ONLINE JOBS) ====================
+  createEscrow(jobId: string, milestones: { title: string; description?: string; amount: number }[]) {
+    return apiClient.post<{ checkoutUrl: string; escrowId: string }>(`/escrow`, { jobId, milestones });
+  },
+
+  getEscrowByJob(jobId: string) {
+    return apiClient.get<Escrow>(`/escrow/job/${jobId}`);
+  },
+
+  syncEscrowDeposit(orderCode: string | number) {
+    return apiClient.get<{ status: string; escrowId: string }>(`/escrow/sync/${orderCode}`);
+  },
+
+  submitMilestone(milestoneId: string, note?: string) {
+    return apiClient.post<Milestone>(`/escrow/milestones/${milestoneId}/submit`, { note });
+  },
+
+  reviewMilestone(milestoneId: string, action: 'approve' | 'request_revision', note?: string) {
+    return apiClient.post<Milestone>(`/escrow/milestones/${milestoneId}/review`, { action, note });
+  },
+
+  proposeMilestone(jobId: string, data: { title: string; description?: string; amount?: number }) {
+    return apiClient.post<Milestone>(`/escrow/milestones/${jobId}/propose`, data);
+  },
+
+  respondToProposal(milestoneId: string, accept: boolean) {
+    return apiClient.post<{ accepted: boolean; milestone?: Milestone }>(`/escrow/milestones/${milestoneId}/respond-proposal`, { accept });
+  },
 };
+

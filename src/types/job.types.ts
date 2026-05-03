@@ -7,6 +7,10 @@ import {
   DisputeStatus,
   EmployerBadge,
   JobType,
+  EscrowStatus,
+  MilestoneStatus,
+  OnlinePaymentType,
+  ExperienceLevel,
 } from "./enums";
 
 export type PrivacyVisibility = "PUBLIC" | "ACCEPTED_ONLY" | "PRIVATE";
@@ -114,14 +118,14 @@ export interface Job {
   categoryId: string;
   title: string;
   description: string;
-  salaryPerHour: number;
+  salaryPerHour?: number;
   salaryType?: JobSalaryType;
   requiredWorkers: number;
-  startTime: string;
-  endTime: string;
-  provinceCode: string;
-  wardCode: string;
-  address: string;
+  startTime?: string;
+  endTime?: string;
+  provinceCode?: string;
+  wardCode?: string;
+  address?: string;
   lat: number | null;
   lng: number | null;
   status: JobStatus;
@@ -136,16 +140,26 @@ export interface Job {
   applications?: JobApplication[];
   employerProfile?: EmployerProfileInfo | null;
   distance?: number;
+  createdAt: string;
+  updatedAt: string;
+  
+  // JobType & specific fields
   jobType?: JobType;
-  // Part-time fields
+  
+  // PART_TIME fields
   contractDuration?: string;
   workSchedule?: string;
   paymentNote?: string;
-  // Online fields
+  
+  // ONLINE fields
+  onlinePaymentType?: OnlinePaymentType;
   totalBudget?: number;
+  hourlyRateMin?: number;
+  hourlyRateMax?: number;
+  deadline?: string;
+  experienceLevel?: ExperienceLevel;
   deliverableType?: string;
-  createdAt: string;
-  updatedAt: string;
+  projectScope?: string;
 }
 
 export interface JobApplication {
@@ -381,4 +395,54 @@ export interface Dispute {
     avatarUrl: string | null;
   };
   createdAt: string;
+}
+
+export interface Milestone {
+  id: string;
+  escrowId: string;
+  orderIndex: number;
+  title: string;
+  description: string | null;
+  amount: number;
+  status: MilestoneStatus;
+  workerId: string | null;
+  proposedByWorker: boolean;
+  proposalAccepted: boolean;
+  submissionNote: string | null;
+  revisionNote: string | null;
+  releaseNote: string | null;
+  submittedAt: string | null;
+  approvedAt: string | null;
+  releasedAt: string | null;
+  createdAt: string;
+}
+
+export interface Escrow {
+  id: string;
+  jobId: string;
+  employerId: string;
+  totalAmount: number;
+  serviceFee: number;
+  chargeAmount: number;
+  releasedAmount: number;
+  status: EscrowStatus;
+  payosOrderCode: number | null;
+  payosPaymentLinkId: string | null;
+  payosCheckoutUrl: string | null;
+  fundedAt: string | null;
+  milestones: Milestone[];
+  createdAt: string;
+}
+
+export interface MatchedCandidate {
+  workerId: string;
+  fullName: string;
+  avatarUrl: string | null;
+  matchScore: number;
+  matchReasons: string[];
+  skills: string[];
+  ratingAvg: number;
+  totalJobsCompleted: number;
+  isAvailable: boolean;
+  profileUrl: string;
 }

@@ -7,4 +7,4 @@ export { WorkerQuickStats, UpcomingShiftsWidget, ApplicantPipelineWidget } from 
 export { ReportModal } from "./report-modal";
 export { ChatDrawer } from "./chat-drawer";
 export { ReviewSection } from "./review-section";
-
+export { EscrowSection } from "./escrow-section";

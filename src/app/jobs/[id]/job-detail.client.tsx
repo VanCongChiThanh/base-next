@@ -10,9 +10,11 @@ import {
   ApplicationStatusBadge,
   ReportModal,
   ReviewSection,
+  EscrowSection,
 } from "@/components/job";
 import { ConfirmModal } from "@/components/common";
 import { ScamAnalysisModal } from "@/components/ai/scam-analysis-modal";
+import { MatchedCandidates } from "@/components/ai/matched-candidates";
 import { useAuth, useChat } from "@/contexts";
 import { jobService, paymentService, reviewService } from "@/services";
 import { saveJob, unsaveJob, checkJobSaved } from "@/services/ai.service";
@@ -69,7 +71,7 @@ export default function JobDetailPageClient({
   const isWorkerAndAuthenticated = !isEmployer && isAuthenticated;
 
   // Calculate estimated earnings
-  const durationMs = job ? new Date(job.endTime).getTime() - new Date(job.startTime).getTime() : 0;
+  const durationMs = job && job.endTime && job.startTime ? new Date(job.endTime).getTime() - new Date(job.startTime).getTime() : 0;
   const durationHours = job && job.salaryType === "HOURLY" ? durationMs / (1000 * 60 * 60) : 1;
   const estimatedEarnings = job ? Number(job.salaryPerHour) * durationHours : 0;
   
@@ -354,12 +356,25 @@ export default function JobDetailPageClient({
               </div>
 
               <div className="text-right">
-                <p className="text-3xl font-bold text-blue-600">
-                  {Number(job.salaryPerHour).toLocaleString("vi-VN")}đ
-                  <span className="text-gray-400 font-normal">
-                    /{job.salaryType === "FIXED" ? "công" : "giờ"}
-                  </span>
-                </p>
+                {job.jobType === JobType.ONLINE ? (
+                  <>
+                    <p className="text-3xl font-bold text-blue-600">
+                      {job.onlinePaymentType === "FIXED_PRICE"
+                        ? `${job.totalBudget?.toLocaleString("vi-VN")}đ`
+                        : `${job.hourlyRateMin?.toLocaleString("vi-VN")}đ - ${job.hourlyRateMax?.toLocaleString("vi-VN")}đ`}
+                    </p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {job.onlinePaymentType === "FIXED_PRICE" ? "Ngân sách cố định" : "Theo giờ"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-3xl font-bold text-blue-600">
+                    {Number(job.salaryPerHour).toLocaleString("vi-VN")}đ
+                    <span className="text-gray-400 font-normal">
+                      /{job.salaryType === "FIXED" ? "công" : "giờ"}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -381,6 +396,12 @@ export default function JobDetailPageClient({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
+              
+              {/* Employer AI Match */}
+              {isEmployer && (
+                <MatchedCandidates job={job} />
+              )}
+
               {/* Description */}
               <div className="bg-white rounded-2xl border border-blue-100 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">
@@ -547,6 +568,11 @@ export default function JobDetailPageClient({
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Escrow Section for Online Jobs */}
+              {job.jobType === JobType.ONLINE && (
+                <EscrowSection job={job} />
               )}
 
               {/* Reviews Section */}
@@ -914,32 +940,45 @@ export default function JobDetailPageClient({
                   </div>
 
                   {/* Time */}
-                  <div className="flex items-start gap-3">
-                    <svg
-                      className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <div>
-                      <p className="text-xs text-gray-400">Thời gian</p>
-                      <p className="text-sm text-gray-700 font-medium">
-                        {formatDateTime(job.startTime)}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        đến {formatDateTime(job.endTime)}
-                      </p>
+                  {job.jobType === JobType.ONLINE ? (
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl">📅</span>
+                      <div>
+                        <p className="text-xs text-gray-400">Deadline</p>
+                        <p className="text-sm text-gray-700 font-medium">
+                          {formatDateTime(job.deadline || job.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex items-start gap-3">
+                      <svg
+                        className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-xs text-gray-400">Thời gian</p>
+                        <p className="text-sm text-gray-700 font-medium">
+                          {formatDateTime(job.startTime || job.createdAt)}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          đến {formatDateTime(job.endTime || job.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Location */}
+                  {job.jobType !== JobType.ONLINE && (
                   <div className="flex items-start gap-3">
                     <svg
                       className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0"
@@ -967,6 +1006,7 @@ export default function JobDetailPageClient({
                       </p>
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
 

@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import { MatchedCandidate } from "@/types";
 
 // ─── Types ───
 
@@ -172,6 +173,13 @@ export async function getChatHistory(
   return apiClient.get(`/ai/chat/history?page=${page}&limit=${limit}`);
 }
 
+// ─── AI Candidate Match ───
+
+export async function matchCandidates(jobId: string, limit?: number): Promise<MatchedCandidate[]> {
+  const limitQuery = limit ? `?limit=${limit}` : "";
+  return apiClient.get<MatchedCandidate[]>(`/ai/match-candidates/${jobId}${limitQuery}`);
+}
+
 // ─── Scam Detection ───
 
 export async function analyzeJob(jobId: string): Promise<ScamAnalysisResult> {
@@ -216,10 +224,10 @@ export async function syncJobsToVectorDb() {
 
 export type SyncTarget = "jobs" | "workers" | "faq";
 
+/** Trả về từ POST /ai/sync (yêu cầu đã xếp hàng, chưa phải job chạy xong) */
 export interface SyncStatus {
-  success: boolean;
-  message?: string;
-  jobId?: string;
+  message: string;
+  targets: SyncTarget[];
 }
 
 export async function triggerSelectiveSync(

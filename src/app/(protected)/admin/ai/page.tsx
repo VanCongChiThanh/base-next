@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import {
   FaqNode,
   FaqNodeType,
@@ -297,14 +298,23 @@ export default function AdminAiPage() {
     setSyncing(true);
     setSyncMsg(null);
     try {
-      await triggerSelectiveSync([...selectedTargets]);
-      setSyncMsg({ ok: true, text: "Đã đưa vào hàng đợi đồng bộ thành công!" });
-    } catch {
-      setSyncMsg({ ok: false, text: "Đồng bộ thất bại, vui lòng thử lại." });
+      const res = await triggerSelectiveSync([...selectedTargets]);
+      toast.success(res.message);
+      setSyncMsg({
+        ok: true,
+        text: "Đang xử lý nền — bạn sẽ nhận thông báo hệ thống khi hoàn tất.",
+      });
+    } catch (e: unknown) {
+      const errMsg =
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message?: string }).message)
+          : "Đồng bộ thất bại, vui lòng thử lại.";
+      toast.error(errMsg);
+      setSyncMsg({ ok: false, text: errMsg });
     } finally {
       setSyncing(false);
       clearTimeout(syncTimerRef.current);
-      syncTimerRef.current = setTimeout(() => setSyncMsg(null), 5000);
+      syncTimerRef.current = setTimeout(() => setSyncMsg(null), 8000);
     }
   }
 
