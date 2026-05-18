@@ -71,6 +71,8 @@ export enum JobStatus {
   OPEN = "OPEN",
   CLOSED = "CLOSED",
   CANCELLED = "CANCELLED",
+  COMPLETED = "COMPLETED",
+  SETTLED = "SETTLED",
 }
 
 export enum ApplicationStatus {

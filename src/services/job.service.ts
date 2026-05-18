@@ -116,6 +116,10 @@ export const jobService = {
     return apiClient.post<Job>(`/jobs/${id}/complete`);
   },
 
+  async completeAssignment(jobId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/complete-assignment`);
+  },
+
   async getWorkerHistory(): Promise<JobApplication[]> {
     const result = await apiClient.get<{
       data: JobApplication[];

@@ -270,9 +270,9 @@ export default function JobDetailPageClient({
     }
   };
 
-  const paymentConfirmed = payments.some(
-    (p) => p.type === PaymentType.FINAL_PAYMENT && p.confirmedByWorker,
-  );
+  const finalPayment = payments.find((p) => p.type === PaymentType.FINAL_PAYMENT);
+  const isConfirmedByMe = isEmployer ? finalPayment?.confirmedByEmployer : finalPayment?.confirmedByWorker;
+  const isFullyConfirmed = finalPayment?.status === PaymentStatus.PAYMENT_CONFIRMED;
   const hasOpenDispute = disputes.some(
     (d) =>
       d.status === DisputeStatus.OPEN ||
@@ -589,12 +589,12 @@ export default function JobDetailPageClient({
             {/* Sidebar */}
             <div className="space-y-5">
               {/* Final Payment Confirmation - only after job completed */}
-              {myApplication?.status === ApplicationStatus.ACCEPTED && job.status === JobStatus.CLOSED && (
+              {(job.status === JobStatus.COMPLETED || job.status === JobStatus.SETTLED) && job.jobType !== JobType.ONLINE && (isEmployer || myApplication?.status === ApplicationStatus.ACCEPTED) && (
                 <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-5">
                   <h3 className="text-sm font-semibold text-emerald-800 mb-2">
-                    Thanh toán
+                    Xác nhận thanh toán
                   </h3>
-                  {!paymentConfirmed ? (
+                  {!isConfirmedByMe ? (
                     <button
                       onClick={handleConfirmPayment}
                       disabled={actionLoading === "payment"}
@@ -602,29 +602,31 @@ export default function JobDetailPageClient({
                     >
                       {actionLoading === "payment"
                         ? "Đang xử lý..."
-                        : "Xác nhận đã nhận thanh toán"}
+                        : isEmployer ? "Xác nhận đã thanh toán" : "Xác nhận đã nhận tiền"}
                     </button>
                   ) : (
-                    <p className="text-sm text-emerald-600 font-medium flex items-center gap-1">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Đã xác nhận thanh toán
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Bạn đã xác nhận
+                      </p>
+                      {!isFullyConfirmed && (
+                        <p className="text-xs text-emerald-600/70">
+                          Chờ {isEmployer ? "người làm" : "người thuê"} xác nhận để hoàn tất...
+                        </p>
+                      )}
+                      {isFullyConfirmed && (
+                        <p className="text-xs font-bold text-emerald-700">
+                          ✓ Giao dịch hoàn tất
+                        </p>
+                      )}
+                    </div>
                   )}
 
                   {/* Dispute option */}
-                  {!hasOpenDispute && !paymentConfirmed && (
+                  {!hasOpenDispute && !isFullyConfirmed && (
                     <div className="mt-3 pt-3 border-t border-emerald-200">
                       {!showDisputeForm ? (
                         <button
@@ -690,12 +692,12 @@ export default function JobDetailPageClient({
                         <span className="text-gray-600">Thanh toán</span>
                         <span
                           className={
-                            p.confirmedByWorker
+                            (isEmployer ? p.confirmedByWorker : p.confirmedByEmployer)
                               ? "text-emerald-600 font-medium"
                               : "text-gray-400"
                           }
                         >
-                          {p.confirmedByWorker
+                          {(isEmployer ? p.confirmedByWorker : p.confirmedByEmployer)
                             ? "✓ Đã xác nhận"
                             : "Chờ xác nhận"}
                         </span>

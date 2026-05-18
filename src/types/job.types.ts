@@ -366,6 +366,7 @@ export interface PaymentConfirmation {
   amount: number;
   status: PaymentStatus;
   confirmedByWorker: boolean;
+  confirmedByEmployer: boolean;
   confirmedAt: string | null;
   note: string | null;
   job?: Job;

@@ -68,7 +68,7 @@ export default function ApplicationProgressPage() {
     if (!progress) return;
     setActionLoading(true);
     try {
-      await jobService.completeJob(progress.jobId);
+      await jobService.completeAssignment(progress.jobId);
       await refresh();
     } finally {
       setActionLoading(false);
