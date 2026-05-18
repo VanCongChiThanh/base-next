@@ -95,6 +95,23 @@ export const jobService = {
     );
   },
 
+  async confirmPayment(id: string): Promise<PaymentConfirmation> {
+    return apiClient.post<PaymentConfirmation>(`/jobs/${id}/confirm-payment`);
+  },
+
+  // Invitations
+  async inviteWorkerToJob(jobId: string, workerId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/invite`, { workerId });
+  },
+
+  async respondToInvitation(invitationId: string, accept: boolean): Promise<any> {
+    return apiClient.post(`/invitations/${invitationId}/respond`, { accept });
+  },
+
+  async getMyInvitations(): Promise<any[]> {
+    return apiClient.get(`/invitations/my-invitations`);
+  },
+
   async completeJob(id: string): Promise<Job> {
     return apiClient.post<Job>(`/jobs/${id}/complete`);
   },

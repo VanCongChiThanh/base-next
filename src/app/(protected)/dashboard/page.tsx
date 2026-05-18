@@ -12,7 +12,10 @@ import { jobService } from "@/services";
 import { Job, JobApplication, ApplicationStatus } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 
-type Tab = "posted" | "applied";
+import { formatRelativeTime } from "@/lib/utils";
+import { toast } from "react-hot-toast";
+
+type Tab = "posted" | "applied" | "invitations";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -20,6 +23,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("posted");
   const [myJobs, setMyJobs] = useState<Job[]>([]);
   const [workerHistory, setWorkerHistory] = useState<JobApplication[]>([]);
+  const [invitations, setInvitations] = useState<any[]>([]);
   const [loadingTab, setLoadingTab] = useState<Tab | null>("posted");
   const isLoading = loadingTab === activeTab;
 
@@ -31,9 +35,12 @@ export default function DashboardPage() {
         if (activeTab === "posted") {
           const data = await jobService.getMyJobs();
           if (!cancelled) setMyJobs(data);
-        } else {
+        } else if (activeTab === "applied") {
           const data = await jobService.getWorkerHistory();
           if (!cancelled) setWorkerHistory(data);
+        } else if (activeTab === "invitations") {
+          const data = await jobService.getMyInvitations();
+          if (!cancelled) setInvitations(data);
         }
       } catch {
         // ignore
@@ -46,6 +53,18 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [activeTab]);
+
+  const handleRespondInvitation = async (id: string, accept: boolean) => {
+    try {
+      await jobService.respondToInvitation(id, accept);
+      toast.success(accept ? "Đã chấp nhận lời mời!" : "Đã từ chối lời mời");
+      // Refresh
+      const data = await jobService.getMyInvitations();
+      setInvitations(data);
+    } catch (err) {
+      toast.error("Không thể phản hồi lời mời");
+    }
+  };
 
   return (
     <AuthGuard>
@@ -88,6 +107,16 @@ export default function DashboardPage() {
               }`}
             >
               Lịch sử ứng tuyển
+            </button>
+            <button
+              onClick={() => setActiveTab("invitations")}
+              className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "invitations"
+                  ? "bg-white text-blue-700 shadow-sm"
+                  : "text-gray-500 hover:text-blue-600"
+              }`}
+            >
+              Lời mời việc làm {invitations.filter(i => i.status === 'PENDING').length > 0 && <span className="ml-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs">{invitations.filter(i => i.status === 'PENDING').length}</span>}
             </button>
           </div>
 
@@ -194,7 +223,7 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : activeTab === "applied" ? (
             /* Worker History */
             <>
               {workerHistory.length === 0 ? (
@@ -288,6 +317,82 @@ export default function DashboardPage() {
                         </svg>
                       </div>
                     </Link>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            /* Invitations */
+            <>
+              {invitations.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-4">
+                    <svg className="w-8 h-8 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    Chưa có lời mời nào
+                  </h3>
+                  <p className="text-gray-500 text-sm">
+                    Khi nhà tuyển dụng mời bạn làm việc, lời mời sẽ xuất hiện ở đây.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {invitations.map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="block bg-white rounded-2xl border border-blue-100 p-5 hover:shadow-md hover:shadow-blue-50 hover:border-blue-200 transition-all"
+                    >
+                      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-base font-semibold text-gray-900 truncate">
+                              {inv.job?.title || "Công việc"}
+                            </h3>
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider ${
+                              inv.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                              inv.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {inv.status === 'PENDING' ? 'Đang chờ' :
+                               inv.status === 'ACCEPTED' ? 'Đã nhận' : 'Đã từ chối'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-1">
+                            Người mời: <span className="font-medium">{inv.employer?.firstName} {inv.employer?.lastName}</span>
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            Nhận {formatRelativeTime(inv.createdAt)}
+                          </p>
+                        </div>
+                        {inv.status === 'PENDING' && (
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            <button
+                              onClick={() => handleRespondInvitation(inv.id, true)}
+                              className="flex-1 sm:flex-none px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-medium text-sm rounded-xl transition-colors"
+                            >
+                              Nhận việc
+                            </button>
+                            <button
+                              onClick={() => handleRespondInvitation(inv.id, false)}
+                              className="flex-1 sm:flex-none px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-medium text-sm rounded-xl transition-colors"
+                            >
+                              Từ chối
+                            </button>
+                          </div>
+                        )}
+                        {inv.status === 'ACCEPTED' && (
+                          <Link
+                            href={`/jobs/${inv.jobId}`}
+                            className="w-full sm:w-auto text-center px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium text-sm rounded-xl transition-colors"
+                          >
+                            Xem công việc
+                          </Link>
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
