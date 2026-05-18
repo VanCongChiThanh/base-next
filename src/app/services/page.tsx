@@ -8,6 +8,8 @@ import { workerServiceAPI, locationService, categoryService } from "@/services";
 import { WorkerService, Province, JobCategory } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 import { useEntitlements } from "@/contexts";
+import toast from "react-hot-toast";
+import { DirectHireModal } from "@/components/services/direct-hire-modal";
 
 export default function ServicesPage() {
   const { hasFeature } = useEntitlements();
@@ -20,6 +22,10 @@ export default function ServicesPage() {
   const [searchMode, setSearchMode] = useState<"AI" | "MANUAL">("AI");
   const [aiQuery, setAiQuery] = useState("");
   const [aiSearching, setAiSearching] = useState(false);
+
+  // Modal state
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<WorkerService | null>(null);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -73,7 +79,7 @@ export default function ServicesPage() {
     
     // Check entitlement using hasFeature
     if (!hasFeature("ai.cv_screening.enabled")) {
-      alert("Sử dụng AI tìm kiếm ứng viên yêu cầu gói cao cấp.");
+      toast.error("Sử dụng AI tìm kiếm ứng viên yêu cầu gói cao cấp.");   
       return;
     }
 
@@ -195,12 +201,15 @@ export default function ServicesPage() {
            >
              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
            </Link>
-           <Link
-             href={`/jobs/post?hire_id=${service.workerId}`}
+           <button
+             onClick={() => {
+               setSelectedService(service);
+               setIsHireModalOpen(true);
+             }}
              className="flex-1 flex items-center justify-center gap-2 py-3 text-center text-sm font-bold text-white bg-[#007bfe] rounded-2xl hover:bg-blue-600 shadow-lg shadow-blue-500/30 transition-all active:scale-95"
            >
              Thuê ngay
-           </Link>
+           </button>
         </div>
       </div>
     );
@@ -386,6 +395,14 @@ export default function ServicesPage() {
         }
       `}</style>
       <Footer />
+      <DirectHireModal 
+        isOpen={isHireModalOpen} 
+        onClose={() => {
+          setIsHireModalOpen(false);
+          setSelectedService(null);
+        }} 
+        service={selectedService} 
+      />
     </>
   );
 }
