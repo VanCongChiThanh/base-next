@@ -12,6 +12,7 @@ import { AuthGuard } from "@/components";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { PrivacySettingsPanel } from "@/components/profile";
+import { BankAccountManager } from "@/components/profile/bank-account-manager";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
 import {
   ApiError,
@@ -760,6 +761,13 @@ function ProfileContent() {
                   </button>
                 </form>
               )}
+            </div>
+          )}
+
+          {/* ==================== BANK ACCOUNT TAB ==================== */}
+          {activeTab === "worker" && (
+            <div className="mt-5 bg-white rounded-2xl border border-blue-100 p-6">
+              <BankAccountManager />
             </div>
           )}
 

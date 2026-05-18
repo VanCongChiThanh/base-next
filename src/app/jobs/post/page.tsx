@@ -12,7 +12,7 @@ import {
   skillService,
   locationService,
 } from "@/services";
-import { JobCategory, Skill, Province, Ward, JobSalaryType, JobType, OnlinePaymentType, ExperienceLevel } from "@/types";
+import { JobCategory, Skill, Province, Ward, JobSalaryType, JobType, OnlinePaymentType, ExperienceLevel, PaymentMethod } from "@/types";
 import { getErrorMessage } from "@/lib/api-client";
 import { ApiError } from "@/types";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,7 @@ export default function PostJobPage() {
 
   const [form, setForm] = useState({
     jobType: "GIG" as JobType,
+    paymentMethod: PaymentMethod.P2P,
     title: "",
     description: "",
     categoryId: "",
@@ -154,6 +155,7 @@ export default function PostJobPage() {
         categoryId: form.categoryId,
         skillIds: form.skillIds.length > 0 ? form.skillIds : undefined,
         jobType: form.jobType,
+        paymentMethod: form.paymentMethod,
       };
 
       if (form.jobType === JobType.ONLINE) {
@@ -346,6 +348,55 @@ export default function PostJobPage() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="bg-white rounded-2xl border border-blue-100 p-6 space-y-5">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <span className="text-sm font-bold text-blue-600">$</span>
+                </div>
+                Phương thức thanh toán
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => updateForm("paymentMethod", PaymentMethod.P2P)}
+                  className={cn(
+                    "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
+                    form.paymentMethod === PaymentMethod.P2P
+                      ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200 shadow-sm"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm",
+                  )}
+                >
+                  <div className="text-xl mb-2">🤝</div>
+                  <div className={cn("font-semibold text-sm", form.paymentMethod === PaymentMethod.P2P ? "text-blue-700" : "text-gray-800")}>
+                    Thanh toán trực tiếp (P2P)
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Hai bên tự thoả thuận chuyển khoản ngân hàng. Website không thu phí trung gian.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => updateForm("paymentMethod", PaymentMethod.ESCROW)}
+                  className={cn(
+                    "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
+                    form.paymentMethod === PaymentMethod.ESCROW
+                      ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200 shadow-sm"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm",
+                  )}
+                >
+                  <div className="text-xl mb-2">🛡️</div>
+                  <div className={cn("font-semibold text-sm", form.paymentMethod === PaymentMethod.ESCROW ? "text-emerald-700" : "text-gray-800")}>
+                    Qua nền tảng (Escrow)
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Bạn thanh toán trước cho website giữ tiền (an toàn 100%). Website sẽ giải ngân khi hoàn thành.
+                  </div>
+                </button>
               </div>
             </div>
 

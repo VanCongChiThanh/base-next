@@ -12,7 +12,6 @@ import { jobService } from "@/services";
 import { Job, JobApplication, ApplicationStatus } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 
-import { formatRelativeTime } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 
 type Tab = "posted" | "applied" | "invitations";

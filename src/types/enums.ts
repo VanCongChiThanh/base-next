@@ -167,3 +167,8 @@ export enum ExperienceLevel {
   INTERMEDIATE = "INTERMEDIATE",
   EXPERT = "EXPERT",
 }
+
+export enum PaymentMethod {
+  P2P = "P2P",
+  ESCROW = "ESCROW",
+}

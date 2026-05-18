@@ -11,6 +11,7 @@ import {
   MilestoneStatus,
   OnlinePaymentType,
   ExperienceLevel,
+  PaymentMethod,
 } from "./enums";
 
 export type PrivacyVisibility = "PUBLIC" | "ACCEPTED_ONLY" | "PRIVATE";
@@ -145,6 +146,7 @@ export interface Job {
   
   // JobType & specific fields
   jobType?: JobType;
+  paymentMethod?: PaymentMethod;
   
   // PART_TIME fields
   contractDuration?: string;
@@ -298,6 +300,7 @@ export interface CreateJobRequest {
   longitude?: number;
   skillIds?: string[];
   jobType?: JobType;
+  paymentMethod?: PaymentMethod;
   // Part-time fields
   contractDuration?: string;
   workSchedule?: string;
@@ -447,3 +450,24 @@ export interface MatchedCandidate {
   isAvailable: boolean;
   profileUrl: string;
 }
+
+export interface BankAccount {
+  id: string;
+  userId: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  qrCodeUrl: string | null;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface CreateBankAccountRequest {
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  qrCodeUrl?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateBankAccountRequest extends Partial<CreateBankAccountRequest> {}

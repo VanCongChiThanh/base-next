@@ -29,6 +29,9 @@ import {
   PaymentType,
   DisputeStatus,
   JobType,
+  PaymentMethod,
+  BankAccount,
+  PaymentStatus,
 } from "@/types";
 import { formatDateTime, formatRelativeTime } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/api-client";
@@ -66,6 +69,7 @@ export default function JobDetailPageClient({
   const [showScamCheck, setShowScamCheck] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savingJob, setSavingJob] = useState(false);
+  const [p2pBankAccounts, setP2pBankAccounts] = useState<BankAccount[]>([]);
 
   const isEmployer = user && job && user.id === job.employerId;
   const isWorkerAndAuthenticated = !isEmployer && isAuthenticated;
@@ -117,6 +121,13 @@ export default function JobDetailPageClient({
         .getJobDisputes(job.id)
         .then(setDisputes)
         .catch(() => {});
+      // Fetch employer bank accounts for P2P jobs
+      if (job.paymentMethod === PaymentMethod.P2P) {
+        paymentService
+          .getP2PInfo(job.id)
+          .then(d => setP2pBankAccounts(d.bankAccounts))
+          .catch(() => {});
+      }
     }
   }, [job, isAuthenticated]);
 
@@ -588,6 +599,56 @@ export default function JobDetailPageClient({
 
             {/* Sidebar */}
             <div className="space-y-5">
+
+              {/* P2P Bank Account Info */}
+              {job.paymentMethod === PaymentMethod.P2P && (isEmployer || myApplication?.status === ApplicationStatus.ACCEPTED) && (
+                <div className="bg-blue-50 rounded-2xl border border-blue-200 p-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🤝</span>
+                    <h3 className="text-sm font-semibold text-blue-900">Thanh toán trực tiếp (P2P)</h3>
+                  </div>
+                  {isEmployer ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-blue-700">
+                        Công việc này dùng thanh toán P2P. Người làm sẽ thấy tài khoản ngân hàng của bạn.
+                      </p>
+                      {p2pBankAccounts.length === 0 ? (
+                        <a href="/profile" className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2 transition-all">
+                          ⚠ Thêm tài khoản ngân hàng →
+                        </a>
+                      ) : (
+                        <p className="text-xs text-emerald-700 font-medium">✓ {p2pBankAccounts.length} tài khoản đã thiết lập</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-blue-700">Thông tin chuyển khoản của nhà tuyển dụng:</p>
+                      {p2pBankAccounts.length === 0 ? (
+                        <p className="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2 border border-amber-200">
+                          ⚠ Nhà tuyển dụng chưa cập nhật tài khoản ngân hàng.
+                        </p>
+                      ) : (
+                        p2pBankAccounts.map(acc => (
+                          <div key={acc.id} className="bg-white rounded-xl border border-blue-100 p-3 flex gap-3 items-start">
+                            {acc.qrCodeUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={acc.qrCodeUrl} alt="QR" className="w-14 h-14 rounded-lg object-contain border border-gray-100 shrink-0" />
+                            ) : (
+                              <div className="w-14 h-14 rounded-lg bg-blue-50 flex items-center justify-center text-2xl shrink-0">🏦</div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-gray-900">{acc.bankName}</p>
+                              <p className="text-sm font-mono text-gray-800 mt-0.5">{acc.accountNumber}</p>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">{acc.accountName}</p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Final Payment Confirmation - only after job completed */}
               {(job.status === JobStatus.COMPLETED || job.status === JobStatus.SETTLED) && job.jobType !== JobType.ONLINE && (isEmployer || myApplication?.status === ApplicationStatus.ACCEPTED) && (
                 <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-5">

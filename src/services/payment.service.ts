@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api-client";
-import { PaymentConfirmation, Dispute, Escrow, Milestone } from "@/types";
+import { PaymentConfirmation, Dispute, Escrow, Milestone, BankAccount } from "@/types";
 
 export const paymentService = {
   // ==================== PAYMENT CONFIRMATION (GIG / PART-TIME) ====================
@@ -12,6 +12,10 @@ export const paymentService = {
 
   getJobPayments(jobId: string) {
     return apiClient.get<PaymentConfirmation[]>(`/jobs/${jobId}/payments`);
+  },
+
+  getP2PInfo(jobId: string) {
+    return apiClient.get<{ bankAccounts: BankAccount[]; paymentMethod: string; isEmployer: boolean }>(`/jobs/${jobId}/p2p-info`);
   },
 
   getMyPayments(page = 1, limit = 10) {
