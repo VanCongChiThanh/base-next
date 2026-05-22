@@ -166,7 +166,7 @@ export default function PostJobPage() {
           payload.hourlyRateMin = Number(form.hourlyRateMin);
           if (form.hourlyRateMax) payload.hourlyRateMax = Number(form.hourlyRateMax);
         }
-        payload.deadline = new Date(form.deadline).toISOString();
+        if (form.deadline) payload.deadline = new Date(form.deadline).toISOString();
         if (form.experienceLevel) payload.experienceLevel = form.experienceLevel;
         if (form.deliverableType) payload.deliverableType = form.deliverableType;
         if (form.projectScope) payload.projectScope = form.projectScope;
@@ -175,7 +175,7 @@ export default function PostJobPage() {
         payload.salaryType = form.salaryType;
         payload.requiredWorkers = Number(form.requiredWorkers);
         payload.startTime = new Date(form.startTime).toISOString();
-        payload.endTime = new Date(form.endTime).toISOString();
+        if (form.endTime) payload.endTime = new Date(form.endTime).toISOString();
         payload.provinceCode = form.provinceCode;
         payload.wardCode = form.wardCode;
         payload.address = form.address;
@@ -527,12 +527,9 @@ export default function PostJobPage() {
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>
-                    Kết thúc <span className="text-red-400">*</span>
-                  </label>
+                  <label className={labelClass}>Kết thúc (không bắt buộc)</label>
                   <input
                     type="datetime-local"
-                    required
                     value={form.endTime}
                     onChange={(e) => updateForm("endTime", e.target.value)}
                     className={inputClass}
@@ -674,7 +671,6 @@ export default function PostJobPage() {
                     <label className={labelClass}>Deadline</label>
                     <input
                       type="datetime-local"
-                      required
                       value={form.deadline}
                       onChange={(e) => updateForm("deadline", e.target.value)}
                       className={inputClass}

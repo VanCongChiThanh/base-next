@@ -65,6 +65,17 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRespondAcceptance = async (applicationId: string, accept: boolean) => {
+    try {
+      await jobService.respondApplicationAcceptance(applicationId, accept);
+      toast.success(accept ? "Đã xác nhận nhận việc!" : "Đã từ chối nhận việc");
+      const data = await jobService.getWorkerHistory();
+      setWorkerHistory(data);
+    } catch {
+      toast.error("Không thể phản hồi xác nhận việc");
+    }
+  };
+
   return (
     <AuthGuard>
       <Navbar />
@@ -281,6 +292,30 @@ export default function DashboardPage() {
                             {app.respondedAt &&
                               ` · Phản hồi ${formatRelativeTime(app.respondedAt)}`}
                           </p>
+                          {app.status === ApplicationStatus.EMPLOYER_ACCEPTED && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRespondAcceptance(app.id, false);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-all border border-red-100"
+                              >
+                                Từ chối
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRespondAcceptance(app.id, true);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition-all border border-emerald-100"
+                              >
+                                Xác nhận nhận việc
+                              </button>
+                            </div>
+                          )}
                           {app.status === ApplicationStatus.ACCEPTED && (
                             <button
                               onClick={(e) => {

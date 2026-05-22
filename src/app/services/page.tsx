@@ -105,7 +105,7 @@ export default function ServicesPage() {
     const coverImage = hasImage ? service.portfolioUrls[0] : "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800"; // Fallback professional image
 
     return (
-      <div key={service.id} className="min-w-[90vw] md:min-w-0 bg-white rounded-3xl shadow-md hover:shadow-xl border border-gray-100 transition-all group flex flex-col snap-center overflow-hidden flex-shrink-0 h-[650px] md:h-[600px] relative">
+      <div key={service.id} className="w-full bg-white rounded-3xl shadow-md hover:shadow-xl border border-gray-100 transition-all group flex flex-col overflow-hidden h-[650px] md:h-[600px] relative">
         
         {/* Cover Image Header */}
         <div className="relative h-64 md:h-56 shrink-0 w-full overflow-hidden">
@@ -268,7 +268,7 @@ export default function ServicesPage() {
                     </div>
                     <input
                       type="text"
-                      placeholder="Mô tả nhu cầu của bạn. VD: Tôi cần một người thợ sửa ống nước đến ngay tại Quận 1..."
+                      placeholder="Mô tả nhu cầu của bạn. VD: Tôi cần một người thợ sửa điều hoà đến ngay tại Quận 1..."
                       value={aiQuery}
                       onChange={(e) => setAiQuery(e.target.value)}
                       className="w-full py-4 px-4 text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 text-base"
@@ -374,11 +374,9 @@ export default function ServicesPage() {
                   </span>
                 </div>
               )}
-              {/* Lướt qua từng người trên mobile, grid trên desktop */}
-              <div className="flex overflow-x-auto pb-10 pt-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scrollbar gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6 md:overflow-visible">                
+              {/* Grid hiển thị danh sách ứng viên, tự co giãn 1 cột trên mobile, nhiều cột trên desktop */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10 pt-2">                
                 {services.map(renderServiceCard)}
-
-                <div className="w-1 shrink-0 md:hidden h-1 block"></div>
               </div>
             </>
           )}

@@ -77,6 +77,7 @@ export enum JobStatus {
 
 export enum ApplicationStatus {
   PENDING = "PENDING",
+  EMPLOYER_ACCEPTED = "EMPLOYER_ACCEPTED",
   ACCEPTED = "ACCEPTED",
   REJECTED = "REJECTED",
   CANCELLED = "CANCELLED",

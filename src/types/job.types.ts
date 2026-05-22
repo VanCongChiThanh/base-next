@@ -292,7 +292,7 @@ export interface CreateJobRequest {
   salaryType?: JobSalaryType;
   requiredWorkers: number;
   startTime: string;
-  endTime: string;
+  endTime?: string;
   provinceCode: string;
   wardCode: string;
   address: string;
@@ -306,8 +306,14 @@ export interface CreateJobRequest {
   workSchedule?: string;
   paymentNote?: string;
   // Online fields
+  onlinePaymentType?: OnlinePaymentType;
   totalBudget?: number;
+  hourlyRateMin?: number;
+  hourlyRateMax?: number;
+  deadline?: string;
+  experienceLevel?: ExperienceLevel;
   deliverableType?: string;
+  projectScope?: string;
 }
 
 export interface ApplyJobRequest {

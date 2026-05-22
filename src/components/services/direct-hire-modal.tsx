@@ -16,7 +16,7 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    jobType: "GIG", // Default to GIG for simple hire
+    jobType: "GIG",
     price: "",
     startTime: "",
     endTime: "",
@@ -27,15 +27,12 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      // Map formData to DirectHireDto
       const dto: any = {
         title: formData.title,
         description: formData.description,
         jobType: formData.jobType,
       };
-
       if (formData.jobType === "ONLINE") {
         dto.totalBudget = Number(formData.price) || service.price;
         dto.deadline = formData.endTime || undefined;
@@ -44,7 +41,6 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
         dto.startTime = formData.startTime || undefined;
         dto.endTime = formData.endTime || undefined;
       }
-
       await workerServiceAPI.hireDirectly(service.id, dto);
       toast.success("Yêu cầu thuê đã được gửi thành công!");
       onClose();
@@ -56,123 +52,151 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <>
+      {/* Overlay */}
       <div 
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div 
+        className="fixed z-[1000] bg-white flex flex-col bottom-0 left-1/2 -translate-x-1/2 w-full sm:w-[520px] max-h-[92dvh] sm:max-h-[680px] rounded-t-3xl sm:rounded-b-3xl sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 shadow-2xl animate-in slide-in-from-bottom duration-300"
       >
-        <div className="p-6 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between shrink-0">
+        {/* Drag handle (mobile only) */}
+        <div className="flex justify-center pt-3 pb-2 sm:hidden shrink-0">
+          <div className="w-10 h-1.5 rounded-full bg-gray-300" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 px-5 py-4 sm:p-6 bg-indigo-50 border-b border-indigo-100 shrink-0 sm:rounded-t-3xl">
           <div>
-            <h2 className="text-xl font-bold text-indigo-900">Thuê Trực Tiếp</h2>
-            <p className="text-sm text-indigo-600 mt-1">
-              Gửi yêu cầu thuê đến <span className="font-bold">{service.worker?.firstName} {service.worker?.lastName}</span>
+            <h2 className="text-lg sm:text-xl font-extrabold text-indigo-900 m-0">Thuê Trực Tiếp</h2>
+            <p className="text-xs sm:text-sm text-indigo-600 mt-1 mb-0">
+              Gửi yêu cầu đến <span className="font-bold">{service.worker?.firstName} {service.worker?.lastName}</span>
             </p>
           </div>
           <button 
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-500 hover:bg-indigo-200 hover:text-indigo-700 transition-colors"
+            className="w-8 h-8 rounded-full bg-indigo-200/50 hover:bg-indigo-200 flex items-center justify-center text-indigo-700 transition-colors shrink-0"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto hide-scrollbar flex-1">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 sm:p-6 space-y-4">
           <form id="hireForm" onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Tiêu đề công việc *</label>
-              <input 
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Tiêu đề công việc *</label>
+              <input
                 required
-                type="text" 
+                type="text"
                 value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                placeholder="VD: Sửa ống nước tại nhà, Chụp ảnh sự kiện..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="VD: Sửa ống nước, Chụp ảnh sự kiện..."
+                className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Mô tả công việc *</label>
-              <textarea 
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">Mô tả công việc *</label>
+              <textarea
                 required
                 rows={3}
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Mô tả chi tiết những việc cần làm..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
-              ></textarea>
+                className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Hình thức *</label>
-                <select 
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Hình thức *</label>
+                <select
                   value={formData.jobType}
-                  onChange={(e) => setFormData({...formData, jobType: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
+                  className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all bg-white"
                 >
-                  <option value="GIG">Việc làm theo giờ/ca (GIG)</option>
-                  <option value="PART_TIME">Hợp đồng dài hạn (Part-time)</option>
-                  <option value="ONLINE">Làm việc trực tuyến (Online)</option>
+                  <option value="GIG">Theo giờ / ca (GIG)</option>
+                  <option value="PART_TIME">Dài hạn (Part-time)</option>
+                  <option value="ONLINE">Trực tuyến (Online)</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Đề xuất giá (VNĐ)</label>
-                <input 
-                  type="number" 
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                  {formData.jobType === "ONLINE" ? "Ngân sách (VNĐ)" : "Giá / giờ (VNĐ)"}
+                </label>
+                <input
+                  type="number"
+                  inputMode="numeric"
                   value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  placeholder={`Mặc định: ${service.price}`}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  placeholder={`${Number(service.price).toLocaleString("vi-VN")}đ`}
+                  className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Bắt đầu</label>
-                <input 
-                  type="datetime-local" 
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                  {formData.jobType === "ONLINE" ? "Ngày bắt đầu" : "Bắt đầu"}
+                </label>
+                <input
+                  type="datetime-local"
                   value={formData.startTime}
-                  onChange={(e) => setFormData({...formData, startTime: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Kết thúc / Deadline</label>
-                <input 
-                  type="datetime-local" 
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                  {formData.jobType === "ONLINE" ? "Deadline" : "Kết thúc"}
+                </label>
+                <input
+                  type="datetime-local"
                   value={formData.endTime}
-                  onChange={(e) => setFormData({...formData, endTime: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
             </div>
           </form>
         </div>
 
-        <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+        {/* Footer */}
+        <div className="flex gap-3 px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 sm:px-6 bg-gray-50 border-t border-gray-100 shrink-0 sm:rounded-b-3xl">
           <button 
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2.5 rounded-xl font-bold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+            type="button" 
+            onClick={onClose} 
+            className="flex-1 sm:flex-none px-6 py-3.5 text-sm font-bold rounded-xl border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Hủy
           </button>
-          <button 
+          <button
             form="hireForm"
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-2"
+            className="flex-[2] sm:flex-none flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 transition-all disabled:opacity-70"
           >
             {loading ? (
-              <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : "Gửi yêu cầu"}
+              <>
+                <svg className="animate-spin w-5 h-5 text-white shrink-0" fill="none" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                  <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" className="opacity-75" />
+                </svg>
+                Đang gửi...
+              </>
+            ) : (
+              "Gửi yêu cầu"
+            )}
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

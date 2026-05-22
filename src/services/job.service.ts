@@ -7,6 +7,7 @@ import {
   ApplyJobRequest,
   ApplicationProgress,
   ApplicationChatResponse,
+  PaymentConfirmation,
 } from "@/types";
 import { ApiSuccessResponse } from "@/types";
 
@@ -92,6 +93,16 @@ export const jobService = {
   ): Promise<JobApplication> {
     return apiClient.post<JobApplication>(
       `/applications/${applicationId}/reject`,
+    );
+  },
+
+  async respondApplicationAcceptance(
+    applicationId: string,
+    accept: boolean,
+  ): Promise<JobApplication> {
+    return apiClient.post<JobApplication>(
+      `/applications/${applicationId}/respond-acceptance`,
+      { accept },
     );
   },
 

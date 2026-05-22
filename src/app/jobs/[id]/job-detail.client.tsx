@@ -220,6 +220,30 @@ export default function JobDetailPageClient({
     }
   };
 
+  const handleRespondAcceptance = async (accept: boolean) => {
+    if (!myApplication) return;
+    setActionLoading(myApplication.id);
+    setError("");
+    try {
+      const updatedApp = await jobService.respondApplicationAcceptance(
+        myApplication.id,
+        accept,
+      );
+      setMyApplication(updatedApp);
+      const updatedJob = await jobService.getJob(id);
+      setJob(updatedJob);
+      setSuccess(
+        accept
+          ? "Bạn đã xác nhận nhận việc!"
+          : "Bạn đã từ chối lời xác nhận từ nhà tuyển dụng.",
+      );
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleCancel = async () => {
     setShowCancelConfirm(false);
     setActionLoading("cancel");
@@ -806,6 +830,25 @@ export default function JobDetailPageClient({
                             />
                           </div>
                         </div>
+                        {myApplication.status ===
+                          ApplicationStatus.EMPLOYER_ACCEPTED && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => handleRespondAcceptance(false)}
+                              disabled={actionLoading === myApplication.id}
+                              className="w-full py-2.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 transition-all"
+                            >
+                              Tá»« chá»‘i
+                            </button>
+                            <button
+                              onClick={() => handleRespondAcceptance(true)}
+                              disabled={actionLoading === myApplication.id}
+                              className="w-full py-2.5 text-sm font-semibold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                            >
+                              XÃ¡c nháº­n nháº­n viá»‡c
+                            </button>
+                          </div>
+                        )}
                         <Link
                           href={`/applications/${myApplication.id}/progress`}
                           className="flex items-center justify-center w-full py-2.5 text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all"
