@@ -268,13 +268,6 @@ export default function PostJobPage() {
                     color: "orange",
                   },
                   {
-                    value: JobType.PART_TIME,
-                    icon: "🕐",
-                    label: "Part-time",
-                    desc: "Dài hạn, nhiều ca",
-                    color: "purple",
-                  },
-                  {
                     value: JobType.ONLINE,
                     icon: "🌐",
                     label: "Online",

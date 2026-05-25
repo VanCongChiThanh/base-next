@@ -82,6 +82,16 @@ export interface ApplicationChatResponse {
   canSend: boolean;
 }
 
+export interface ApplicationConversation {
+  applicationId: string;
+  applicationStatus: ApplicationStatus;
+  jobId: string;
+  jobTitle: string;
+  isDirectHire: boolean;
+  participant?: ApplicationChatSender | null;
+  lastMessage: ApplicationChatMessage | null;
+}
+
 export interface JobCategory {
   id: string;
   name: string;
@@ -143,6 +153,8 @@ export interface Job {
   distance?: number;
   createdAt: string;
   updatedAt: string;
+  isDirectHire?: boolean;
+  targetWorkerId?: string | null;
   
   // JobType & specific fields
   jobType?: JobType;

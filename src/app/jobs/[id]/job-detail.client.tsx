@@ -637,7 +637,7 @@ export default function JobDetailPageClient({
                         Công việc này dùng thanh toán P2P. Người làm sẽ thấy tài khoản ngân hàng của bạn.
                       </p>
                       {p2pBankAccounts.length === 0 ? (
-                        <a href="/profile" className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2 transition-all">
+                        <a href="/profile?section=bank" className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2 transition-all">
                           ⚠ Thêm tài khoản ngân hàng →
                         </a>
                       ) : (

@@ -7,6 +7,7 @@ import {
   ApplyJobRequest,
   ApplicationProgress,
   ApplicationChatResponse,
+  ApplicationConversation,
   PaymentConfirmation,
 } from "@/types";
 import { ApiSuccessResponse } from "@/types";
@@ -164,6 +165,10 @@ export const jobService = {
     return apiClient.get<ApplicationChatResponse>(
       `/applications/${applicationId}/messages`,
     );
+  },
+
+  async getMyConversations(): Promise<ApplicationConversation[]> {
+    return apiClient.get<ApplicationConversation[]>(`/applications/my-conversations`);
   },
 
   async postApplicationMessage(

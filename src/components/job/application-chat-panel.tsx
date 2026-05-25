@@ -33,11 +33,14 @@ export function ApplicationChatPanel({
     () => messages[messages.length - 1]?.id ?? null,
     [messages],
   );
+  const isChatActive =
+    applicationStatus === ApplicationStatus.ACCEPTED ||
+    applicationStatus === ApplicationStatus.EMPLOYER_ACCEPTED;
 
   const load = useCallback(
     async (options?: { silent?: boolean }) => {
       if (!canAccess) return;
-      if (applicationStatus !== ApplicationStatus.ACCEPTED) return;
+      if (!isChatActive) return;
       if (!options?.silent) {
         setLoading(true);
       }
@@ -54,7 +57,7 @@ export function ApplicationChatPanel({
         }
       }
     },
-    [applicationId, applicationStatus, canAccess],
+    [applicationId, canAccess, isChatActive],
   );
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export function ApplicationChatPanel({
   }, [load]);
 
   useEffect(() => {
-    if (!canAccess || applicationStatus !== ApplicationStatus.ACCEPTED) return;
+    if (!canAccess || !isChatActive) return;
 
     const interval = setInterval(() => {
       // Poll nhẹ để cập nhật tin nhắn mới theo thời gian thực gần đúng.
@@ -70,7 +73,7 @@ export function ApplicationChatPanel({
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [applicationStatus, canAccess, load]);
+  }, [canAccess, isChatActive, load]);
 
   useEffect(() => {
     if (!lastMessageId) return;
@@ -107,7 +110,7 @@ export function ApplicationChatPanel({
     );
   }
 
-  if (applicationStatus !== ApplicationStatus.ACCEPTED) {
+  if (!isChatActive) {
     return (
       <div className={`${embedded ? "p-4" : "mt-8"} rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600`}>
         Nhắn tin giữa người lao động và người đăng tin chỉ khả dụng khi đơn ứng

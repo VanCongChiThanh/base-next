@@ -1,16 +1,78 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts";
 import { cn } from "@/lib/utils";
 import { Role } from "@/types";
+import { jobService } from "@/services";
+import { toast } from "react-hot-toast";
+
+const MESSAGE_READ_KEY = "message_last_read_at_map_v1";
 
 export function Navbar() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+
+  const messageLinkHref = useMemo(() => "/messages", []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasUnreadMessages(false);
+      return;
+    }
+
+    let cancelled = false;
+    let lastSeenLatestMessageAt = "";
+
+    // Poll conversation list to detect unread/new messages globally.
+    const checkUnreadConversations = async () => {
+      try {
+        const conversations = await jobService.getMyConversations();
+        if (cancelled) return;
+
+        const raw = localStorage.getItem(MESSAGE_READ_KEY);
+        const readMap = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+
+        let unreadFound = false;
+        let latestUnreadAt = "";
+
+        for (const conversation of conversations) {
+          const lastMessageAt = conversation.lastMessage?.createdAt;
+          if (!lastMessageAt) continue;
+
+          const readAt = readMap[conversation.applicationId];
+          const isUnread = !readAt || new Date(lastMessageAt).getTime() > new Date(readAt).getTime();
+          if (isUnread) {
+            unreadFound = true;
+            if (!latestUnreadAt || new Date(lastMessageAt).getTime() > new Date(latestUnreadAt).getTime()) {
+              latestUnreadAt = lastMessageAt;
+            }
+          }
+        }
+
+        if (latestUnreadAt && latestUnreadAt !== lastSeenLatestMessageAt && pathname !== messageLinkHref) {
+          toast.success("Bạn có tin nhắn mới từ việc làm");
+        }
+
+        lastSeenLatestMessageAt = latestUnreadAt;
+        setHasUnreadMessages(unreadFound);
+      } catch {
+        // Ignore transient polling errors.
+      }
+    };
+
+    void checkUnreadConversations();
+    const intervalId = window.setInterval(checkUnreadConversations, 10000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [isAuthenticated, pathname, messageLinkHref]);
 
   const navLinks = [
     {
@@ -24,11 +86,17 @@ export function Navbar() {
       label: "Thuê ngay",
       icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z",
     },
+    {
+      href: "/messages",
+      label: "Tin nhắn ",
+      icon: "M8 10h8m-8 4h5m-7 7 4.684-4.684A2 2 0 0111.1 15.9H17a2 2 0 002-2V6a2 2 0 00-2-2H7a2 2 0 00-2 2v13z",
+    },
   ];
 
   const userLinks = isAuthenticated
     ? [
         { href: "/dashboard", label: "Quản lý việc làm" },
+        { href: "/messages", label: "Tin nhắn " },
         { href: "/saved-jobs", label: "Việc đã lưu" },
         { href: "/profile", label: "Hồ sơ" },
       ]
@@ -90,7 +158,12 @@ export function Navbar() {
                     d={link.icon}
                   />
                 </svg>
-                {link.label}
+                <span className="relative inline-flex items-center">
+                  {link.label}
+                  {link.href === messageLinkHref && hasUnreadMessages && (
+                    <span className="ml-1 inline-block h-2 w-2 rounded-full bg-red-500" />
+                  )}
+                </span>
               </Link>
             ))}
           </div>
@@ -281,7 +354,12 @@ export function Navbar() {
                     d={link.icon}
                   />
                 </svg>
-                {link.label}
+                <span className="relative inline-flex items-center">
+                  {link.label}
+                  {link.href === messageLinkHref && hasUnreadMessages && (
+                    <span className="ml-1 inline-block h-2 w-2 rounded-full bg-red-500" />
+                  )}
+                </span>
               </Link>
             ))}
             {/* Mobile Upgrade */}
