@@ -54,15 +54,60 @@ body {
 
 /* Smooth scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--primary-50);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--primary-200);
-  border-radius: 3px;
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary-light);
+}
+
+/* Mobile safe-area padding for devices with notch/home indicator */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Mobile: prevent body scroll when admin sidebar overlay is open */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Smooth height transitions for auto-resize textarea */
+textarea {
+  transition: height 0.1s ease;
+}
+
+/* Chat message animations */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-in { animation: slideInLeft 0.18s ease-out; }
+.msg-out { animation: slideInRight 0.18s ease-out; }
+.fade-in { animation: fadeIn 0.2s ease-out; }
+
+/* Sidebar slide animation keyframes (used by Tailwind translate-x) */
+@keyframes sidebarIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }

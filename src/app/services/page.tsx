@@ -7,12 +7,13 @@ import { Footer } from "@/components/layout/footer";
 import { workerServiceAPI, locationService, categoryService } from "@/services";
 import { WorkerService, Province, JobCategory } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
-import { useEntitlements } from "@/contexts";
+import { useEntitlements, useAuth } from "@/contexts";
 import toast from "react-hot-toast";
 import { DirectHireModal } from "@/components/services/direct-hire-modal";
 
 export default function ServicesPage() {
   const { hasFeature } = useEntitlements();
+  const { user } = useAuth();
   const [services, setServices] = useState<WorkerService[]>([]);
   const [loading, setLoading] = useState(false);
   const [provinces, setProvinces] = useState<Province[]>([]);
@@ -163,8 +164,9 @@ export default function ServicesPage() {
                  {service.category?.name || "Dịch vụ"}
               </span>
             </div>
-            <div className="bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-lg font-bold text-base whitespace-nowrap shadow-sm border border-yellow-100">
-              {Number(service.price).toLocaleString('vi-VN')}đ
+            <div className="flex flex-col items-end bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-lg font-bold whitespace-nowrap shadow-sm border border-yellow-100">
+              <span className="text-base">{Number(service.price).toLocaleString('vi-VN')}đ</span>
+              <span className="text-[10px] font-medium opacity-80">(Đề xuất)</span>
             </div>
           </div>
 
@@ -201,15 +203,17 @@ export default function ServicesPage() {
            >
              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
            </Link>
-           <button
-             onClick={() => {
-               setSelectedService(service);
-               setIsHireModalOpen(true);
-             }}
-             className="flex-1 flex items-center justify-center gap-2 py-3 text-center text-sm font-bold text-white bg-[#007bfe] rounded-2xl hover:bg-blue-600 shadow-lg shadow-blue-500/30 transition-all active:scale-95"
-           >
-             Thuê ngay
-           </button>
+           {service.workerId !== user?.id && (
+             <button
+               onClick={() => {
+                 setSelectedService(service);
+                 setIsHireModalOpen(true);
+               }}
+               className="flex-1 flex items-center justify-center gap-2 py-3 text-center text-sm font-bold text-white bg-[#007bfe] rounded-2xl hover:bg-blue-600 shadow-lg shadow-blue-500/30 transition-all active:scale-95"
+             >
+               Thuê ngay
+             </button>
+           )}
         </div>
       </div>
     );

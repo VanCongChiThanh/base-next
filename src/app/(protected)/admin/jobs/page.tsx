@@ -74,11 +74,11 @@ export default function AdminJobsPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Tiêu đề</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Người đăng</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Danh mục</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Lương</th>
+                <th className="hidden md:table-cell text-left px-4 py-3 font-medium text-gray-600">Người đăng</th>
+                <th className="hidden lg:table-cell text-left px-4 py-3 font-medium text-gray-600">Danh mục</th>
+                <th className="hidden sm:table-cell text-left px-4 py-3 font-medium text-gray-600">Lương</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Trạng thái</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Ngày đăng</th>
+                <th className="hidden md:table-cell text-left px-4 py-3 font-medium text-gray-600">Ngày đăng</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">Thao tác</th>
               </tr>
             </thead>
@@ -94,14 +94,14 @@ export default function AdminJobsPage() {
                   const badge = statusBadge[job.status] || { label: job.status, variant: "default" as const };
                   return (
                     <tr key={job.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px] truncate">{job.title}</td>
-                      <td className="px-4 py-3 text-gray-600">{job.employer?.firstName} {job.employer?.lastName}</td>
-                      <td className="px-4 py-3 text-gray-600">{job.category?.name || "—"}</td>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{Number(job.salaryPerHour).toLocaleString("vi-VN")}đ/h</td>
+                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[150px] md:max-w-[200px] truncate">{job.title}</td>
+                      <td className="hidden md:table-cell px-4 py-3 text-gray-600">{job.employer?.firstName} {job.employer?.lastName}</td>
+                      <td className="hidden lg:table-cell px-4 py-3 text-gray-600">{job.category?.name || "—"}</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-gray-600 whitespace-nowrap">{Number(job.salaryPerHour).toLocaleString("vi-VN")}đ/h</td>
                       <td className="px-4 py-3"><Badge variant={badge.variant}>{badge.label}</Badge></td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(job.createdAt)}</td>
+                      <td className="hidden md:table-cell px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(job.createdAt)}</td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex flex-col sm:flex-row items-center justify-end gap-1">
                           {job.status === "OPEN" && (
                             <button onClick={() => setConfirmAction({ id: job.id, action: "close" })} className="px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors">Đóng</button>
                           )}

@@ -78,7 +78,7 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-indigo-500">Thuê ngay</p>
             <h2 className="text-lg sm:text-xl font-extrabold text-indigo-900 m-0">
-              Gửi hợp đồng trực tiếp
+              Gửi đề nghị trực tiếp
             </h2>
             <p className="text-xs sm:text-sm text-indigo-600 mt-1 mb-0">
               Đến <span className="font-bold">{service.worker?.firstName} {service.worker?.lastName}</span>
@@ -151,7 +151,8 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">
-                  {isFixedPackage ? "Ngân sách khoán (VNĐ)" : "Giá / giờ (VNĐ)"}
+                  {isFixedPackage ? "Ngân sách đề xuất (VNĐ)" : "Giá đề xuất / giờ (VNĐ)"}
+                  <span className="text-xs font-normal text-gray-500 ml-2">(Có thể thoả thuận)</span>
                 </label>
                 <input
                   type="number"

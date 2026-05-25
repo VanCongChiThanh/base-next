@@ -17,6 +17,7 @@ import { getErrorMessage } from "@/lib/api-client";
 import { ApiError } from "@/types";
 import { cn } from "@/lib/utils";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
+import { useUpload } from "@/hooks/use-upload";
 
 const LocationPicker = dynamic(
   () => import("@/components/job/location-picker"),
@@ -48,6 +49,11 @@ export default function PostServicePage() {
     type: ServiceType.OFFLINE,
     skillIds: [] as string[],
     isAvailableNow: true,
+    portfolioUrls: [] as string[],
+  });
+
+  const { upload, isUploading, error: uploadError } = useUpload({
+    allowedTypes: ["image/jpeg", "image/png", "image/webp"],
   });
 
   useEffect(() => {
@@ -119,9 +125,9 @@ export default function PostServicePage() {
         description: form.description,
         price: Number(form.price),
         priceType: form.priceType,
-        isNegotiable: form.isNegotiable,
-        startTime: new Date(form.startTime).toISOString(),
-        endTime: new Date(form.endTime).toISOString(),
+        isNegotiable: true, // Always allow negotiation
+        startTime: form.startTime ? new Date(form.startTime).toISOString() : new Date().toISOString(),
+        endTime: form.endTime ? new Date(form.endTime).toISOString() : new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(),
         recurring: form.recurring || undefined,
         provinceCode: form.provinceCode,
         wardCode: form.wardCode,
@@ -129,6 +135,7 @@ export default function PostServicePage() {
         type: form.type,
         skillIds: form.skillIds.length > 0 ? form.skillIds : undefined,
         isAvailableNow: form.isAvailableNow,
+        portfolioUrls: form.portfolioUrls.length > 0 ? form.portfolioUrls : undefined,
       });
       router.push(`/services`);
     } catch (err) {
@@ -255,7 +262,7 @@ export default function PostServicePage() {
                 </div>
                 <div>
                   <label className={labelClass}>
-                    Mức giá mong muốn (Đ) <span className="text-red-400">*</span>
+                    Mức giá đề xuất (Đ) <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="number"
@@ -285,11 +292,10 @@ export default function PostServicePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
                 <div>
                   <label className={labelClass}>
-                    Thời gian bắt đầu rảnh <span className="text-red-400">*</span>
+                    Bắt đầu rảnh (Tuỳ chọn)
                   </label>
                   <input
                     type="datetime-local"
-                    required
                     value={form.startTime}
                     onChange={(e) => updateForm("startTime", e.target.value)}
                     className={inputClass}
@@ -297,11 +303,10 @@ export default function PostServicePage() {
                 </div>
                 <div>
                   <label className={labelClass}>
-                    Đến lúc <span className="text-red-400">*</span>
+                    Rảnh đến lúc (Tuỳ chọn)
                   </label>
                   <input
                     type="datetime-local"
-                    required
                     value={form.endTime}
                     onChange={(e) => updateForm("endTime", e.target.value)}
                     className={inputClass}
@@ -428,6 +433,71 @@ export default function PostServicePage() {
                 </div>
               </div>
             )}
+
+            {/* Images Upload */}
+            <div className="bg-white rounded-2xl border border-indigo-100 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Ảnh minh hoạ (Tuỳ chọn)
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Tải lên ảnh kết quả công việc hoặc chứng chỉ để thu hút nhà tuyển dụng.
+              </p>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                {form.portfolioUrls.map((url, idx) => (
+                  <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200">
+                    <img src={url} alt={`Portfolio ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateForm("portfolioUrls", form.portfolioUrls.filter((_, i) => i !== idx));
+                      }}
+                      className="absolute top-2 right-2 p-1.5 bg-white/90 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    {idx === 0 && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] py-1 text-center font-medium backdrop-blur-sm">
+                        Ảnh bìa
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {form.portfolioUrls.length < 4 && (
+                  <label className="relative aspect-square rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer flex flex-col items-center justify-center overflow-hidden">
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={isUploading}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const url = await upload(file);
+                        if (url) {
+                          updateForm("portfolioUrls", [...form.portfolioUrls, url]);
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                    {isUploading ? (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                    ) : (
+                      <>
+                        <svg className="w-6 h-6 text-indigo-400 mb-2" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        <span className="text-xs font-medium text-indigo-600">Thêm ảnh</span>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+              {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
+            </div>
 
             {/* Submit */}
             <div className="flex items-center justify-end pt-2">
