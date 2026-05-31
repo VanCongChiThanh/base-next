@@ -49,7 +49,9 @@ export interface ApplicationProgress {
   onlinePaymentType: string;
   startTime: string;
   endTime: string;
+  salaryType?: string | null;
   salaryPerHour: number;
+  totalBudget?: number | null;
   currentStep: number;
   steps: ProgressStep[];
   workerInfo: Record<string, unknown>;
@@ -84,6 +86,15 @@ export interface ApplicationChatMessage {
 export interface ApplicationChatResponse {
   messages: ApplicationChatMessage[];
   canSend: boolean;
+  jobDetails?: {
+    jobId: string;
+    isDirectHire: boolean;
+    employerId: string;
+    workerId: string;
+    onlinePaymentType: string | null;
+    salaryPerHour: number | null;
+    totalBudget: number | null;
+  };
 }
 
 export interface ApplicationConversation {
@@ -150,6 +161,7 @@ export interface Job {
     firstName: string;
     lastName: string;
     avatarUrl: string | null;
+    verificationLevel?: string;
   };
   jobSkills: JobSkill[];
   applications?: JobApplication[];
