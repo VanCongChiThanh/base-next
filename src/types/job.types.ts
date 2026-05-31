@@ -84,6 +84,15 @@ export interface ApplicationChatMessage {
 export interface ApplicationChatResponse {
   messages: ApplicationChatMessage[];
   canSend: boolean;
+  jobDetails?: {
+    jobId: string;
+    isDirectHire: boolean;
+    employerId: string;
+    workerId: string;
+    onlinePaymentType: string | null;
+    salaryPerHour: number | null;
+    totalBudget: number | null;
+  };
 }
 
 export interface ApplicationConversation {
