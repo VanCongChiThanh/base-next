@@ -8,21 +8,28 @@ interface JobStatusBadgeProps {
   className?: string;
 }
 
-const jobStatusConfig: Record<JobStatus, { label: string; className: string }> =
-  {
-    [JobStatus.OPEN]: {
-      label: "Đang tuyển",
-      className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    },
-    [JobStatus.CLOSED]: {
-      label: "Đã đóng",
-      className: "bg-gray-50 text-gray-600 border-gray-200",
-    },
-    [JobStatus.CANCELLED]: {
-      label: "Đã huỷ",
-      className: "bg-red-50 text-red-600 border-red-200",
-    },
-  };
+const jobStatusConfig: Record<JobStatus, { label: string; className: string }> = {
+  [JobStatus.OPEN]: {
+    label: "Đang tuyển",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  [JobStatus.CLOSED]: {
+    label: "Đã đóng",
+    className: "bg-gray-50 text-gray-600 border-gray-200",
+  },
+  [JobStatus.CANCELLED]: {
+    label: "Đã huỷ",
+    className: "bg-red-50 text-red-600 border-red-200",
+  },
+  [JobStatus.COMPLETED]: {
+    label: "Hoàn thành",
+    className: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  [JobStatus.SETTLED]: {
+    label: "Đã thanh toán",
+    className: "bg-violet-50 text-violet-700 border-violet-200",
+  },
+};
 
 export function JobStatusBadge({ status, className }: JobStatusBadgeProps) {
   const config = jobStatusConfig[status];
@@ -40,6 +47,8 @@ export function JobStatusBadge({ status, className }: JobStatusBadgeProps) {
           status === JobStatus.OPEN && "bg-emerald-500",
           status === JobStatus.CLOSED && "bg-gray-400",
           status === JobStatus.CANCELLED && "bg-red-500",
+          status === JobStatus.COMPLETED && "bg-blue-500",
+          status === JobStatus.SETTLED && "bg-violet-500",
         )}
       />
       {config.label}
@@ -52,13 +61,14 @@ interface ApplicationStatusBadgeProps {
   className?: string;
 }
 
-const appStatusConfig: Record<
-  ApplicationStatus,
-  { label: string; className: string }
-> = {
+const appStatusConfig: Record<ApplicationStatus, { label: string; className: string }> = {
   [ApplicationStatus.PENDING]: {
     label: "Chờ duyệt",
     className: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  [ApplicationStatus.EMPLOYER_ACCEPTED]: {
+    label: "Chờ bạn xác nhận",
+    className: "bg-blue-50 text-blue-700 border-blue-200",
   },
   [ApplicationStatus.ACCEPTED]: {
     label: "Đã chấp nhận",

@@ -1,17 +1,17 @@
 import { Notification, NotificationType, ReferenceType } from "@/types";
 
 /**
- * Template cho notification - FE tự định nghĩa title/message
- * Dễ dàng hỗ trợ i18n: chỉ cần thay đổi templates theo locale
+ * Template cho notification - FE tá»± Ä‘á»‹nh nghÄ©a title/message
+ * Dá»… dÃ ng há»— trá»£ i18n: chá»‰ cáº§n thay Ä‘á»•i templates theo locale
  */
 interface NotificationTemplate {
   title: string;
-  message: string; // Dùng {key} để replace với data
+  message: string; // DÃ¹ng {key} Ä‘á»ƒ replace vá»›i data
 }
 
 /**
- * Notification templates - Tiếng Việt
- * TODO: Khi cần i18n, load templates từ file JSON theo locale
+ * Notification templates - Tiáº¿ng Viá»‡t
+ * TODO: Khi cáº§n i18n, load templates tá»« file JSON theo locale
  */
 const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
   // System
@@ -78,17 +78,17 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
 
   // Gig Platform / Jobs
   [NotificationType.JOB_APPLICATION_RECEIVED]: {
-    title: "Ứng viên mới",
+    title: "ứng viên mới",
     message:
       "Bạn có ứng viên mới ứng tuyển vào công việc: {jobTitle}. {message}",
   },
   [NotificationType.JOB_APPLICATION_ACCEPTED]: {
-    title: "Ứng tuyển thành công",
+    title: "ứng tuyển thành công",
     message:
       "Hồ sơ của bạn cho công việc {jobTitle} đã được chấp nhận. {message}",
   },
   [NotificationType.JOB_APPLICATION_REJECTED]: {
-    title: "Ứng tuyển bị từ chối",
+    title: "ứng tuyển bị từ chối",
     message: "Trạng thái công việc {jobTitle}: {message}",
   },
   [NotificationType.JOB_COMPLETED]: {
@@ -97,15 +97,19 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
   },
   [NotificationType.JOB_CANCELLED]: {
     title: "Công việc bị hủy",
-    message: "Công việc {jobTitle} đã bị hủy bỏ.",
+    message: "Công việc {jobTitle} đã bị hủy.",
   },
   [NotificationType.JOB_CHECKED_IN]: {
-    title: "Ứng viên đã Điểm danh",
-    message: "Ứng viên đã đến làm việc tại {jobTitle}.",
+    title: "ứng viên đã Điểm danh",
+    message: "ứng viên đã đến làm việc tại {jobTitle}.",
   },
   [NotificationType.APPLICATION_CANCELLED]: {
-    title: "Ứng viên hủy ứng tuyển",
-    message: "Một ứng viên đã rút lại hồ sơ cho công việc {jobTitle}.",
+    title: "ứng viên hủy ứng tuyển",
+    message: "Một ứng viên đã rút lý lịch cho công việc {jobTitle}.",
+  },
+  [NotificationType.APPLICATION_MESSAGE]: {
+    title: "Tin nhắn mới",
+    message: "{senderName}: {preview}",
   },
   [NotificationType.REVIEW_RECEIVED]: {
     title: "Đánh giá mới",
@@ -117,25 +121,25 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
   },
   [NotificationType.PAYMENT_DISPUTED]: {
     title: "Khiếu nại thanh toán",
-    message: "Có khiếu nại bồi thường về công việc {jobTitle}: {reason}",
+    message: "Có khiếu nại về thanh toán cho công việc {jobTitle}: {reason}",
   },
   [NotificationType.DISPUTE_RESOLVED]: {
-    title: "Đã giải quyết Khiếu nại",
+    title: "Đã giải quyết khiếu nại",
     message: "Khiếu nại về công việc {jobTitle} đã được xử lý xong.",
   },
 
   // Escrow / Milestones
   [NotificationType.ESCROW_DEPOSITED]: {
-    title: "Ký quỹ thành công",
-    message: "Đã ký quỹ thành công cho công việc {jobTitle}.",
+    title: "Ký quá hạn thành công",
+    message: "Đã ký quá hạn thành công cho công việc {jobTitle}.",
   },
   [NotificationType.ESCROW_RELEASED]: {
     title: "Tiền đã được giải ngân",
     message: "Tiền đã được giải ngân thành công cho {milestoneTitle}.",
   },
   [NotificationType.ESCROW_REFUNDED]: {
-    title: "Hoàn tiền ký quỹ",
-    message: "Tiền ký quỹ đã được hoàn lại cho nhà tuyển dụng.",
+    title: "Hoàn tiền ký quá hạn",
+    message: "Tiền ký quá hạn đã được hoàn lại cho nhà tuyển dụng.",
   },
   [NotificationType.MILESTONE_SUBMITTED]: {
     title: "Milestone đã được nộp",
@@ -154,7 +158,7 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
     message: "Nhà tuyển dụng đã chấp nhận kết quả milestone {milestoneTitle}.",
   },
   [NotificationType.MILESTONE_RELEASED]: {
-    title: "Milestone đã giải ngân",
+    title: "Milestone được giải ngân",
     message: "Tiền của milestone {milestoneTitle} đã được giải ngân.",
   },
   [NotificationType.MILESTONE_REVISION_REQUESTED]: {
@@ -164,7 +168,7 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
 };
 
 /**
- * Replace {key} với giá trị từ data
+ * Replace {key} vá»›i giÃ¡ trá»‹ tá»« data
  */
 function formatTemplate(
   template: string,
@@ -179,10 +183,10 @@ function formatTemplate(
 }
 
 /**
- * Render title từ notification
+ * Render title tá»« notification
  */
 export function getNotificationTitle(notification: Notification): string {
-  if (!notification?.type) return "Thông báo";
+  if (!notification?.type) return "ThÃ´ng bÃ¡o";
   
   if (notification.type === NotificationType.SYSTEM && notification.data?.title) {
     return String(notification.data.title);
@@ -190,11 +194,16 @@ export function getNotificationTitle(notification: Notification): string {
 
   const template = NOTIFICATION_TEMPLATES[notification.type];
   if (!template) return "Thông báo";
+
+  if (notification.type === NotificationType.JOB_APPLICATION_RECEIVED && notification.data?.isDirectHire) {
+    return "Yêu cầu Thuê ngay";
+  }
+
   return formatTemplate(template.title, notification.data);
 }
 
 /**
- * Render message từ notification
+ * Render message tá»« notification
  */
 export function getNotificationMessage(notification: Notification): string {
   if (!notification?.type) return "";
@@ -206,12 +215,16 @@ export function getNotificationMessage(notification: Notification): string {
 
   const template = NOTIFICATION_TEMPLATES[notification.type];
   if (!template) return "";
+
+  if (notification.type === NotificationType.JOB_APPLICATION_RECEIVED && notification.data?.isDirectHire) {
+    return `Bạn nhận được lời đề nghị Thuê ngay cho công việc: ${notification.data?.jobTitle || 'Chưa cập nhật'}.`;
+  }
+
   return formatTemplate(template.message, notification.data);
 }
 
 /**
- * Map notification -> route để navigate khi click
- * FE tự quyết định route dựa vào refType + refId
+ * Map notification -> route 
  */
 export function getNotificationRoute(
   notification: Notification,
@@ -234,13 +247,13 @@ export function getNotificationRoute(
   if (!refType || !refId) {
     switch (notification.type) {
       case NotificationType.JOB_APPLICATION_RECEIVED:
-      case NotificationType.JOB_CHECKED_IN:
-      case NotificationType.APPLICATION_CANCELLED:
-      case NotificationType.JOB_COMPLETED:
       case NotificationType.JOB_CANCELLED:
-      case NotificationType.PAYMENT_CONFIRMED:
         return dataJobId ? `/jobs/${dataJobId}` : null;
 
+      case NotificationType.JOB_COMPLETED:
+      case NotificationType.JOB_CHECKED_IN:
+      case NotificationType.APPLICATION_CANCELLED:
+      case NotificationType.PAYMENT_CONFIRMED:
       case NotificationType.JOB_APPLICATION_ACCEPTED:
       case NotificationType.JOB_APPLICATION_REJECTED:
         return dataApplicationId
@@ -299,7 +312,7 @@ export function getNotificationRoute(
 }
 
 /**
- * Map notification type -> icon name (dùng cho icon library)
+ * Map notification type -> icon name (dÃ¹ng cho icon library)
  */
 export function getNotificationIcon(type: NotificationType): string {
   switch (type) {
@@ -338,7 +351,7 @@ export function getNotificationIcon(type: NotificationType): string {
 }
 
 /**
- * Map notification type -> màu sắc
+ * Map notification type -> mÃ u sáº¯c
  */
 export function getNotificationColor(
   type: NotificationType,
@@ -362,3 +375,4 @@ export function getNotificationColor(
       return "default";
   }
 }
+

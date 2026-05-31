@@ -54,12 +54,12 @@ export default function AdminPaymentsPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Công việc</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Người lao động</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Loại</th>
+                <th className="hidden md:table-cell text-left px-4 py-3 font-medium text-gray-600">Người lao động</th>
+                <th className="hidden lg:table-cell text-left px-4 py-3 font-medium text-gray-600">Loại</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Trạng thái</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Worker xác nhận</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Ghi chú</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Ngày tạo</th>
+                <th className="hidden sm:table-cell text-left px-4 py-3 font-medium text-gray-600">Worker xác nhận</th>
+                <th className="hidden lg:table-cell text-left px-4 py-3 font-medium text-gray-600">Ghi chú</th>
+                <th className="hidden md:table-cell text-left px-4 py-3 font-medium text-gray-600">Ngày tạo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -74,13 +74,13 @@ export default function AdminPaymentsPage() {
                   const badge = statusBadge[p.status] || { label: p.status, variant: "default" as const };
                   return (
                     <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px] truncate">{p.job?.title || "—"}</td>
-                      <td className="px-4 py-3 text-gray-600">{p.worker?.firstName} {p.worker?.lastName}</td>
-                      <td className="px-4 py-3 text-gray-600">{p.type === "FINAL_PAYMENT" ? "Thanh toán cuối" : p.type}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[150px] md:max-w-[200px] truncate">{p.job?.title || "—"}</td>
+                      <td className="hidden md:table-cell px-4 py-3 text-gray-600">{p.worker?.firstName} {p.worker?.lastName}</td>
+                      <td className="hidden lg:table-cell px-4 py-3 text-gray-600">{p.type === "FINAL_PAYMENT" ? "Thanh toán cuối" : p.type}</td>
                       <td className="px-4 py-3"><Badge variant={badge.variant}>{badge.label}</Badge></td>
-                      <td className="px-4 py-3">{p.confirmedByWorker ? <span className="text-emerald-600 font-medium">✓ Đã xác nhận</span> : <span className="text-gray-400">Chưa</span>}</td>
-                      <td className="px-4 py-3 text-gray-600 max-w-[150px] truncate">{p.note || "—"}</td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(p.createdAt)}</td>
+                      <td className="hidden sm:table-cell px-4 py-3">{p.confirmedByWorker ? <span className="text-emerald-600 font-medium">✓ Đã xác nhận</span> : <span className="text-gray-400">Chưa</span>}</td>
+                      <td className="hidden lg:table-cell px-4 py-3 text-gray-600 max-w-[150px] truncate">{p.note || "—"}</td>
+                      <td className="hidden md:table-cell px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(p.createdAt)}</td>
                     </tr>
                   );
                 })

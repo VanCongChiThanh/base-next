@@ -69,12 +69,12 @@ export default function AdminReportsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Người báo cáo</th>
+                <th className="hidden md:table-cell text-left px-4 py-3 font-medium text-gray-600">Người báo cáo</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Bị báo cáo</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Lý do</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Công việc</th>
+                <th className="hidden md:table-cell text-left px-4 py-3 font-medium text-gray-600">Công việc</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Trạng thái</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Ngày tạo</th>
+                <th className="hidden sm:table-cell text-left px-4 py-3 font-medium text-gray-600">Ngày tạo</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">Thao tác</th>
               </tr>
             </thead>
@@ -90,12 +90,12 @@ export default function AdminReportsPage() {
                   const badge = statusBadge[report.status] || { label: report.status, variant: "default" as const };
                   return (
                     <tr key={report.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-gray-900">{report.reporter?.firstName} {report.reporter?.lastName}</td>
+                      <td className="hidden md:table-cell px-4 py-3 text-gray-900">{report.reporter?.firstName} {report.reporter?.lastName}</td>
                       <td className="px-4 py-3 text-gray-900">{report.reportedUser?.firstName} {report.reportedUser?.lastName}</td>
-                      <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate">{report.reason}</td>
-                      <td className="px-4 py-3 text-gray-600">{report.job?.title || "—"}</td>
+                      <td className="px-4 py-3 text-gray-600 max-w-[150px] truncate">{report.reason}</td>
+                      <td className="hidden md:table-cell px-4 py-3 text-gray-600">{report.job?.title || "—"}</td>
                       <td className="px-4 py-3"><Badge variant={badge.variant}>{badge.label}</Badge></td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(report.createdAt)}</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(report.createdAt)}</td>
                       <td className="px-4 py-3 text-right">
                         <button
                           onClick={() => { setSelectedReport(report); setUpdateStatus(report.status); setAdminNote(report.adminNote || ""); }}

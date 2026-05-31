@@ -12,6 +12,7 @@ import { AuthGuard } from "@/components";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { PrivacySettingsPanel } from "@/components/profile";
+import { BankAccountManager } from "@/components/profile/bank-account-manager";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
 import {
   ApiError,
@@ -311,6 +312,20 @@ function ProfileContent() {
       void refreshUser();
     }
   }, [refreshUser, searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get("section") !== "bank") return;
+
+    setActiveTab("worker");
+    const timer = window.setTimeout(() => {
+      document.getElementById("bank-account-section")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [searchParams]);
 
   const inputClass =
     "w-full px-4 py-2.5 rounded-xl border border-blue-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent text-gray-800 placeholder:text-gray-400 transition-all";
@@ -760,6 +775,16 @@ function ProfileContent() {
                   </button>
                 </form>
               )}
+            </div>
+          )}
+
+          {/* ==================== BANK ACCOUNT TAB ==================== */}
+          {activeTab === "worker" && (
+            <div
+              id="bank-account-section"
+              className="mt-5 bg-white rounded-2xl border border-blue-100 p-6"
+            >
+              <BankAccountManager />
             </div>
           )}
 

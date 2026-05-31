@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { reviewService } from "@/services/review.service";
+import { workerServiceAPI } from "@/services/worker-service.service";
 import apiClient from "@/lib/api-client";
-import { Review, User } from "@/types";
+import { Review, User, WorkerService } from "@/types";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import Link from "next/link";
@@ -21,16 +22,19 @@ export default function UserProfileClient({ id }: { id: string }) {
   const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState<Partial<User> | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [services, setServices] = useState<WorkerService[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
       apiClient.get<Partial<User>>(`/users/${id}/public`),
       reviewService.getByUser(id),
+      workerServiceAPI.getServicesByWorker(id).catch(() => []), // fallback for error
     ])
-      .then(([userData, reviewsRes]) => {
+      .then(([userData, reviewsRes, servicesRes]) => {
         setProfile(userData);
         setReviews(reviewsRes?.data || (Array.isArray(reviewsRes) ? reviewsRes : []));
+        setServices(servicesRes || []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -100,11 +104,86 @@ export default function UserProfileClient({ id }: { id: string }) {
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                   </svg>
-                  Thuê tôi
+                  Thuê ngay
                 </Link>
               </div>
             )}
           </div>
+
+          {/* Worker Services List */}
+          {services.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Dịch vụ "Thuê tôi"</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {services.map(service => {
+                  const hasImage = service.portfolioUrls && service.portfolioUrls.length > 0;
+                  const coverImage = hasImage 
+                    ? service.portfolioUrls[0] 
+                    : "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=400";
+                  
+                  return (
+                    <div key={service.id} className="border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow group">
+                      <div className="aspect-video w-full overflow-hidden relative">
+                        <img 
+                          src={coverImage} 
+                          alt={service.title} 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        {/* Status Badge */}
+                        <div className="absolute top-3 right-3">
+                          {service.isAvailableNow ? (
+                            <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/90 text-white backdrop-blur-sm shadow-sm">
+                              Sẵn sàng làm ngay
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-500/90 text-white backdrop-blur-sm shadow-sm">
+                              Đang bận
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-bold text-gray-900 line-clamp-1 flex-1">{service.title}</h3>
+                          <div className="flex flex-col items-end shrink-0 ml-2">
+                            <span className="font-bold text-blue-600">
+                              {Number(service.price).toLocaleString("vi-VN")}đ
+                              {service.priceType === "HOURLY" ? "/giờ" : ""}
+                            </span>
+                            <span className="text-[10px] text-gray-500 font-medium">(Đề xuất)</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-500 line-clamp-2 mb-4">{service.description}</p>
+                        
+                        {/* More images preview if any */}
+                        {hasImage && service.portfolioUrls.length > 1 && (
+                          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+                            {service.portfolioUrls.slice(1).map((url, idx) => (
+                              <img 
+                                key={idx} 
+                                src={url} 
+                                alt={`Ảnh ${idx+2}`} 
+                                className="w-12 h-12 rounded-lg object-cover border border-gray-100 shrink-0"
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        {service.workerId !== currentUser?.id && (
+                          <Link
+                            href={`/jobs/post?hire_id=${profile.id}&service_id=${service.id}`}
+                            className="w-full inline-flex justify-center items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 font-semibold rounded-lg hover:bg-blue-100 transition-colors"
+                          >
+                            Thuê người này
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Reviews List */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">

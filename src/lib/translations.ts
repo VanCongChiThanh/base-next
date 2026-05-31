@@ -13,6 +13,10 @@ export const ERROR_MESSAGES_VI: Record<string, string> = {
   "Application not found": "Không tìm thấy hồ sơ ứng tuyển.",
   "Messaging is only available after acceptance and before the job is completed":
     "Nhắn tin chỉ dùng được sau khi đơn được chấp nhận và trước khi hoàn thành ca.",
+  "Feature not available for your current plan": "Tính năng này không khả dụng cho gói hiện tại của bạn.",
+  "Feature is not enabled for your current plan": "Tính năng này chưa được kích hoạt cho gói hiện tại của bạn.",
+  "You have exceeded your plan quota": "Bạn đã vượt quá hạn mức của gói hiện tại.",
+  "An active subscription is required to access this feature": "Bạn cần nâng cấp gói dịch vụ để sử dụng tính năng này.",
   
   // Profile
   "Profile not found": "Không tìm thấy hồ sơ cá nhân.",

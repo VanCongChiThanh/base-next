@@ -72,10 +72,10 @@ export default function AdminDisputesPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Công việc</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Người tạo</th>
+                <th className="hidden md:table-cell text-left px-4 py-3 font-medium text-gray-600">Người tạo</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Lý do</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Trạng thái</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Ngày tạo</th>
+                <th className="hidden sm:table-cell text-left px-4 py-3 font-medium text-gray-600">Ngày tạo</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">Thao tác</th>
               </tr>
             </thead>
@@ -91,11 +91,11 @@ export default function AdminDisputesPage() {
                   const badge = statusBadge[d.status] || { label: d.status, variant: "default" as const };
                   return (
                     <tr key={d.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px] truncate">{d.job?.title || "—"}</td>
-                      <td className="px-4 py-3 text-gray-600">{d.raisedBy?.firstName} {d.raisedBy?.lastName}</td>
-                      <td className="px-4 py-3 text-gray-600 max-w-[250px] truncate">{d.reason}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[150px] md:max-w-[200px] truncate">{d.job?.title || "—"}</td>
+                      <td className="hidden md:table-cell px-4 py-3 text-gray-600">{d.raisedBy?.firstName} {d.raisedBy?.lastName}</td>
+                      <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate">{d.reason}</td>
                       <td className="px-4 py-3"><Badge variant={badge.variant}>{badge.label}</Badge></td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(d.createdAt)}</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(d.createdAt)}</td>
                       <td className="px-4 py-3 text-right">
                         {(d.status === "OPEN" || d.status === "UNDER_REVIEW") ? (
                           <button onClick={() => { setSelected(d); setResolution(""); }} className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">Xử lý</button>

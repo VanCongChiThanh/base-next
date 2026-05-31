@@ -5,6 +5,8 @@ import Link from "next/link";
 import { matchCandidates } from "@/services/ai.service";
 import { MatchedCandidate, Job } from "@/types";
 import { getErrorMessage } from "@/lib/api-client";
+import { jobService } from "@/services";
+import { toast } from "react-hot-toast";
 
 interface MatchedCandidatesProps {
   job: Job;
@@ -15,6 +17,8 @@ export function MatchedCandidates({ job }: MatchedCandidatesProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [inviting, setInviting] = useState<string | null>(null);
+  const [invited, setInvited] = useState<Record<string, boolean>>({});
 
   const handleMatch = async () => {
     try {
@@ -30,9 +34,22 @@ export function MatchedCandidates({ job }: MatchedCandidatesProps) {
     }
   };
 
+  const handleInvite = async (workerId: string) => {
+    try {
+      setInviting(workerId);
+      await jobService.inviteWorkerToJob(job.id, workerId);
+      toast.success("Đã gửi lời mời thành công!");
+      setInvited(prev => ({ ...prev, [workerId]: true }));
+    } catch (err: any) {
+      toast.error(getErrorMessage(err) || "Không thể gửi lời mời");
+    } finally {
+      setInviting(null);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-blue-100 p-6 overflow-hidden">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <svg className="w-5 h-5 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -45,7 +62,7 @@ export function MatchedCandidates({ job }: MatchedCandidatesProps) {
         <button
           onClick={handleMatch}
           disabled={loading}
-          className="px-4 py-2 bg-purple-50 text-purple-600 rounded-xl font-medium hover:bg-purple-100 disabled:opacity-50 transition-colors flex items-center gap-2 border border-purple-200"
+          className="self-start sm:self-auto px-4 py-2.5 bg-purple-50 text-purple-600 rounded-xl font-medium hover:bg-purple-100 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 border border-purple-200 whitespace-nowrap shrink-0"
         >
           {loading ? (
             <>
@@ -97,12 +114,38 @@ export function MatchedCandidates({ job }: MatchedCandidatesProps) {
                     Phù hợp {c.matchScore}%
                   </span>
                   <Link
-                    href={`/workers/${c.workerId}`}
+                    href={`/users/${c.workerId}`}
                     target="_blank"
                     className="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
                   >
                     Xem hồ sơ →
                   </Link>
+                  <button
+                    onClick={() => handleInvite(c.workerId)}
+                    disabled={inviting === c.workerId || invited[c.workerId]}
+                    className={`mt-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 ${
+                      invited[c.workerId] 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50'
+                    }`}
+                  >
+                    {inviting === c.workerId ? (
+                      <>
+                        <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Đang mời...
+                      </>
+                    ) : invited[c.workerId] ? (
+                      <>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        Đã mời
+                      </>
+                    ) : (
+                      <>Mời làm việc</>
+                    )}
+                  </button>
                 </div>
               </div>
               

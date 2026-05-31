@@ -29,6 +29,9 @@ import {
   PaymentType,
   DisputeStatus,
   JobType,
+  PaymentMethod,
+  BankAccount,
+  PaymentStatus,
 } from "@/types";
 import { formatDateTime, formatRelativeTime } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/api-client";
@@ -66,6 +69,10 @@ export default function JobDetailPageClient({
   const [showScamCheck, setShowScamCheck] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savingJob, setSavingJob] = useState(false);
+  const [p2pBankAccounts, setP2pBankAccounts] = useState<BankAccount[]>([]);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const isEmployer = user && job && user.id === job.employerId;
   const isWorkerAndAuthenticated = !isEmployer && isAuthenticated;
@@ -117,6 +124,13 @@ export default function JobDetailPageClient({
         .getJobDisputes(job.id)
         .then(setDisputes)
         .catch(() => {});
+      // Fetch employer bank accounts for P2P jobs
+      if (job.paymentMethod === PaymentMethod.P2P) {
+        paymentService
+          .getP2PInfo(job.id)
+          .then(d => setP2pBankAccounts(d.bankAccounts))
+          .catch(() => {});
+      }
     }
   }, [job, isAuthenticated]);
 
@@ -209,6 +223,30 @@ export default function JobDetailPageClient({
     }
   };
 
+  const handleRespondAcceptance = async (accept: boolean) => {
+    if (!myApplication) return;
+    setActionLoading(myApplication.id);
+    setError("");
+    try {
+      const updatedApp = await jobService.respondApplicationAcceptance(
+        myApplication.id,
+        accept,
+      );
+      setMyApplication(updatedApp);
+      const updatedJob = await jobService.getJob(id);
+      setJob(updatedJob);
+      setSuccess(
+        accept
+          ? "Bạn đã xác nhận nhận việc!"
+          : "Bạn đã từ chối lời xác nhận từ nhà tuyển dụng.",
+      );
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleCancel = async () => {
     setShowCancelConfirm(false);
     setActionLoading("cancel");
@@ -270,9 +308,9 @@ export default function JobDetailPageClient({
     }
   };
 
-  const paymentConfirmed = payments.some(
-    (p) => p.type === PaymentType.FINAL_PAYMENT && p.confirmedByWorker,
-  );
+  const finalPayment = payments.find((p) => p.type === PaymentType.FINAL_PAYMENT);
+  const isConfirmedByMe = isEmployer ? finalPayment?.confirmedByEmployer : finalPayment?.confirmedByWorker;
+  const isFullyConfirmed = finalPayment?.status === PaymentStatus.PAYMENT_CONFIRMED;
   const hasOpenDispute = disputes.some(
     (d) =>
       d.status === DisputeStatus.OPEN ||
@@ -297,6 +335,275 @@ export default function JobDetailPageClient({
   }
 
   if (!job) return null;
+
+  if (isEmployer) {
+    const filteredApps = applications.filter(app => {
+      const matchStatus = statusFilter === "ALL" || app.status === statusFilter;
+      const matchSearch = (app.worker.firstName + " " + app.worker.lastName).toLowerCase().includes(searchTerm.toLowerCase());
+      return matchStatus && matchSearch;
+    });
+
+    return (
+      <>
+        <Navbar />
+        <main className="flex-1 min-h-screen bg-slate-50 pb-12">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 shadow-sm">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <Link href="/jobs" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mb-4 transition-colors font-medium">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg> Quay lại danh sách
+              </Link>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{job.title}</h1>
+                    <JobStatusBadge status={job.status} />
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    
+                  </div>
+                </div>
+                <div className="text-left md:text-right">
+                  {job.jobType === JobType.ONLINE ? (
+                    <>
+                      <p className="text-3xl font-bold text-blue-600">{job.onlinePaymentType === "FIXED_PRICE" ? `${job.totalBudget?.toLocaleString("vi-VN")}đ` : `${job.hourlyRateMin?.toLocaleString("vi-VN")}đ - ${job.hourlyRateMax?.toLocaleString("vi-VN")}đ`}</p>
+                      <p className="text-sm text-gray-500 font-medium mt-1">{job.onlinePaymentType === "FIXED_PRICE" ? "Ngân sách cố định" : "Theo giờ"}</p>
+                    </>
+                  ) : (
+                    <p className="text-3xl font-bold text-blue-600">{Number(job.salaryPerHour).toLocaleString("vi-VN")}đ<span className="text-gray-500 text-lg font-normal">/{job.salaryType === "FIXED" ? "công" : "giờ"}</span></p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            {error && <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>}
+            {success && <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">{success}</div>}
+
+            {/* Job Details Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                {!job.isDirectHire && (
+                  <MatchedCandidates job={job} />
+                )}
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Mô tả công việc</h2>
+                  <p className="text-gray-600 whitespace-pre-line leading-relaxed">{job.description}</p>
+                </div>
+                {job.jobSkills && job.jobSkills.length > 0 && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                    <h2 className="text-lg font-bold text-gray-900 mb-4">Kỹ năng yêu cầu</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {job.jobSkills.map(js => <span key={js.id} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-100">{js.skill.name}</span>)}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-6">
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Tổng quan</h2>
+                  <div className="space-y-4 text-sm">
+                    <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Danh mục</span><span className="font-medium text-gray-900">{job.category.name}</span></div>
+                    {job.jobType === JobType.PART_TIME ? (
+                      <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Thời gian</span><span className="font-medium text-gray-900">{formatDateTime(job.startTime!)} - {formatDateTime(job.endTime!)}</span></div>
+                    ) : (
+                      <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Deadline</span><span className="font-medium text-gray-900">{formatDateTime(job.deadline!)}</span></div>
+                    )}
+                    <div className="flex justify-between"><span className="text-gray-500">Hình thức thanh toán</span><span className="font-medium text-gray-900">{job.paymentMethod === PaymentMethod.ESCROW ? "Ký quỹ (Escrow)" : job.paymentMethod === PaymentMethod.P2P ? "Trực tiếp" : "Tiền mặt"}</span></div>
+                  </div>
+                </div>
+                
+                {/* Actions & Confirm Payment */}
+                {(job.status === JobStatus.COMPLETED || job.status === JobStatus.SETTLED) && job.jobType !== JobType.ONLINE && (
+                  <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-6 shadow-sm">
+                    <h3 className="text-sm font-bold text-emerald-800 mb-3">Xác nhận thanh toán</h3>
+                    {!isConfirmedByMe ? (
+                      <button onClick={handleConfirmPayment} disabled={actionLoading === "payment"} className="w-full py-2.5 text-sm font-bold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 transition-all shadow-sm">
+                        {actionLoading === "payment" ? "Đang xử lý..." : "Xác nhận đã thanh toán"}
+                      </button>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm text-emerald-600 font-bold flex items-center gap-1"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Bạn đã xác nhận</p>
+                        {!isFullyConfirmed && <p className="text-xs text-emerald-600/70">Chờ người làm xác nhận...</p>}
+                        {isFullyConfirmed && <p className="text-sm font-bold text-emerald-700 bg-emerald-100/50 p-2 rounded-lg mt-2 text-center">✓ Giao dịch hoàn tất</p>}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {job.status === JobStatus.OPEN && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col gap-3">
+                    {showCancelConfirm ? (
+                      <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+                        <p className="text-sm text-red-800 mb-3 font-medium">Bạn có chắc muốn huỷ bài đăng này?</p>
+                        <div className="flex gap-2">
+                          <button onClick={handleCancel} className="flex-1 py-1.5 text-xs font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">Xác nhận</button>
+                          <button onClick={() => setShowCancelConfirm(false)} className="flex-1 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Quay lại</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => setShowCancelConfirm(true)} className="w-full py-2.5 text-sm font-medium text-red-600 bg-red-50 rounded-xl hover:bg-red-100 border border-red-100 transition-colors">Huỷ bài đăng</button>
+                    )}
+                  </div>
+                )}
+                {job.status === JobStatus.OPEN && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                    {showCompleteConfirm ? (
+                      <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                        <p className="text-sm text-emerald-800 mb-3 font-medium">Xác nhận công việc đã hoàn thành?</p>
+                        <div className="flex gap-2">
+                          <button onClick={handleComplete} className="flex-1 py-1.5 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">Xác nhận</button>
+                          <button onClick={() => setShowCompleteConfirm(false)} className="flex-1 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Quay lại</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button onClick={() => setShowCompleteConfirm(true)} className="w-full py-2.5 text-sm font-bold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 shadow-sm transition-all">Đánh dấu hoàn thành</button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Application Data Table Section */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mt-8">
+              <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  Danh sách Ứng viên ({applications.length})
+                </h2>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative">
+                    <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <input type="text" placeholder="Tìm tên ứng viên..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64" />
+                  </div>
+                  <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="ALL">Tất cả trạng thái</option>
+                    <option value="PENDING">Chờ duyệt</option>
+                    <option value="ACCEPTED">Đã nhận</option>
+                    <option value="EMPLOYER_ACCEPTED">Chờ ứng viên XN</option>
+                    <option value="REJECTED">Đã từ chối</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ứng viên</th>
+                      <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Kinh nghiệm</th>
+                      <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ngày ứng tuyển</th>
+                      <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                      <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredApps.length === 0 ? (
+                      <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">Không tìm thấy ứng viên nào phù hợp.</td></tr>
+                    ) : filteredApps.map(app => (
+                      <tr key={app.id} className="hover:bg-blue-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Link href={`/users/${app.workerId}`} className="flex-shrink-0">
+                              {app.worker.avatarUrl ? (
+                                <img src={app.worker.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">{app.worker.firstName?.charAt(0)}</div>
+                              )}
+                            </Link>
+                            <div>
+                              <Link href={`/users/${app.workerId}`} className="font-semibold text-gray-900 hover:text-blue-600">{app.worker.firstName} {app.worker.lastName}</Link>
+                              {(app.worker.verificationLevel === "BASIC" || app.worker.verificationLevel === "BUSINESS") && (
+                                <div className="mt-0.5"><span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">✓ Đã xác thực</span></div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {app.worker.workerProfile ? (
+                            <div className="flex flex-col gap-1 text-xs text-gray-600">
+                              <span className="font-medium text-amber-600 flex items-center gap-1"><svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg> {Number(app.worker.workerProfile.ratingAvg || 0).toFixed(1)} sao</span>
+                              <span>{app.worker.workerProfile.totalJobsCompleted || 0} việc hoàn thành</span>
+                            </div>
+                          ) : <span className="text-xs text-gray-400">Chưa có dữ liệu</span>}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{formatDateTime(app.appliedAt)}</td>
+                        <td className="px-6 py-4"><ApplicationStatusBadge status={app.status} /></td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex flex-wrap justify-end gap-2">
+                            {(app.status === ApplicationStatus.PENDING || app.status === ApplicationStatus.ACCEPTED || app.status === ApplicationStatus.EMPLOYER_ACCEPTED) && (
+                              <button onClick={() => openChat(app.id, app.status as ApplicationStatus, job.title)} className="px-3 py-1.5 text-xs font-medium bg-white border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Nhắn tin">💬 Chat</button>
+                            )}
+                            {app.status === ApplicationStatus.ACCEPTED && (
+                              <Link href={`/applications/${app.id}/progress`} className="px-3 py-1.5 text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors">📈 Tiến trình</Link>
+                            )}
+                            {app.status === ApplicationStatus.ACCEPTED && job.paymentMethod === PaymentMethod.P2P && (
+                              <button onClick={() => setShowBankModal(true)} className="px-3 py-1.5 text-xs font-medium bg-purple-50 border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">🏦 Ngân hàng</button>
+                            )}
+                            {app.status === ApplicationStatus.PENDING && (
+                              <>
+                                <button onClick={() => handleAccept(app.id)} disabled={actionLoading === app.id} className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">Nhận</button>
+                                <button onClick={() => handleReject(app.id)} disabled={actionLoading === app.id} className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors">Từ chối</button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Escrow Section */}
+            {job.jobType === JobType.ONLINE && job.paymentMethod === PaymentMethod.ESCROW && (
+              <div className="mt-6"><EscrowSection job={job} /></div>
+            )}
+            
+            {/* Bank Modal */}
+            {showBankModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+                  <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2"><span className="text-xl">🤝</span>Thanh toán trực tiếp</h3>
+                    <button onClick={() => setShowBankModal(false)} className="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-full p-1 transition-all"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    <p className="text-sm text-gray-600">Thông tin chuyển khoản của ứng viên đã được xác nhận:</p>
+                    {p2pBankAccounts.length === 0 ? (
+                      <div className="bg-amber-50 rounded-xl px-4 py-3 border border-amber-200">
+                        <p className="text-sm font-medium text-amber-800 flex items-center gap-2">⚠ Ứng viên chưa cập nhật tài khoản.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                        {p2pBankAccounts.map((acc) => (
+                          <div key={acc.id} className="bg-white rounded-xl border border-blue-100 p-4 flex gap-4 items-start shadow-sm">
+                            {acc.qrCodeUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={acc.qrCodeUrl} alt="QR" className="w-16 h-16 rounded-xl object-contain border border-gray-100 shrink-0" />
+                            ) : <div className="w-16 h-16 rounded-xl bg-blue-50 flex items-center justify-center text-3xl shrink-0">🏦</div>}
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-gray-900">{acc.bankName}</p>
+                              <p className="text-base font-mono text-blue-700 mt-1">{acc.accountNumber}</p>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide mt-0.5">{acc.accountName}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                    <button onClick={() => setShowBankModal(false)} className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-all">Đóng</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </>
+    );
+  }
+
 
   return (
     <>
@@ -465,113 +772,8 @@ export default function JobDetailPageClient({
                   </div>
                 )}
 
-              {/* Employer: Applications */}
-              {isEmployer && applications.length > 0 && (
-                <div className="bg-white rounded-2xl border border-blue-100 p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Đơn ứng tuyển ({applications.length})
-                  </h2>
-                  <div className="space-y-3">
-                    {applications.map((app) => (
-                      <div
-                        key={app.id}
-                        className="flex items-start gap-3 p-4 rounded-xl bg-blue-50/30 border border-blue-50"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-sky-300 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                          {app.worker.firstName?.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">
-                              {app.worker.firstName} {app.worker.lastName}
-                            </span>
-                            <ApplicationStatusBadge status={app.status} />
-                          </div>
-                          {app.coverLetter && (
-                            <p className="text-sm text-gray-500 line-clamp-2">
-                              {app.coverLetter}
-                            </p>
-                          )}
-                          <p className="text-xs text-gray-400 mt-1">
-                            {formatRelativeTime(app.appliedAt)}
-                          </p>
-                          {app.status === ApplicationStatus.ACCEPTED && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <Link
-                                href={`/applications/${app.id}/progress`}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100"
-                                title="Xem tiến trình chi tiết"
-                                aria-label="Xem tiến trình chi tiết"
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"
-                                  />
-                                </svg>
-                              </Link>
-                              <button
-                                onClick={() =>
-                                  openChat(
-                                    app.id,
-                                    app.status as ApplicationStatus,
-                                    job?.title,
-                                  )
-                                }
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-white text-blue-600 hover:bg-blue-50"
-                                title="Mở chat"
-                                aria-label="Mở chat"
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 10h8m-8 4h5m-7 7 4.684-4.684A2 2 0 0111.1 15.9H17a2 2 0 002-2V6a2 2 0 00-2-2H7a2 2 0 00-2 2v13z"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        {app.status === ApplicationStatus.PENDING && (
-                          <div className="flex gap-2 flex-shrink-0">
-                            <button
-                              onClick={() => handleAccept(app.id)}
-                              disabled={actionLoading === app.id}
-                              className="px-3 py-1.5 text-xs font-semibold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-all"
-                            >
-                              Chấp nhận
-                            </button>
-                            <button
-                              onClick={() => handleReject(app.id)}
-                              disabled={actionLoading === app.id}
-                              className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-all"
-                            >
-                              Từ chối
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Escrow Section for Online Jobs */}
-              {job.jobType === JobType.ONLINE && (
+              {job.jobType === JobType.ONLINE && job.paymentMethod === PaymentMethod.ESCROW && (
                 <EscrowSection job={job} />
               )}
 
@@ -588,13 +790,55 @@ export default function JobDetailPageClient({
 
             {/* Sidebar */}
             <div className="space-y-5">
+
+              {/* P2P Bank Account Info */}
+              {job.paymentMethod === PaymentMethod.P2P && (isEmployer || myApplication?.status === ApplicationStatus.ACCEPTED) && (
+                <div className="bg-blue-50 rounded-2xl border border-blue-200 p-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🤝</span>
+                    <h3 className="text-sm font-semibold text-blue-900">Thanh toán trực tiếp (P2P)</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-xs text-blue-700">Thông tin chuyển khoản để nhận tiền:</p>
+                    {p2pBankAccounts.length === 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2 border border-amber-200">
+                          ⚠ Bạn chưa cập nhật tài khoản ngân hàng.
+                        </p>
+                        <a href="/profile?section=bank" className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2 transition-all w-full justify-center">
+                          Thêm tài khoản ngay →
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {p2pBankAccounts.map(acc => (
+                          <div key={acc.id} className="bg-white rounded-xl border border-blue-100 p-3 flex gap-3 items-start">
+                            {acc.qrCodeUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={acc.qrCodeUrl} alt="QR" className="w-14 h-14 rounded-lg object-contain border border-gray-100 shrink-0" />
+                            ) : (
+                              <div className="w-14 h-14 rounded-lg bg-blue-50 flex items-center justify-center text-2xl shrink-0">🏦</div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-gray-900">{acc.bankName}</p>
+                              <p className="text-sm font-mono text-gray-800 mt-0.5">{acc.accountNumber}</p>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide">{acc.accountName}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Final Payment Confirmation - only after job completed */}
-              {myApplication?.status === ApplicationStatus.ACCEPTED && job.status === JobStatus.CLOSED && (
+              {(job.status === JobStatus.COMPLETED || job.status === JobStatus.SETTLED) && job.jobType !== JobType.ONLINE && (isEmployer || myApplication?.status === ApplicationStatus.ACCEPTED) && (
                 <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-5">
                   <h3 className="text-sm font-semibold text-emerald-800 mb-2">
-                    Thanh toán
+                    Xác nhận thanh toán
                   </h3>
-                  {!paymentConfirmed ? (
+                  {!isConfirmedByMe ? (
                     <button
                       onClick={handleConfirmPayment}
                       disabled={actionLoading === "payment"}
@@ -602,29 +846,31 @@ export default function JobDetailPageClient({
                     >
                       {actionLoading === "payment"
                         ? "Đang xử lý..."
-                        : "Xác nhận đã nhận thanh toán"}
+                        : isEmployer ? "Xác nhận đã thanh toán" : "Xác nhận đã nhận tiền"}
                     </button>
                   ) : (
-                    <p className="text-sm text-emerald-600 font-medium flex items-center gap-1">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Đã xác nhận thanh toán
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-emerald-600 font-medium flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Bạn đã xác nhận
+                      </p>
+                      {!isFullyConfirmed && (
+                        <p className="text-xs text-emerald-600/70">
+                          Chờ {isEmployer ? "người làm" : "người thuê"} xác nhận để hoàn tất...
+                        </p>
+                      )}
+                      {isFullyConfirmed && (
+                        <p className="text-xs font-bold text-emerald-700">
+                          ✓ Giao dịch hoàn tất
+                        </p>
+                      )}
+                    </div>
                   )}
 
                   {/* Dispute option */}
-                  {!hasOpenDispute && !paymentConfirmed && (
+                  {!hasOpenDispute && !isFullyConfirmed && (
                     <div className="mt-3 pt-3 border-t border-emerald-200">
                       {!showDisputeForm ? (
                         <button
@@ -690,12 +936,12 @@ export default function JobDetailPageClient({
                         <span className="text-gray-600">Thanh toán</span>
                         <span
                           className={
-                            p.confirmedByWorker
+                            (isEmployer ? p.confirmedByWorker : p.confirmedByEmployer)
                               ? "text-emerald-600 font-medium"
                               : "text-gray-400"
                           }
                         >
-                          {p.confirmedByWorker
+                          {(isEmployer ? p.confirmedByWorker : p.confirmedByEmployer)
                             ? "✓ Đã xác nhận"
                             : "Chờ xác nhận"}
                         </span>
@@ -743,6 +989,25 @@ export default function JobDetailPageClient({
                             />
                           </div>
                         </div>
+                        {myApplication.status ===
+                          ApplicationStatus.EMPLOYER_ACCEPTED && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => handleRespondAcceptance(false)}
+                              disabled={actionLoading === myApplication.id}
+                              className="w-full py-2.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 transition-all"
+                            >
+                              Từ chối
+                            </button>
+                            <button
+                              onClick={() => handleRespondAcceptance(true)}
+                              disabled={actionLoading === myApplication.id}
+                              className="w-full py-2.5 text-sm font-semibold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                            >
+                              Xác nhận làm việc
+                            </button>
+                          </div>
+                        )}
                         <Link
                           href={`/applications/${myApplication.id}/progress`}
                           className="flex items-center justify-center w-full py-2.5 text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all"
@@ -783,13 +1048,15 @@ export default function JobDetailPageClient({
               {/* Employer Actions */}
               {isEmployer && job.status === JobStatus.OPEN && (
                 <div className="bg-white rounded-2xl border border-blue-100 p-5 space-y-2">
-                  <button
-                    onClick={() => setShowCompleteConfirm(true)}
-                    disabled={actionLoading === "complete"}
-                    className="w-full py-2.5 text-sm font-semibold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all"
-                  >
-                    Hoàn thành công việc
-                  </button>
+                  {job.jobType !== JobType.ONLINE && job.paymentMethod !== PaymentMethod.ESCROW && (
+                    <button
+                      onClick={() => setShowCompleteConfirm(true)}
+                      disabled={actionLoading === "complete"}
+                      className="w-full py-2.5 text-sm font-semibold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                    >
+                      Hoàn thành công việc
+                    </button>
+                  )}
                   <button
                     onClick={() => setShowCancelConfirm(true)}
                     disabled={actionLoading === "cancel"}
@@ -801,7 +1068,7 @@ export default function JobDetailPageClient({
               )}
 
               {/* Estimated Earnings (Worker View) */}
-              {!isEmployer && job.salaryType === "HOURLY" && (
+              {!isEmployer && job.jobType !== JobType.ONLINE && job.salaryType === "HOURLY" && (
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -7,6 +7,8 @@ import {
   ApplyJobRequest,
   ApplicationProgress,
   ApplicationChatResponse,
+  ApplicationConversation,
+  PaymentConfirmation,
 } from "@/types";
 import { ApiSuccessResponse } from "@/types";
 
@@ -57,6 +59,10 @@ export const jobService = {
     return apiClient.post<Job>(`/jobs/${id}/cancel`);
   },
 
+  async negotiateDirectHirePrice(jobId: string, proposedPrice: number): Promise<JobApplication> {
+    return apiClient.put<JobApplication>(`/jobs/${jobId}/negotiate-price`, { proposedPrice });
+  },
+
   async applyForJob(
     jobId: string,
     data: ApplyJobRequest,
@@ -95,8 +101,55 @@ export const jobService = {
     );
   },
 
+  async respondApplicationAcceptance(
+    applicationId: string,
+    accept: boolean,
+  ): Promise<JobApplication> {
+    return apiClient.post<JobApplication>(
+      `/applications/${applicationId}/respond-acceptance`,
+      { accept },
+    );
+  },
+
+  async confirmPayment(id: string): Promise<PaymentConfirmation> {
+    return apiClient.post<PaymentConfirmation>(`/jobs/${id}/confirm-payment`);
+  },
+
+  // Invitations
+  async inviteWorkerToJob(jobId: string, workerId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/invite`, { workerId });
+  },
+
+  async respondToInvitation(invitationId: string, accept: boolean): Promise<any> {
+    return apiClient.post(`/invitations/${invitationId}/respond`, { accept });
+  },
+
+  async getMyInvitations(): Promise<any[]> {
+    return apiClient.get(`/invitations/my-invitations`);
+  },
+
   async completeJob(id: string): Promise<Job> {
     return apiClient.post<Job>(`/jobs/${id}/complete`);
+  },
+
+  async completeAssignment(jobId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/complete-assignment`);
+  },
+
+  async logHours(jobId: string, loggedHours: number): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/log-hours`, { loggedHours });
+  },
+
+  async confirmHours(jobId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/confirm-hours`);
+  },
+
+  async markPaid(jobId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/mark-paid`);
+  },
+
+  async confirmPaymentReceipt(jobId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/confirm-payment-receipt`);
   },
 
   async getWorkerHistory(): Promise<JobApplication[]> {
@@ -132,6 +185,10 @@ export const jobService = {
     return apiClient.get<ApplicationChatResponse>(
       `/applications/${applicationId}/messages`,
     );
+  },
+
+  async getMyConversations(): Promise<ApplicationConversation[]> {
+    return apiClient.get<ApplicationConversation[]>(`/applications/my-conversations`);
   },
 
   async postApplicationMessage(

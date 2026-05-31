@@ -1,16 +1,78 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts";
 import { cn } from "@/lib/utils";
 import { Role } from "@/types";
+import { jobService } from "@/services";
+import { toast } from "react-hot-toast";
+
+const MESSAGE_READ_KEY = "message_last_read_at_map_v1";
 
 export function Navbar() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+
+  const messageLinkHref = useMemo(() => "/messages", []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasUnreadMessages(false);
+      return;
+    }
+
+    let cancelled = false;
+    let lastSeenLatestMessageAt = "";
+
+    // Poll conversation list to detect unread/new messages globally.
+    const checkUnreadConversations = async () => {
+      try {
+        const conversations = await jobService.getMyConversations();
+        if (cancelled) return;
+
+        const raw = localStorage.getItem(MESSAGE_READ_KEY);
+        const readMap = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+
+        let unreadFound = false;
+        let latestUnreadAt = "";
+
+        for (const conversation of conversations) {
+          const lastMessageAt = conversation.lastMessage?.createdAt;
+          if (!lastMessageAt) continue;
+
+          const readAt = readMap[conversation.applicationId];
+          const isUnread = !readAt || new Date(lastMessageAt).getTime() > new Date(readAt).getTime();
+          if (isUnread) {
+            unreadFound = true;
+            if (!latestUnreadAt || new Date(lastMessageAt).getTime() > new Date(latestUnreadAt).getTime()) {
+              latestUnreadAt = lastMessageAt;
+            }
+          }
+        }
+
+        if (latestUnreadAt && latestUnreadAt !== lastSeenLatestMessageAt && pathname !== messageLinkHref) {
+          toast.success("Bạn có tin nhắn mới từ việc làm");
+        }
+
+        lastSeenLatestMessageAt = latestUnreadAt;
+        setHasUnreadMessages(unreadFound);
+      } catch {
+        // Ignore transient polling errors.
+      }
+    };
+
+    void checkUnreadConversations();
+    const intervalId = window.setInterval(checkUnreadConversations, 10000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [isAuthenticated, pathname, messageLinkHref]);
 
   const navLinks = [
     {
@@ -19,26 +81,29 @@ export function Navbar() {
       icon: "M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
     },
     { href: "/jobs/post", label: "Đăng việc", icon: "M12 4v16m8-8H4" },
-    { href: "/services", label: "Thuê ngay", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
     {
-      href: "/pricing",
-      label: "Bảng giá",
-      icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1",
+      href: "/services",
+      label: "Thuê ngay",
+      icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z",
+    },
+    {
+      href: "/messages",
+      label: "Tin nhắn ",
+      icon: "M8 10h8m-8 4h5m-7 7 4.684-4.684A2 2 0 0111.1 15.9H17a2 2 0 002-2V6a2 2 0 00-2-2H7a2 2 0 00-2 2v13z",
     },
   ];
 
   const userLinks = isAuthenticated
     ? [
         { href: "/dashboard", label: "Quản lý việc làm" },
+        { href: "/messages", label: "Tin nhắn " },
         { href: "/saved-jobs", label: "Việc đã lưu" },
         { href: "/profile", label: "Hồ sơ" },
       ]
     : [];
-  
+
   const workerLinks = isAuthenticated
-    ? [
-        { href: "/services/new", label: "Đăng Thuê Tôi" }
-      ]
+    ? [{ href: "/services/new", label: "Đăng Thuê Tôi" }]
     : [];
 
   return (
@@ -93,7 +158,12 @@ export function Navbar() {
                     d={link.icon}
                   />
                 </svg>
-                {link.label}
+                <span className="relative inline-flex items-center">
+                  {link.label}
+                  {link.href === messageLinkHref && hasUnreadMessages && (
+                    <span className="ml-1 inline-block h-2 w-2 rounded-full bg-red-500" />
+                  )}
+                </span>
               </Link>
             ))}
           </div>
@@ -110,6 +180,19 @@ export function Navbar() {
                     Admin
                   </Link>
                 )}
+
+                {/* Upgrade Button */}
+                <Link
+                  href="/pricing"
+                  className="relative flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-pink-500 text-white shadow-md shadow-orange-200 hover:shadow-lg hover:shadow-orange-300 hover:-translate-y-0.5 transition-all overflow-hidden group"
+                >
+                  <span className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                  </svg>
+                  Nâng cấp
+                </Link>
+
                 <Link
                   href="/notifications"
                   className="relative p-2 rounded-xl text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-all"
@@ -190,6 +273,16 @@ export function Navbar() {
                   Đăng nhập
                 </Link>
                 <Link
+                  href="/pricing"
+                  className="relative flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-amber-400 via-orange-400 to-pink-500 text-white shadow-md shadow-orange-200 hover:shadow-lg hover:shadow-orange-300 hover:-translate-y-0.5 transition-all overflow-hidden group"
+                >
+                  <span className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                  </svg>
+                  Nâng cấp Pro
+                </Link>
+                <Link
                   href="/register"
                   className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-sky-400 rounded-xl hover:shadow-md hover:shadow-blue-200 transition-all"
                 >
@@ -261,9 +354,25 @@ export function Navbar() {
                     d={link.icon}
                   />
                 </svg>
-                {link.label}
+                <span className="relative inline-flex items-center">
+                  {link.label}
+                  {link.href === messageLinkHref && hasUnreadMessages && (
+                    <span className="ml-1 inline-block h-2 w-2 rounded-full bg-red-500" />
+                  )}
+                </span>
               </Link>
             ))}
+            {/* Mobile Upgrade */}
+            <Link
+              href="/pricing"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-amber-400 to-orange-400 text-white"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+              Nâng cấp Pro
+            </Link>
             {isAuthenticated ? (
               <>
                 {userLinks.map((link) => (

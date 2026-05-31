@@ -53,4 +53,8 @@ export const workerServiceAPI = {
   async deleteService(id: string): Promise<void> {
     return apiClient.delete(`/worker-services/${id}`);
   },
+
+  async hireDirectly(id: string, data: any): Promise<any> {
+    return apiClient.post(`/worker-services/${id}/hire`, data);
+  },
 };

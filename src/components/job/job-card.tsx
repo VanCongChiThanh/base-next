@@ -38,12 +38,21 @@ export function JobCard({ job }: JobCardProps) {
       ? badgeConfig[profile.badge]
       : null;
 
+  const isEmployerVerified =
+    job.employer?.verificationLevel === "BASIC" ||
+    job.employer?.verificationLevel === "BUSINESS";
+
   return (
     <Link href={`/jobs/${job.id}`} className="block group">
       <div className="bg-white rounded-2xl border border-blue-100 p-5 hover:shadow-lg hover:shadow-blue-100/50 hover:border-blue-200 transition-all duration-300 h-full flex flex-col relative">
         {/* Trust Badges */}
-        {(badge || profile?.isVerifiedBusiness) && (
+        {(badge || profile?.isVerifiedBusiness || !isEmployerVerified) && (
           <div className="flex flex-wrap gap-1.5 mb-2">
+            {!isEmployerVerified && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-300">
+                ⚠️ Chưa xác thực
+              </span>
+            )}
             {badge && (
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${badge.color}`}

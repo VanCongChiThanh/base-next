@@ -11,6 +11,7 @@ import {
   MilestoneStatus,
   OnlinePaymentType,
   ExperienceLevel,
+  PaymentMethod,
 } from "./enums";
 
 export type PrivacyVisibility = "PUBLIC" | "ACCEPTED_ONLY" | "PRIVATE";
@@ -44,6 +45,8 @@ export interface ApplicationProgress {
   jobId: string;
   jobTitle: string;
   jobAddress: string;
+  jobType: string;
+  onlinePaymentType: string;
   startTime: string;
   endTime: string;
   salaryPerHour: number;
@@ -58,6 +61,8 @@ export interface ApplicationProgress {
     checkedInAt: string | null;
     completedAt: string | null;
     notes: string | null;
+    loggedHours: number | null;
+    hoursSubmittedBy: string | null;
   } | null;
 }
 
@@ -79,6 +84,16 @@ export interface ApplicationChatMessage {
 export interface ApplicationChatResponse {
   messages: ApplicationChatMessage[];
   canSend: boolean;
+}
+
+export interface ApplicationConversation {
+  applicationId: string;
+  applicationStatus: ApplicationStatus;
+  jobId: string;
+  jobTitle: string;
+  isDirectHire: boolean;
+  participant?: ApplicationChatSender | null;
+  lastMessage: ApplicationChatMessage | null;
 }
 
 export interface JobCategory {
@@ -142,9 +157,12 @@ export interface Job {
   distance?: number;
   createdAt: string;
   updatedAt: string;
+  isDirectHire?: boolean;
+  targetWorkerId?: string | null;
   
   // JobType & specific fields
   jobType?: JobType;
+  paymentMethod?: PaymentMethod;
   
   // PART_TIME fields
   contractDuration?: string;
@@ -175,6 +193,8 @@ export interface JobApplication {
     firstName: string;
     lastName: string;
     avatarUrl: string | null;
+    verificationLevel?: string;
+    workerProfile?: any;
   };
   job?: Job;
 }
@@ -189,6 +209,8 @@ export interface JobAssignment {
   checkedInAt: string | null;
   completedAt: string | null;
   notes: string | null;
+  loggedHours?: number;
+  hoursSubmittedBy?: string;
 }
 
 export interface Review {
@@ -290,7 +312,7 @@ export interface CreateJobRequest {
   salaryType?: JobSalaryType;
   requiredWorkers: number;
   startTime: string;
-  endTime: string;
+  endTime?: string;
   provinceCode: string;
   wardCode: string;
   address: string;
@@ -298,13 +320,20 @@ export interface CreateJobRequest {
   longitude?: number;
   skillIds?: string[];
   jobType?: JobType;
+  paymentMethod?: PaymentMethod;
   // Part-time fields
   contractDuration?: string;
   workSchedule?: string;
   paymentNote?: string;
   // Online fields
+  onlinePaymentType?: OnlinePaymentType;
   totalBudget?: number;
+  hourlyRateMin?: number;
+  hourlyRateMax?: number;
+  deadline?: string;
+  experienceLevel?: ExperienceLevel;
   deliverableType?: string;
+  projectScope?: string;
 }
 
 export interface ApplyJobRequest {
@@ -366,6 +395,7 @@ export interface PaymentConfirmation {
   amount: number;
   status: PaymentStatus;
   confirmedByWorker: boolean;
+  confirmedByEmployer: boolean;
   confirmedAt: string | null;
   note: string | null;
   job?: Job;
@@ -446,3 +476,24 @@ export interface MatchedCandidate {
   isAvailable: boolean;
   profileUrl: string;
 }
+
+export interface BankAccount {
+  id: string;
+  userId: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  qrCodeUrl: string | null;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface CreateBankAccountRequest {
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  qrCodeUrl?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateBankAccountRequest extends Partial<CreateBankAccountRequest> {}

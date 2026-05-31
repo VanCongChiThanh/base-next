@@ -124,11 +124,11 @@ export function ReviewSection({ jobId, reviews, canReview, revieweeId, currentUs
           {reviews.map((review) => (
             <div key={review.id} className="flex gap-3 py-3 border-b border-gray-50 last:border-0">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-sky-300 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                {review.reviewer.firstName?.charAt(0)}{review.reviewer.lastName?.charAt(0)}
+                {review.reviewer?.firstName?.charAt(0) || "U"}{review.reviewer?.lastName?.charAt(0) || ""}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-sm font-medium text-gray-900">{review.reviewer.firstName} {review.reviewer.lastName}</span>
+                  <span className="text-sm font-medium text-gray-900">{review.reviewer?.firstName || "Người dùng"} {review.reviewer?.lastName || ""}</span>
                   <StarRating value={review.rating} readonly />
                 </div>
                 {review.comment && <p className="text-sm text-gray-600">{review.comment}</p>}

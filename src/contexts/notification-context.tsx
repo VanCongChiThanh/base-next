@@ -10,7 +10,7 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Notification } from "@/types";
+import { Notification, NotificationType } from "@/types";
 import { notificationService } from "@/services";
 import { getNotificationRoute } from "@/lib";
 import { useAuth } from "./auth-context";
@@ -38,6 +38,8 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 
 const LIMIT = 20;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const isMessageNotification = (notification: Notification) =>
+  notification.type === NotificationType.APPLICATION_MESSAGE;
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -60,15 +62,23 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           page: pageNum,
           limit: LIMIT,
         });
+        const filteredNotifications = response.notifications.filter(
+          (item) => !isMessageNotification(item),
+        );
 
         if (pageNum === 1) {
-          setNotifications(response.notifications);
+          setNotifications(filteredNotifications);
         } else {
-          setNotifications((prev) => [...prev, ...response.notifications]);
+          setNotifications((prev) => [...prev, ...filteredNotifications]);
         }
 
-        setUnreadCount(response.unreadCount);
-        setTotal(response.pagination?.total || 0);
+        setUnreadCount(
+          filteredNotifications.reduce(
+            (count, item) => count + (item.isRead ? 0 : 1),
+            0,
+          ),
+        );
+        setTotal(filteredNotifications.length);
         setPage(pageNum);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -179,18 +189,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         }
 
         // Thêm notification mới vào đầu list
-        setNotifications((prev) => [notification, ...prev]);
-        setUnreadCount((prev) => prev + 1);
-        setTotal((prev) => prev + 1);
-        // Show toast
-        setToasts((prev) => [notification, ...prev].slice(0, 5)); // Max 5 toasts
+        if (!isMessageNotification(notification)) {
+          setNotifications((prev) => [notification, ...prev]);
+          setUnreadCount((prev) => prev + 1);
+          setTotal((prev) => prev + 1);
+          setToasts((prev) => [notification, ...prev].slice(0, 5)); // Max 5 toasts
+        }
       } catch (error) {
         console.error("Failed to parse SSE notification:", error);
       }
     };
 
     eventSource.onerror = () => {
-      console.error("SSE connection error");
+      // Dùng console.warn thay vì console.error để tránh bị Next.js báo lỗi overlay khó chịu trong dev
+      console.warn("SSE connection error (reconnecting...)");
       eventSource.close();
       // Retry sau 5s
       setTimeout(() => {

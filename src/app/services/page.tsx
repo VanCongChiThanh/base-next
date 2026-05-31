@@ -7,10 +7,13 @@ import { Footer } from "@/components/layout/footer";
 import { workerServiceAPI, locationService, categoryService } from "@/services";
 import { WorkerService, Province, JobCategory } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
-import { useEntitlements } from "@/contexts";
+import { useEntitlements, useAuth } from "@/contexts";
+import toast from "react-hot-toast";
+import { DirectHireModal } from "@/components/services/direct-hire-modal";
 
 export default function ServicesPage() {
   const { hasFeature } = useEntitlements();
+  const { user } = useAuth();
   const [services, setServices] = useState<WorkerService[]>([]);
   const [loading, setLoading] = useState(false);
   const [provinces, setProvinces] = useState<Province[]>([]);
@@ -20,6 +23,10 @@ export default function ServicesPage() {
   const [searchMode, setSearchMode] = useState<"AI" | "MANUAL">("AI");
   const [aiQuery, setAiQuery] = useState("");
   const [aiSearching, setAiSearching] = useState(false);
+
+  // Modal state
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<WorkerService | null>(null);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -73,7 +80,7 @@ export default function ServicesPage() {
     
     // Check entitlement using hasFeature
     if (!hasFeature("ai.cv_screening.enabled")) {
-      alert("Sử dụng AI tìm kiếm ứng viên yêu cầu gói cao cấp.");
+      toast.error("Sử dụng AI tìm kiếm ứng viên yêu cầu gói cao cấp.");   
       return;
     }
 
@@ -99,7 +106,7 @@ export default function ServicesPage() {
     const coverImage = hasImage ? service.portfolioUrls[0] : "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800"; // Fallback professional image
 
     return (
-      <div key={service.id} className="min-w-[90vw] md:min-w-0 bg-white rounded-3xl shadow-md hover:shadow-xl border border-gray-100 transition-all group flex flex-col snap-center overflow-hidden flex-shrink-0 h-[650px] md:h-[600px] relative">
+      <div key={service.id} className="w-full bg-white rounded-3xl shadow-md hover:shadow-xl border border-gray-100 transition-all group flex flex-col overflow-hidden h-[650px] md:h-[600px] relative">
         
         {/* Cover Image Header */}
         <div className="relative h-64 md:h-56 shrink-0 w-full overflow-hidden">
@@ -157,8 +164,9 @@ export default function ServicesPage() {
                  {service.category?.name || "Dịch vụ"}
               </span>
             </div>
-            <div className="bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-lg font-bold text-base whitespace-nowrap shadow-sm border border-yellow-100">
-              {Number(service.price).toLocaleString('vi-VN')}đ
+            <div className="flex flex-col items-end bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-lg font-bold whitespace-nowrap shadow-sm border border-yellow-100">
+              <span className="text-base">{Number(service.price).toLocaleString('vi-VN')}đ</span>
+              <span className="text-[10px] font-medium opacity-80">(Đề xuất)</span>
             </div>
           </div>
 
@@ -195,12 +203,17 @@ export default function ServicesPage() {
            >
              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
            </Link>
-           <Link
-             href={`/jobs/post?hire_id=${service.workerId}`}
-             className="flex-1 flex items-center justify-center gap-2 py-3 text-center text-sm font-bold text-white bg-[#007bfe] rounded-2xl hover:bg-blue-600 shadow-lg shadow-blue-500/30 transition-all active:scale-95"
-           >
-             Thuê ngay
-           </Link>
+           {service.workerId !== user?.id && (
+             <button
+               onClick={() => {
+                 setSelectedService(service);
+                 setIsHireModalOpen(true);
+               }}
+               className="flex-1 flex items-center justify-center gap-2 py-3 text-center text-sm font-bold text-white bg-[#007bfe] rounded-2xl hover:bg-blue-600 shadow-lg shadow-blue-500/30 transition-all active:scale-95"
+             >
+               Thuê ngay
+             </button>
+           )}
         </div>
       </div>
     );
@@ -259,7 +272,7 @@ export default function ServicesPage() {
                     </div>
                     <input
                       type="text"
-                      placeholder="Mô tả nhu cầu của bạn. VD: Tôi cần một người thợ sửa ống nước đến ngay tại Quận 1..."
+                      placeholder="Mô tả nhu cầu của bạn. VD: Tôi cần một người thợ sửa điều hoà đến ngay tại Quận 1..."
                       value={aiQuery}
                       onChange={(e) => setAiQuery(e.target.value)}
                       className="w-full py-4 px-4 text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 text-base"
@@ -365,11 +378,9 @@ export default function ServicesPage() {
                   </span>
                 </div>
               )}
-              {/* Lướt qua từng người trên mobile, grid trên desktop */}
-              <div className="flex overflow-x-auto pb-10 pt-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory hide-scrollbar gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6 md:overflow-visible">                
+              {/* Grid hiển thị danh sách ứng viên, tự co giãn 1 cột trên mobile, nhiều cột trên desktop */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10 pt-2">                
                 {services.map(renderServiceCard)}
-
-                <div className="w-1 shrink-0 md:hidden h-1 block"></div>
               </div>
             </>
           )}
@@ -386,6 +397,14 @@ export default function ServicesPage() {
         }
       `}</style>
       <Footer />
+      <DirectHireModal 
+        isOpen={isHireModalOpen} 
+        onClose={() => {
+          setIsHireModalOpen(false);
+          setSelectedService(null);
+        }} 
+        service={selectedService} 
+      />
     </>
   );
 }
