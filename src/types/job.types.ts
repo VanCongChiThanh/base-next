@@ -49,7 +49,9 @@ export interface ApplicationProgress {
   onlinePaymentType: string;
   startTime: string;
   endTime: string;
+  salaryType?: string | null;
   salaryPerHour: number;
+  totalBudget?: number | null;
   currentStep: number;
   steps: ProgressStep[];
   workerInfo: Record<string, unknown>;
@@ -159,6 +161,7 @@ export interface Job {
     firstName: string;
     lastName: string;
     avatarUrl: string | null;
+    verificationLevel?: string;
   };
   jobSkills: JobSkill[];
   applications?: JobApplication[];
