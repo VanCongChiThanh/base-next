@@ -201,7 +201,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
 
     eventSource.onerror = () => {
-      console.error("SSE connection error");
+      // Dùng console.warn thay vì console.error để tránh bị Next.js báo lỗi overlay khó chịu trong dev
+      console.warn("SSE connection error (reconnecting...)");
       eventSource.close();
       // Retry sau 5s
       setTimeout(() => {

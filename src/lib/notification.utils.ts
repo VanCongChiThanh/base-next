@@ -247,13 +247,13 @@ export function getNotificationRoute(
   if (!refType || !refId) {
     switch (notification.type) {
       case NotificationType.JOB_APPLICATION_RECEIVED:
-      case NotificationType.JOB_CHECKED_IN:
-      case NotificationType.APPLICATION_CANCELLED:
-      case NotificationType.JOB_COMPLETED:
       case NotificationType.JOB_CANCELLED:
-      case NotificationType.PAYMENT_CONFIRMED:
         return dataJobId ? `/jobs/${dataJobId}` : null;
 
+      case NotificationType.JOB_COMPLETED:
+      case NotificationType.JOB_CHECKED_IN:
+      case NotificationType.APPLICATION_CANCELLED:
+      case NotificationType.PAYMENT_CONFIRMED:
       case NotificationType.JOB_APPLICATION_ACCEPTED:
       case NotificationType.JOB_APPLICATION_REJECTED:
         return dataApplicationId

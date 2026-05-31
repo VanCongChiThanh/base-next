@@ -1068,7 +1068,7 @@ export default function JobDetailPageClient({
               )}
 
               {/* Estimated Earnings (Worker View) */}
-              {!isEmployer && job.salaryType === "HOURLY" && (
+              {!isEmployer && job.jobType !== JobType.ONLINE && job.salaryType === "HOURLY" && (
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

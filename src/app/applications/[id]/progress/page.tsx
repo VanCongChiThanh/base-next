@@ -41,6 +41,7 @@ export default function ApplicationProgressPage() {
   const { progress, isLoading, error, refresh } = useLiveProgress(id);
   const [actionLoading, setActionLoading] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
   // Auto-open chat if ?chat=1 is in the URL (e.g., from notification click)
   useEffect(() => {
@@ -66,6 +67,7 @@ export default function ApplicationProgressPage() {
 
   const handleComplete = async () => {
     if (!progress) return;
+    setShowCompleteConfirm(false);
     setActionLoading(true);
     try {
       await jobService.completeAssignment(progress.jobId);
@@ -298,7 +300,7 @@ export default function ApplicationProgressPage() {
         <ApplicationProgressBar
           progress={progress}
           onCheckIn={handleCheckIn}
-          onComplete={handleComplete}
+          onComplete={() => setShowCompleteConfirm(true)}
           onCancel={() => setShowCancelConfirm(true)}
           isLoading={actionLoading}
           viewAs={viewAs}
@@ -339,6 +341,17 @@ export default function ApplicationProgressPage() {
         message="Bạn có chắc chắn muốn rút đơn ứng tuyển này? Hành động này không thể hoàn tác."
         variant="danger"
         confirmLabel="Rút đơn"
+        isLoading={actionLoading}
+      />
+
+      <ConfirmModal
+        isOpen={showCompleteConfirm}
+        onClose={() => setShowCompleteConfirm(false)}
+        onConfirm={handleComplete}
+        title="Hoàn thành công việc"
+        message={viewAs === "worker" ? "Xác nhận rằng bạn đã hoàn tất công việc (và đã nhận đủ tiền nếu thu tiền mặt)?" : "Xác nhận rằng công việc này đã được hoàn thành tốt đẹp?"}
+        confirmLabel="Xác nhận hoàn thành"
+        variant="success"
         isLoading={actionLoading}
       />
     </div>

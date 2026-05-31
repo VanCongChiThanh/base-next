@@ -197,6 +197,10 @@ export function ApplicationProgressBar({
     }
   }
 
+  const isHourly = progress.jobType === "ONLINE" 
+    ? progress.onlinePaymentType === "HOURLY_RATE" 
+    : progress.salaryType === "HOURLY";
+
   return (
     <div className="bg-white border md:border-2 border-blue-50 md:border-blue-100 rounded-2xl overflow-hidden shadow-xl shadow-blue-100/50">
       {/* Header */}
@@ -429,125 +433,137 @@ export function ApplicationProgressBar({
 
           {/* Actions */}
           <div className="pt-2">
-            {/* HOURLY ONLINE ACTIONS */}
-            {progress.jobType === "ONLINE" && progress.onlinePaymentType === "HOURLY_RATE" && (
-              <div className="space-y-3">
-                {(isInProgress || isAssigned) && onLogHours && (
-                  <button
-                    onClick={() => setShowLogHoursModal(true)}
-                    disabled={isLoading}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-semibold transition-all shadow-lg hover:shadow-blue-200 disabled:opacity-50"
-                  >
-                    {isLoading ? "Đang xử lý..." : "Hoàn thành công việc"}
-                  </button>
-                )}
-                {assignment?.status === "HOURS_SUBMITTED" && onConfirmHours && (
-                  <div className="space-y-2 bg-amber-50 rounded-xl border border-amber-200 p-3">
-                    <p className="text-sm font-medium text-amber-900">
-                      Báo cáo số giờ đã làm: <b>{assignment.loggedHours} giờ</b>
-                    </p>
-                    {String(currentUserId) !== String(assignment.hoursSubmittedBy) ? (
+            <div className="space-y-3">
+              {/* 1. INITIAL ACTIONS (IN_PROGRESS or ASSIGNED) */}
+              {(isAssigned || isInProgress) && (
+                <>
+                  {/* Gig check-in specific */}
+                  {isAssigned && onCheckIn && progress.jobType === "GIG" && viewAs === "worker" && (
+                    <button
+                      onClick={onCheckIn}
+                      disabled={isLoading}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-semibold transition-all shadow-lg hover:shadow-blue-200 disabled:opacity-50"
+                    >
+                      {isLoading ? "Processing..." : "📍 Đã có mặt (Check-in)"}
+                    </button>
+                  )}
+
+                  {/* Hourly Job: Log Hours */}
+                  {isHourly && onLogHours && viewAs === "worker" && (
+                    <button
+                      onClick={() => setShowLogHoursModal(true)}
+                      disabled={isLoading}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-semibold transition-all shadow-lg hover:shadow-blue-200 disabled:opacity-50"
+                    >
+                      {isLoading ? "Processing..." : "Báo cáo số giờ làm"}
+                    </button>
+                  )}
+
+                  {/* Fixed Job: Complete Assignment */}
+                  {!isHourly && onComplete && (
+                    <div className="space-y-1">
                       <button
-                        onClick={onConfirmHours}
+                        onClick={onComplete}
                         disabled={isLoading}
-                        className="w-full py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-all disabled:opacity-50"
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-sm font-semibold transition-all shadow-lg hover:shadow-emerald-200 disabled:opacity-50"
                       >
-                        {isLoading ? "Đang xử lý..." : "Xác nhận số giờ làm"}
+                        {isLoading ? "Processing..." : "✅ Hoàn thành công việc"}
                       </button>
-                    ) : (
-                      <p className="text-xs text-amber-700 italic">Đang chờ đối tác xác nhận...</p>
-                    )}
-                  </div>
-                )}
-                {assignment?.status === "PAYMENT_PENDING" && (
-                  <div className="space-y-2">
-                    {viewAs === "employer" ? (
-                      <button
-                        onClick={onMarkPaid}
-                        disabled={isLoading}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold transition-all hover:shadow-lg disabled:opacity-50"
-                      >
-                        {isLoading ? "Đang xử lý..." : "Xác nhận đã thanh toán"}
-                      </button>
-                    ) : (
-                      <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                        <p className="text-sm text-blue-800 text-center">Đang chờ nhà tuyển dụng thanh toán...</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {assignment?.status === "PAYMENT_SENT" && (
-                  <div className="space-y-2">
-                    {viewAs === "worker" ? (
+                      {viewAs === "worker" && (
+                        <p className="text-[11px] text-gray-500 text-center italic">
+                          Lưu ý: Chỉ xác nhận hoàn thành khi bạn đã hoàn tất công việc (và đã nhận đủ tiền nếu là tiền mặt).
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* 2. HOURS SUBMITTED STATE (Hourly jobs only) */}
+              {assignment?.status === "HOURS_SUBMITTED" && onConfirmHours && (
+                <div className="space-y-2 bg-amber-50 rounded-xl border border-amber-200 p-3">
+                  <p className="text-sm font-medium text-amber-900">
+                    Báo cáo số giờ đã làm: <b>{assignment.loggedHours} giờ</b>
+                  </p>
+                  {String(currentUserId) !== String(assignment.hoursSubmittedBy) ? (
+                    <button
+                      onClick={onConfirmHours}
+                      disabled={isLoading}
+                      className="w-full py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-all disabled:opacity-50"
+                    >
+                      {isLoading ? "Processing..." : "Xác nhận số giờ làm"}
+                    </button>
+                  ) : (
+                    <p className="text-xs text-amber-700 italic">Đang chờ đối tác xác nhận...</p>
+                  )}
+                </div>
+              )}
+
+              {/* 3. PAYMENT PENDING STATE */}
+              {assignment?.status === "PAYMENT_PENDING" && (
+                <div className="space-y-2">
+                  {viewAs === "employer" ? (
+                    <button
+                      onClick={onMarkPaid}
+                      disabled={isLoading}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold transition-all hover:shadow-lg disabled:opacity-50"
+                    >
+                      {isLoading ? "Processing..." : "Xác nhận đã thanh toán"}
+                    </button>
+                  ) : (
+                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                      <p className="text-sm text-blue-800 text-center">Đang chờ nhà tuyển dụng xác nhận thanh toán...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 4. PAYMENT SENT STATE */}
+              {assignment?.status === "PAYMENT_SENT" && (
+                <div className="space-y-2">
+                  {viewAs === "worker" ? (
+                    <div className="space-y-1">
                       <button
                         onClick={onConfirmReceipt}
                         disabled={isLoading}
                         className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold transition-all hover:shadow-lg disabled:opacity-50"
                       >
-                        {isLoading ? "Đang xử lý..." : "Xác nhận đã nhận đủ thanh toán"}
+                        {isLoading ? "Processing..." : "Xác nhận đã nhận đủ thanh toán"}
                       </button>
-                    ) : (
-                      <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                        <p className="text-sm text-blue-800 text-center">Đang chờ ứng viên xác nhận đã nhận tiền...</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {viewAs === "worker" && (
-                  <Link
-                    href={`/jobs/${progress.jobId}`}
-                    className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition-all shadow-sm"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                    Quản lý giao việc / Thanh toán
-                  </Link>
-                )}
-              </div>
-            )}
+                      <p className="text-[11px] text-red-500 text-center italic mt-1 font-medium">
+                        Lưu ý: Bạn chỉ được bấm xác nhận này khi thực tế đã nhận được tiền.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                      <p className="text-sm text-blue-800 text-center">Đang chờ ứng viên xác nhận đã nhận tiền...</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
-            {/* GIG & PART TIME ACTIONS */}
-            {viewAs === "worker" && progress.jobType !== "ONLINE" && (
-              <>
-                {isAssigned && onCheckIn && progress.jobType === "GIG" && (
-                  <button
-                    onClick={onCheckIn}
-                    disabled={isLoading}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-semibold transition-all shadow-lg hover:shadow-blue-200 disabled:opacity-50"
-                  >
-                    {isLoading ? "Đang xử lý..." : "📍 Đã có mặt (Check-in)"}
-                  </button>
-                )}
-                {(isAssigned || isInProgress) && onComplete && progress.jobType === "GIG" && (
-                  <button
-                    onClick={onComplete}
-                    disabled={isLoading}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-sm font-semibold transition-all shadow-lg hover:shadow-emerald-200 disabled:opacity-50"
-                  >
-                    {isLoading ? "Đang xử lý..." : "✅ Hoàn thành ca làm"}
-                  </button>
-                )}
-                {isPending && onCancel && (
-                  <button
-                    onClick={onCancel}
-                    disabled={isLoading}
-                    className="w-full py-3 mt-2 rounded-xl bg-white hover:bg-red-50 border border-red-200 text-red-600 font-medium text-sm transition-all disabled:opacity-50"
-                  >
-                    {isLoading ? "Đang xử lý..." : "Rút đơn ứng tuyển"}
-                  </button>
-                )}
-              </>
-            )}
+              {/* CANCEL PENDING APPLICATION */}
+              {isPending && onCancel && viewAs === "worker" && (
+                <button
+                  onClick={onCancel}
+                  disabled={isLoading}
+                  className="w-full py-3 mt-2 rounded-xl bg-white hover:bg-red-50 border border-red-200 text-red-600 font-medium text-sm transition-all disabled:opacity-50"
+                >
+                  {isLoading ? "Processing..." : "Rút đơn ứng tuyển"}
+                </button>
+              )}
 
-            {/* ONLINE FIXED PRICE (OR DEFAULT) */}
-            {viewAs === "worker" && progress.jobType === "ONLINE" && progress.onlinePaymentType !== "HOURLY_RATE" && (
-              <Link
-                href={`/jobs/${progress.jobId}`}
-                className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition-all shadow-sm"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                Quản lý giao việc / Thanh toán
-              </Link>
-            )}
+              {/* FALLBACK MANAGEMENT LINK */}
+              {viewAs === "worker" && (
+                <Link
+                  href={`/jobs/${progress.jobId}`}
+                  className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition-all shadow-sm"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  Quản lý giao việc / Thanh toán
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
