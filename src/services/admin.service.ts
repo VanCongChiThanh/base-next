@@ -93,6 +93,14 @@ export const adminService = {
     return apiClient.delete(`/users/${id}`);
   },
 
+  async createOrganization(data: any): Promise<User> {
+    return apiClient.post<User>("/users/admin/organization", data);
+  },
+
+  async assignPlan(userId: string, data: { planCode: string; note?: string }): Promise<any> {
+    return apiClient.post(`/subscriptions/admin/assign/${userId}`, data);
+  },
+
   // ==================== DASHBOARD STATS ====================
   async getDashboardStats(): Promise<DashboardStats> {
     return apiClient.get<DashboardStats>("/admin/stats");

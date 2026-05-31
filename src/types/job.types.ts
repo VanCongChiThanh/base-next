@@ -193,6 +193,8 @@ export interface JobApplication {
     firstName: string;
     lastName: string;
     avatarUrl: string | null;
+    verificationLevel?: string;
+    workerProfile?: any;
   };
   job?: Job;
 }

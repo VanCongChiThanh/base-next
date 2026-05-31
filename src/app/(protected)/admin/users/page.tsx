@@ -13,6 +13,8 @@ import {
 import { adminService } from "@/services";
 import { User, Role, ApiError } from "@/types";
 import { getErrorMessage } from "@/lib/api-client";
+import { CreateOrganizationModal } from "./CreateOrganizationModal";
+import { AssignPlanModal } from "./AssignPlanModal";
 
 const ROLE_OPTIONS = [
   { value: Role.USER, label: "User" },
@@ -50,10 +52,15 @@ export default function AdminUsersPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [roleChangeTarget, setRoleChangeTarget] = useState<User | null>(null);
   const [isChangingRole, setIsChangingRole] = useState(false);
+  const [assignPlanTarget, setAssignPlanTarget] = useState<User | null>(null);
+  const [isAssigningPlan, setIsAssigningPlan] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
 
   const limit = 10;
 
@@ -129,6 +136,34 @@ export default function AdminUsersPage() {
       showToast(getErrorMessage(err as ApiError), "error");
     } finally {
       setIsChangingRole(false);
+    }
+  };
+
+  const handleAssignPlan = async (userId: string, data: { planCode: string; note: string }) => {
+    setIsAssigningPlan(true);
+    try {
+      await adminService.assignPlan(userId, data);
+      showToast("Nâng cấp gói thành công", "success");
+      setAssignPlanTarget(null);
+      // Giữ nguyên trang, refresh
+    } catch (err) {
+      showToast(getErrorMessage(err as ApiError), "error");
+    } finally {
+      setIsAssigningPlan(false);
+    }
+  };
+
+  const handleCreateOrganization = async (data: any) => {
+    setIsCreatingOrg(true);
+    try {
+      await adminService.createOrganization(data);
+      showToast("Organization created successfully", "success");
+      setIsCreateModalOpen(false);
+      fetchUsers();
+    } catch (err) {
+      showToast(getErrorMessage(err as ApiError), "error");
+    } finally {
+      setIsCreatingOrg(false);
     }
   };
 
@@ -227,6 +262,18 @@ export default function AdminUsersPage() {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setAssignPlanTarget(user);
+            }}
+            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+            title="Nâng cấp gói"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
               setDeleteTarget(user);
             }}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -254,12 +301,23 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage user accounts and permissions ·{" "}
-          <span className="font-medium text-gray-700">{total}</span> total users
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage user accounts and permissions ·{" "}
+            <span className="font-medium text-gray-700">{total}</span> total users
+          </p>
+        </div>
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Create Organization
+        </button>
       </div>
 
       {/* Filters */}
@@ -331,6 +389,23 @@ export default function AdminUsersPage() {
         confirmText="Confirm"
         variant="warning"
         isLoading={isChangingRole}
+      />
+
+      {/* Create Organization Modal */}
+      <CreateOrganizationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateOrganization}
+        isLoading={isCreatingOrg}
+      />
+
+      {/* Assign Plan Modal */}
+      <AssignPlanModal
+        isOpen={!!assignPlanTarget}
+        onClose={() => setAssignPlanTarget(null)}
+        onSubmit={handleAssignPlan}
+        isLoading={isAssigningPlan}
+        user={assignPlanTarget}
       />
 
       {/* Toast */}

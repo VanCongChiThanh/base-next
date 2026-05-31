@@ -542,6 +542,23 @@ export function ApplicationProgressBar({
                 </div>
               )}
 
+              {/* 5. COMPLETED STATE */}
+              {assignment?.status === "COMPLETED" && (
+                <div className="space-y-3">
+                  <div className="p-4 bg-green-50 rounded-xl border border-green-200 text-center">
+                    <span className="text-2xl mb-1 block">🎉</span>
+                    <h3 className="text-sm font-bold text-green-900">Công việc hoàn tất!</h3>
+                    <p className="text-xs text-green-700 mt-1">Giao dịch đã được xác nhận thành công.</p>
+                  </div>
+                  <Link
+                    href={`/jobs/${progress.jobId}`}
+                    className="flex items-center justify-center w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                  >
+                    Xem chi tiết & Đánh giá đối tác
+                  </Link>
+                </div>
+              )}
+
               {/* CANCEL PENDING APPLICATION */}
               {isPending && onCancel && viewAs === "worker" && (
                 <button
@@ -554,13 +571,13 @@ export function ApplicationProgressBar({
               )}
 
               {/* FALLBACK MANAGEMENT LINK */}
-              {viewAs === "worker" && (
+              {assignment?.status !== "COMPLETED" && (
                 <Link
                   href={`/jobs/${progress.jobId}`}
                   className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition-all shadow-sm"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                  Quản lý giao việc / Thanh toán
+                  Về trang chi tiết công việc
                 </Link>
               )}
             </div>
