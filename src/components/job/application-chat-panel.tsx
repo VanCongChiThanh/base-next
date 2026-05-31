@@ -3,16 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts";
 import { jobService } from "@/services";
-import { ApplicationChatMessage, ApplicationStatus } from "@/types";
+import { ApplicationChatMessage, ApplicationStatus, ApplicationChatResponse } from "@/types";
 import { formatDate, getInitials } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/api-client";
 import type { ApiError } from "@/types";
+import toast from "react-hot-toast";
 
 interface Props {
   applicationId: string;
   applicationStatus: ApplicationStatus;
+  isDirectHire?: boolean;
   canAccess?: boolean;
   embedded?: boolean;
+  onActionSuccess?: () => void;
 }
 
 /** Optimistic message — shown immediately while sending */
@@ -57,8 +60,10 @@ function ChatAvatar({ firstName, lastName, avatarUrl, mine }: { firstName?: stri
 export function ApplicationChatPanel({
   applicationId,
   applicationStatus,
+  isDirectHire = false,
   canAccess = true,
   embedded = false,
+  onActionSuccess,
 }: Props) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<OptimisticMessage[]>([]);
@@ -70,6 +75,11 @@ export function ApplicationChatPanel({
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // Negotiation state
+  const [jobDetails, setJobDetails] = useState<ApplicationChatResponse["jobDetails"]>();
+  const [isNegotiating, setIsNegotiating] = useState(false);
+  const [negotiatedPrice, setNegotiatedPrice] = useState("");
+
   const lastRealMessageId = useMemo(
     () => messages.filter((m) => !m.isOptimistic).at(-1)?.id ?? null,
     [messages],
@@ -77,7 +87,8 @@ export function ApplicationChatPanel({
 
   const isChatActive =
     applicationStatus === ApplicationStatus.ACCEPTED ||
-    applicationStatus === ApplicationStatus.EMPLOYER_ACCEPTED;
+    applicationStatus === ApplicationStatus.EMPLOYER_ACCEPTED ||
+    applicationStatus === ApplicationStatus.PENDING;
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     const el = scrollerRef.current;
@@ -97,6 +108,7 @@ export function ApplicationChatPanel({
         const data = await jobService.getApplicationMessages(applicationId);
         setMessages(data.messages);
         setCanSend(data.canSend);
+        setJobDetails(data.jobDetails);
       } catch (e) {
         setError(getErrorMessage(e as ApiError));
       } finally {
@@ -207,6 +219,114 @@ export function ApplicationChatPanel({
     );
   }
 
+  const handleAcceptPrice = async () => {
+    if (!jobDetails || !user) return;
+    try {
+      if (jobDetails.workerId === user.id) {
+        await jobService.respondApplicationAcceptance(applicationId, true);
+      } else {
+        await jobService.acceptApplication(jobDetails.jobId, applicationId);
+      }
+      toast.success("Đã chấp nhận mức giá!");
+      onActionSuccess?.();
+      load();
+    } catch (err) {
+      toast.error(getErrorMessage(err as ApiError));
+    }
+  };
+
+  const handleProposePrice = async () => {
+    if (!jobDetails || !negotiatedPrice) return;
+    try {
+      await jobService.negotiateDirectHirePrice(jobDetails.jobId, Number(negotiatedPrice));
+      toast.success("Đã gửi đề xuất giá mới");
+      setIsNegotiating(false);
+      onActionSuccess?.();
+      load();
+    } catch (err) {
+      toast.error(getErrorMessage(err as ApiError));
+    }
+  };
+
+  const renderNegotiationUI = () => {
+    if (!jobDetails || !jobDetails.isDirectHire || !user) return null;
+    
+    // Only show if not fully accepted
+    if (applicationStatus === ApplicationStatus.ACCEPTED) return null;
+
+    const isEmployer = jobDetails.employerId === user.id;
+    const isWorker = jobDetails.workerId === user.id;
+    
+    // PENDING = Waiting for employer
+    // EMPLOYER_ACCEPTED = Waiting for worker
+    const isMyTurn = (isEmployer && applicationStatus === ApplicationStatus.PENDING) ||
+                     (isWorker && applicationStatus === ApplicationStatus.EMPLOYER_ACCEPTED);
+
+    const price = jobDetails.onlinePaymentType === "FIXED_PRICE" ? jobDetails.totalBudget : jobDetails.salaryPerHour;
+
+    return (
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4 mt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-sm text-gray-600 mb-1">Mức giá đề xuất hiện tại:</p>
+            <p className="text-lg font-bold text-blue-700">
+              {Number(price).toLocaleString("vi-VN")} VNĐ
+              {jobDetails.onlinePaymentType === "FIXED_PRICE" ? " (Khoán)" : " / giờ"}
+            </p>
+          </div>
+          
+          {isMyTurn ? (
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
+              {isNegotiating ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-32 outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Giá mới..."
+                    value={negotiatedPrice}
+                    onChange={(e) => setNegotiatedPrice(e.target.value)}
+                  />
+                  <button
+                    onClick={handleProposePrice}
+                    disabled={!negotiatedPrice}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Gửi
+                  </button>
+                  <button
+                    onClick={() => setIsNegotiating(false)}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setIsNegotiating(true)}
+                    className="bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                  >
+                    Đề xuất giá khác
+                  </button>
+                  <button
+                    onClick={handleAcceptPrice}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-colors whitespace-nowrap"
+                  >
+                    Chấp nhận mức giá này
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 whitespace-nowrap">
+              Đang chờ đối phương duyệt...
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Group messages by sender for consecutive runs
   const messageGroups = messages.reduce<{ message: OptimisticMessage; showAvatar: boolean; showSender: boolean }[]>(
     (acc, msg, idx) => {
@@ -247,6 +367,13 @@ export function ApplicationChatPanel({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
           </svg>
           {error}
+        </div>
+      )}
+
+      {/* Negotiation UI */}
+      {!embedded ? renderNegotiationUI() : (
+        <div className="mx-3 mt-2">
+          {renderNegotiationUI()}
         </div>
       )}
 

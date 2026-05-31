@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { AuthGuard } from "@/components/auth-guard";
@@ -58,27 +58,34 @@ export default function MessagesPage() {
   // Mobile view: "list" shows conversation list, "chat" shows chat panel
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
+  // Read initial conversation ID from URL
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const data = await jobService.getMyConversations();
-        if (cancelled) return;
-        setConversations(data);
-        setSelectedId((current) => current || data[0]?.applicationId || null);
-      } finally {
-        if (!cancelled) setLoading(false);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      if (id) {
+        setSelectedId(id);
+        setMobileView("chat");
       }
-    };
-
-    load();
-    const interval = window.setInterval(load, 10000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
+    }
   }, []);
+
+  const loadConversations = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const data = await jobService.getMyConversations();
+      setConversations(data);
+      setSelectedId((current) => current || data[0]?.applicationId || null);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadConversations();
+    const interval = window.setInterval(() => loadConversations(true), 10000);
+    return () => window.clearInterval(interval);
+  }, [loadConversations]);
 
   const selectedConversation = useMemo(
     () => conversations.find((item) => item.applicationId === selectedId) || null,
@@ -304,7 +311,9 @@ export default function MessagesPage() {
                 <ApplicationChatPanel
                   applicationId={selectedConversation.applicationId}
                   applicationStatus={selectedConversation.applicationStatus}
+                  isDirectHire={selectedConversation.isDirectHire}
                   embedded
+                  onActionSuccess={() => loadConversations(true)}
                 />
               ) : (
                 <div className="flex flex-col h-full items-center justify-center text-center px-6 py-12">

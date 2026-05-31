@@ -1,4 +1,4 @@
-﻿import { Notification, NotificationType, ReferenceType } from "@/types";
+import { Notification, NotificationType, ReferenceType } from "@/types";
 
 /**
  * Template cho notification - FE tá»± Ä‘á»‹nh nghÄ©a title/message
@@ -193,7 +193,12 @@ export function getNotificationTitle(notification: Notification): string {
   }
 
   const template = NOTIFICATION_TEMPLATES[notification.type];
-  if (!template) return "ThÃ´ng bÃ¡o";
+  if (!template) return "Thông báo";
+
+  if (notification.type === NotificationType.JOB_APPLICATION_RECEIVED && notification.data?.isDirectHire) {
+    return "Yêu cầu Thuê ngay";
+  }
+
   return formatTemplate(template.title, notification.data);
 }
 
@@ -210,6 +215,11 @@ export function getNotificationMessage(notification: Notification): string {
 
   const template = NOTIFICATION_TEMPLATES[notification.type];
   if (!template) return "";
+
+  if (notification.type === NotificationType.JOB_APPLICATION_RECEIVED && notification.data?.isDirectHire) {
+    return `Bạn nhận được lời đề nghị Thuê ngay cho công việc: ${notification.data?.jobTitle || 'Chưa cập nhật'}.`;
+  }
+
   return formatTemplate(template.message, notification.data);
 }
 

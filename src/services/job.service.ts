@@ -59,6 +59,10 @@ export const jobService = {
     return apiClient.post<Job>(`/jobs/${id}/cancel`);
   },
 
+  async negotiateDirectHirePrice(jobId: string, proposedPrice: number): Promise<JobApplication> {
+    return apiClient.put<JobApplication>(`/jobs/${jobId}/negotiate-price`, { proposedPrice });
+  },
+
   async applyForJob(
     jobId: string,
     data: ApplyJobRequest,
@@ -130,6 +134,22 @@ export const jobService = {
 
   async completeAssignment(jobId: string): Promise<any> {
     return apiClient.post(`/jobs/${jobId}/complete-assignment`);
+  },
+
+  async logHours(jobId: string, loggedHours: number): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/log-hours`, { loggedHours });
+  },
+
+  async confirmHours(jobId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/confirm-hours`);
+  },
+
+  async markPaid(jobId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/mark-paid`);
+  },
+
+  async confirmPaymentReceipt(jobId: string): Promise<any> {
+    return apiClient.post(`/jobs/${jobId}/confirm-payment-receipt`);
   },
 
   async getWorkerHistory(): Promise<JobApplication[]> {

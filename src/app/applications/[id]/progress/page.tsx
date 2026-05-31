@@ -87,6 +87,50 @@ export default function ApplicationProgressPage() {
     }
   };
 
+  const handleLogHours = async (hours: number) => {
+    if (!progress) return;
+    setActionLoading(true);
+    try {
+      await jobService.logHours(progress.jobId, hours);
+      await refresh();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmHours = async () => {
+    if (!progress) return;
+    setActionLoading(true);
+    try {
+      await jobService.confirmHours(progress.jobId);
+      await refresh();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!progress) return;
+    setActionLoading(true);
+    try {
+      await jobService.markPaid(progress.jobId);
+      await refresh();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmReceipt = async () => {
+    if (!progress) return;
+    setActionLoading(true);
+    try {
+      await jobService.confirmPaymentReceipt(progress.jobId);
+      await refresh();
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -258,6 +302,10 @@ export default function ApplicationProgressPage() {
           onCancel={() => setShowCancelConfirm(true)}
           isLoading={actionLoading}
           viewAs={viewAs}
+          onLogHours={handleLogHours}
+          onConfirmHours={handleConfirmHours}
+          onMarkPaid={handleMarkPaid}
+          onConfirmReceipt={handleConfirmReceipt}
         />
 
         <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4 flex items-center gap-3">

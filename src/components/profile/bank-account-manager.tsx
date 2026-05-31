@@ -124,7 +124,7 @@ export function BankAccountManager() {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900 text-sm">Tài khoản ngân hàng</h3>
-            <p className="text-xs text-gray-500">Dùng để nhận thanh toán P2P từ nhà tuyển dụng</p>
+            <p className="text-xs text-gray-500">Dùng để nhận thanh toán từ nhà tuyển dụng</p>
           </div>
         </div>
         {!showForm && accounts.length < 5 && (

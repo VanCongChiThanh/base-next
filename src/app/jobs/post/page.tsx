@@ -18,6 +18,10 @@ import { ApiError } from "@/types";
 import { cn } from "@/lib/utils";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
 import { UpgradePrompt } from "@/components/common/upgrade-prompt";
+import { toast } from "react-hot-toast";
+
+const ONLINE_SKILL_NAMES = ["Thiết kế", "Marketing", "Gia sư", "Chụp ảnh", "MC"];
+const GIG_SKILL_NAMES = ["Phục vụ", "Pha chế", "Nấu ăn", "Bán hàng", "Khuân vác", "Lái xe", "Dọn dẹp", "Chụp ảnh", "MC"];
 
 const LocationPicker = dynamic(
   () => import("@/components/job/location-picker"),
@@ -100,7 +104,13 @@ export default function PostJobPage() {
   }, [form.provinceCode]);
 
   const updateForm = (field: string, value: string | string[]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "jobType") {
+        next.skillIds = [];
+      }
+      return next;
+    });
   };
   const handleLocationChange = useCallback((lat: number, lng: number) => {
     // Dùng thẳng setForm để gộp 2 biến vào 1 lần cập nhật duy nhất
@@ -124,6 +134,26 @@ export default function PostJobPage() {
     [categories],
   );
 
+  const filteredSkills = useMemo(() => {
+    if (form.jobType === JobType.ONLINE) {
+      return skills.filter((s) => ONLINE_SKILL_NAMES.includes(s.name));
+    } else {
+      return skills.filter((s) => GIG_SKILL_NAMES.includes(s.name));
+    }
+  }, [skills, form.jobType]);
+
+  const titlePlaceholder = useMemo(() => {
+    return form.jobType === JobType.ONLINE
+      ? "VD: Thiết kế Landing Page, Lập trình ReactJS, Dịch thuật Anh-Việt..."
+      : "VD: Phục vụ nhà hàng cuối tuần, Bốc xếp hàng hoá, Giao hàng nội thành...";
+  }, [form.jobType]);
+
+  const descPlaceholder = useMemo(() => {
+    return form.jobType === JobType.ONLINE
+      ? "Mô tả chi tiết dự án, các yêu cầu kỹ thuật, sản phẩm cần bàn giao, thời hạn và tiêu chí đánh giá..."
+      : "Mô tả chi tiết công việc, thời gian làm việc, địa chỉ cụ thể, yêu cầu về sức khoẻ và trang phục...";
+  }, [form.jobType]);
+
   const provinceOptions = useMemo(
     () => provinces.map((p) => ({ value: p.code, label: p.fullName })),
     [provinces],
@@ -138,12 +168,16 @@ export default function PostJobPage() {
     e.preventDefault();
     setError("");
     if (!form.categoryId) {
-      setError("Vui lòng chọn danh mục.");
+      const msg = "Vui lòng chọn danh mục.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     if (form.jobType !== JobType.ONLINE) {
       if (!form.provinceCode || !form.wardCode) {
-        setError("Vui lòng chọn tỉnh/thành và phường/xã.");
+        const msg = "Vui lòng chọn tỉnh/thành và phường/xã.";
+        setError(msg);
+        toast.error(msg);
         return;
       }
     }
@@ -193,7 +227,9 @@ export default function PostJobPage() {
       const job = await jobService.createJob(payload);
       router.push(`/jobs/${job.id}`);
     } catch (err) {
-      setError(getErrorMessage(err as ApiError));
+      const msg = getErrorMessage(err as ApiError);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -365,7 +401,7 @@ export default function PostJobPage() {
                 >
                   <div className="text-xl mb-2">🤝</div>
                   <div className={cn("font-semibold text-sm", form.paymentMethod === PaymentMethod.P2P ? "text-blue-700" : "text-gray-800")}>
-                    Thanh toán trực tiếp (P2P)
+                    Thanh toán trực tiếp
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     Hai bên tự thoả thuận chuyển khoản ngân hàng. Website không thu phí trung gian.
@@ -411,7 +447,7 @@ export default function PostJobPage() {
                   required
                   value={form.title}
                   onChange={(e) => updateForm("title", e.target.value)}
-                  placeholder="VD: Phục vụ nhà hàng cuối tuần"
+                  placeholder={titlePlaceholder}
                   className={inputClass}
                 />
               </div>
@@ -424,7 +460,7 @@ export default function PostJobPage() {
                   required
                   value={form.description}
                   onChange={(e) => updateForm("description", e.target.value)}
-                  placeholder="Mô tả chi tiết công việc, yêu cầu và quyền lợi..."
+                  placeholder={descPlaceholder}
                   rows={5}
                   className={cn(inputClass, "resize-none")}
                 />
@@ -774,6 +810,13 @@ export default function PostJobPage() {
                     initialLat={form.latitude}
                     initialLng={form.longitude}
                     onChange={handleLocationChange}
+                    addressQuery={
+                      form.wardCode && form.provinceCode
+                        ? `${wards.find(w => w.code === form.wardCode)?.name || ""}, ${provinces.find(p => p.code === form.provinceCode)?.name || ""}, Việt Nam`
+                        : form.provinceCode
+                        ? `${provinces.find(p => p.code === form.provinceCode)?.name || ""}, Việt Nam`
+                        : undefined
+                    }
                   />
                 </div>
               </div>
@@ -781,7 +824,7 @@ export default function PostJobPage() {
             )}
 
             {/* Skills */}
-            {skills.length > 0 && (
+            {filteredSkills.length > 0 && (
               <div className="bg-white rounded-2xl border border-blue-100 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -793,13 +836,13 @@ export default function PostJobPage() {
                   </span>
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                  {skills.map((skill) => (
+                  {filteredSkills.map((skill) => (
                     <button
                       key={skill.id}
                       type="button"
                       onClick={() => toggleSkill(skill.id)}
                       className={cn(
-                        "px-3 py-1.5 rounded-xl text-sm font-medium border transition-all",
+                        "px-3 py-1.5 rounded-xl text-sm font-medium border transition-all cursor-pointer",
                         form.skillIds.includes(skill.id)
                           ? "bg-blue-500 text-white border-blue-500 shadow-sm shadow-blue-200"
                           : "bg-white text-gray-600 border-blue-100 hover:border-blue-300 hover:text-blue-600",

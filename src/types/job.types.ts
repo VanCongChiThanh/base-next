@@ -45,6 +45,8 @@ export interface ApplicationProgress {
   jobId: string;
   jobTitle: string;
   jobAddress: string;
+  jobType: string;
+  onlinePaymentType: string;
   startTime: string;
   endTime: string;
   salaryPerHour: number;
@@ -59,6 +61,8 @@ export interface ApplicationProgress {
     checkedInAt: string | null;
     completedAt: string | null;
     notes: string | null;
+    loggedHours: number | null;
+    hoursSubmittedBy: string | null;
   } | null;
 }
 
@@ -203,6 +207,8 @@ export interface JobAssignment {
   checkedInAt: string | null;
   completedAt: string | null;
   notes: string | null;
+  loggedHours?: number;
+  hoursSubmittedBy?: string;
 }
 
 export interface Review {

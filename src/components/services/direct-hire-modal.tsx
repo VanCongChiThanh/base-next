@@ -96,9 +96,6 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
 
         <div className="flex-1 overflow-y-auto px-5 py-4 sm:p-6">
           <form id="hireForm" onSubmit={handleSubmit} className="space-y-4">
-            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4 text-sm text-indigo-800">
-              Đây là yêu cầu thuê riêng cho một người cụ thể, không hiển thị như bài đăng tuyển công khai.
-            </div>
 
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1.5">Tiêu đề công việc *</label>
@@ -148,24 +145,25 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                {isFixedPackage ? "Ngân sách đề xuất (VNĐ)" : "Giá đề xuất / giờ (VNĐ)"}
+                <span className="text-xs font-normal text-gray-500 ml-2">(Có thể thoả thuận)</span>
+              </label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                placeholder={`${Number(service.price).toLocaleString("vi-VN")}đ`}
+                className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+              />
+            </div>
+
+            {isFixedPackage ? (
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">
-                  {isFixedPackage ? "Ngân sách đề xuất (VNĐ)" : "Giá đề xuất / giờ (VNĐ)"}
-                  <span className="text-xs font-normal text-gray-500 ml-2">(Có thể thoả thuận)</span>
-                </label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  placeholder={`${Number(service.price).toLocaleString("vi-VN")}đ`}
-                  className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">
-                  {isFixedPackage ? "Deadline (không bắt buộc)" : "Kết thúc (không bắt buộc)"}
+                  Deadline (không bắt buộc)
                 </label>
                 <input
                   type="datetime-local"
@@ -174,17 +172,26 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
                   className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
-            </div>
-
-            {!isFixedPackage && (
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Bắt đầu (không bắt buộc)</label>
-                <input
-                  type="datetime-local"
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Bắt đầu (không bắt buộc)</label>
+                  <input
+                    type="datetime-local"
+                    value={formData.startTime}
+                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                    className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Kết thúc (không bắt buộc)</label>
+                  <input
+                    type="datetime-local"
+                    value={formData.endTime}
+                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                    className="w-full px-4 py-3 text-base rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  />
+                </div>
               </div>
             )}
           </form>
