@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/footer";
 import { AuthGuard } from "@/components/auth-guard";
 import { JobStatusBadge, ApplicationStatusBadge } from "@/components/job";
 import { UpgradePrompt } from "@/components/common/upgrade-prompt";
+import { BankAccountReminder } from "@/components/profile";
 import { useAuth, useChat } from "@/contexts";
 import { jobService } from "@/services";
 import { Job, JobApplication, ApplicationStatus } from "@/types";
@@ -96,6 +97,8 @@ export default function DashboardPage() {
         </div>
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {user?.role === "USER" && <BankAccountReminder />}
+          
           {/* Tabs */}
           <div className="flex items-center gap-1 bg-blue-50/50 rounded-2xl p-1 mb-6 w-fit">
             <button

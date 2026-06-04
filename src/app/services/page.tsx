@@ -7,22 +7,15 @@ import { Footer } from "@/components/layout/footer";
 import { workerServiceAPI, locationService, categoryService } from "@/services";
 import { WorkerService, Province, JobCategory } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
-import { useEntitlements, useAuth } from "@/contexts";
-import toast from "react-hot-toast";
+import { useAuth } from "@/contexts";
 import { DirectHireModal } from "@/components/services/direct-hire-modal";
 
 export default function ServicesPage() {
-  const { hasFeature } = useEntitlements();
   const { user } = useAuth();
   const [services, setServices] = useState<WorkerService[]>([]);
   const [loading, setLoading] = useState(false);
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [categories, setCategories] = useState<JobCategory[]>([]);
-
-  // Search modes
-  const [searchMode, setSearchMode] = useState<"AI" | "MANUAL">("AI");
-  const [aiQuery, setAiQuery] = useState("");
-  const [aiSearching, setAiSearching] = useState(false);
 
   // Modal state
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
@@ -48,8 +41,6 @@ export default function ServicesPage() {
   }, []);
 
   useEffect(() => {
-    // Initial fetch always, subsequent fetches depend on mode
-    if (searchMode === "AI" && services.length > 0) return;
 
     let cancel = false;
     setLoading(true);
@@ -69,36 +60,12 @@ export default function ServicesPage() {
     });
 
     return () => { cancel = true; };
-  }, [filters, searchMode]);
+  }, [filters]);
 
   const updateFilter = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleAiSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Check entitlement using hasFeature
-    if (!hasFeature("ai.cv_screening.enabled")) {
-      toast.error("Sử dụng AI tìm kiếm ứng viên yêu cầu gói cao cấp.");   
-      return;
-    }
-
-    if (!aiQuery.trim()) return;
-
-    setAiSearching(true);
-    setLoading(true);
-    try {
-      const results = await workerServiceAPI.searchCandidatesByAi(aiQuery);
-      setServices(results || []);
-    } catch (error) {
-      console.error(error);
-      setServices([]);
-    } finally {
-      setAiSearching(false);
-      setLoading(false);
-    }
-  };
 
   const renderServiceCard = (service: WorkerService) => {
     // Determine the image to show. If no portfolio, use a standard gradient or placeholder.
@@ -234,97 +201,45 @@ export default function ServicesPage() {
               Tìm người đang rảnh để làm việc ngay: dọn dẹp, giao hàng, phụ quán...
             </p>
 
-            {/* Toggle Modes */}
-            <div className="mt-8 flex justify-center">
-              <div className="bg-white/10 p-1 rounded-2xl inline-flex backdrop-blur-md">
-                <button
-                  onClick={() => setSearchMode("AI")}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${searchMode === "AI" ? "bg-white text-indigo-900 shadow-lg scale-105" : "text-white hover:bg-white/10"}`}
-                >
-                  ✨ Tìm nhanh bằng AI
-                </button>
-                <button
-                  onClick={() => {
-                    setSearchMode("MANUAL");
-                    if (services.length === 0 && searchMode === "AI") {
-                      // Trigger manually an empty query
-                      setFilters(f => ({ ...f }));
-                    }
-                  }}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${searchMode === "MANUAL" ? "bg-white text-indigo-900 shadow-lg scale-105" : "text-white hover:bg-white/10"}`}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-                  Bộ lọc 
-                </button>
-              </div>
-            </div>
-
             {/* Search Controls */}
-            <div className="mt-6 w-full max-w-3xl mx-auto">
-              {searchMode === "AI" ? (
-                <form onSubmit={handleAiSearch} className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-                  <div className="relative flex items-center bg-white rounded-2xl shadow-xl overflow-hidden p-1.5 focus-within:ring-2 focus-within:ring-indigo-300">
-                    <div className="pl-4 text-indigo-500">
-                      <svg className="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                      </svg>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Mô tả nhu cầu của bạn. VD: Tôi cần một người thợ sửa điều hoà đến ngay tại Quận 1..."
-                      value={aiQuery}
-                      onChange={(e) => setAiQuery(e.target.value)}
-                      className="w-full py-4 px-4 text-gray-800 bg-transparent border-0 focus:outline-none focus:ring-0 text-base"
-                    />
-                    <button
-                      disabled={aiSearching}
-                      type="submit"
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-xl font-bold transition-all flexitems-center gap-2 disabled:opacity-70 whitespace-nowrap"
-                    >
-                      {aiSearching ? 'Đang phân tích...' : 'Tìm kiếm AI'}
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="bg-white p-2 sm:p-3 rounded-2xl shadow-xl flex flex-col md:flex-row gap-2 border border-indigo-50 items-center justify-center max-w-4xl mx-auto w-full">
+            <div className="mt-8 w-full max-w-3xl mx-auto">
+              <div className="bg-white p-2 sm:p-3 rounded-2xl shadow-xl flex flex-col md:flex-row gap-2 border border-indigo-50 items-center justify-center max-w-4xl mx-auto w-full">
+                <input
+                  type="text"
+                  placeholder="Từ khóa (chụp ảnh, dọn dẹp...)"
+                  className="flex-1 px-4 py-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 focus:bg-white border focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all outline-none w-full md:w-auto"
+                  value={filters.search}
+                  onChange={(e) => updateFilter("search", e.target.value)}
+                />
+                
+                <select
+                  className="px-4 py-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 focus:bg-white border focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all outline-none text-gray-700 w-full md:w-auto md:min-w-[180px]"
+                  value={filters.categoryId}
+                  onChange={(e) => updateFilter("categoryId", e.target.value)}
+                >
+                  <option value="">Tất cả lĩnh vực</option>
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+
+                <select
+                  className="px-4 py-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 focus:bg-white border focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all outline-none text-gray-700 w-full md:w-auto md:min-w-[160px]"
+                  value={filters.provinceCode}
+                  onChange={(e) => updateFilter("provinceCode", e.target.value)}
+                >
+                  <option value="">Toàn quốc</option>
+                  {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
+                </select>
+
+                <label className="flex items-center gap-2 px-6 py-3 bg-[#eef1fa] border border-transparent rounded-xl cursor-pointer hover:border-indigo-200 transition-all whitespace-nowrap w-full md:w-auto justify-center group">
                   <input
-                    type="text"
-                    placeholder="Từ khóa (chụp ảnh, dọn dẹp...)"
-                    className="flex-1 px-4 py-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 focus:bg-white border focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all outline-none w-full md:w-auto"
-                    value={filters.search}
-                    onChange={(e) => updateFilter("search", e.target.value)}
+                    type="checkbox"
+                    checked={filters.isAvailableNow}
+                    onChange={(e) => updateFilter("isAvailableNow", e.target.checked)}
+                    className="w-5 h-5 text-indigo-600 bg-white border-gray-300 rounded focus:ring-indigo-500 shadow-inner block"
                   />
-                  
-                  <select
-                    className="px-4 py-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 focus:bg-white border focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all outline-none text-gray-700 w-full md:w-auto md:min-w-[180px]"
-                    value={filters.categoryId}
-                    onChange={(e) => updateFilter("categoryId", e.target.value)}
-                  >
-                    <option value="">Tất cả lĩnh vực</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-
-                  <select
-                    className="px-4 py-3 rounded-xl bg-gray-50/50 hover:bg-gray-50 focus:bg-white border focus:border-indigo-200 focus:ring-4 focus:ring-indigo-100 transition-all outline-none text-gray-700 w-full md:w-auto md:min-w-[160px]"
-                    value={filters.provinceCode}
-                    onChange={(e) => updateFilter("provinceCode", e.target.value)}
-                  >
-                    <option value="">Toàn quốc</option>
-                    {provinces.map(p => <option key={p.code} value={p.code}>{p.name}</option>)}
-                  </select>
-
-                  <label className="flex items-center gap-2 px-6 py-3 bg-[#eef1fa] border border-transparent rounded-xl cursor-pointer hover:border-indigo-200 transition-all whitespace-nowrap w-full md:w-auto justify-center group">
-                    <input
-                      type="checkbox"
-                      checked={filters.isAvailableNow}
-                      onChange={(e) => updateFilter("isAvailableNow", e.target.checked)}
-                      className="w-5 h-5 text-indigo-600 bg-white border-gray-300 rounded focus:ring-indigo-500 shadow-inner block"
-                    />
-                    <span className="text-indigo-800 font-bold group-hover:text-indigo-900 transition-colors">Rảnh ngay</span>
-                  </label>
-                </div>
-              )}
+                  <span className="text-indigo-800 font-bold group-hover:text-indigo-900 transition-colors">Rảnh ngay</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -358,26 +273,14 @@ export default function ServicesPage() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">Chưa tìm thấy ứng viên phù hợp</h3>
               <p className="text-gray-500 mb-8 text-lg">
-                {searchMode === "AI" 
-                  ? "AI của chúng tôi chưa tìm thấy ai khớp với mô tả của bạn. Hãy thử diễn đạt chi tiết hơn hoặc chuyển sang dùng bộ lọc."
-                  : "Thử thay đổi cấu hình bộ lọc hoặc tìm kiếm bằng từ khoá khác để mở rộng kết quả."}
+                Thử thay đổi cấu hình bộ lọc hoặc tìm kiếm bằng từ khoá khác để mở rộng kết quả.
               </p>
-              {searchMode === "MANUAL" && (
-                <button onClick={() => setFilters({search: "", categoryId: "", provinceCode: "", isAvailableNow: false})} className="px-8 py-3 bg-indigo-50 text-indigo-700 font-bold rounded-xl hover:bg-indigo-100 transition shadow-sm">
-                  Xoá toàn bộ bộ lọc
-                </button>
-              )}
+              <button onClick={() => setFilters({search: "", categoryId: "", provinceCode: "", isAvailableNow: false})} className="px-8 py-3 bg-indigo-50 text-indigo-700 font-bold rounded-xl hover:bg-indigo-100 transition shadow-sm">
+                Xoá toàn bộ bộ lọc
+              </button>
             </div>
           ) : (
             <>
-              {searchMode === "AI" && (
-                <div className="mb-6 flex items-center justify-between bg-emerald-50 border border-emerald-100 text-emerald-800 px-5 py-3 rounded-2xl">
-                  <span className="font-semibold flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    AI đã phân tích và tìm thấy {services.length} ứng viên phù hợp với nhu cầu.
-                  </span>
-                </div>
-              )}
               {/* Grid hiển thị danh sách ứng viên, tự co giãn 1 cột trên mobile, nhiều cột trên desktop */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-10 pt-2">                
                 {services.map(renderServiceCard)}

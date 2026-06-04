@@ -209,6 +209,7 @@ export interface JobApplication {
     workerProfile?: any;
   };
   job?: Job;
+  assignment?: JobAssignment;
 }
 
 export interface JobAssignment {
@@ -456,7 +457,16 @@ export interface Milestone {
   submittedAt: string | null;
   approvedAt: string | null;
   releasedAt: string | null;
+  workerReceivedAt?: string | null;
   createdAt: string;
+  escrow?: Escrow;
+  worker?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    bankAccounts?: BankAccount[];
+  };
 }
 
 export interface Escrow {
@@ -474,6 +484,7 @@ export interface Escrow {
   fundedAt: string | null;
   milestones: Milestone[];
   createdAt: string;
+  job?: Job;
 }
 
 export interface MatchedCandidate {

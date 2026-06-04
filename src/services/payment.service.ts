@@ -59,5 +59,9 @@ export const paymentService = {
   respondToProposal(milestoneId: string, accept: boolean) {
     return apiClient.post<{ accepted: boolean; milestone?: Milestone }>(`/escrow/milestones/${milestoneId}/respond-proposal`, { accept });
   },
+
+  confirmMilestoneReceipt(milestoneId: string) {
+    return apiClient.post<Milestone>(`/escrow/milestones/${milestoneId}/confirm-receipt`);
+  },
 };
 
