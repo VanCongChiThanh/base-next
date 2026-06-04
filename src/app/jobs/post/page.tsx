@@ -410,7 +410,15 @@ export default function PostJobPage() {
 
                 <button
                   type="button"
-                  onClick={() => updateForm("paymentMethod", PaymentMethod.ESCROW)}
+                  onClick={() => {
+                    updateForm("paymentMethod", PaymentMethod.ESCROW);
+                    if (form.salaryType === "HOURLY") {
+                      updateForm("salaryType", "FIXED");
+                    }
+                    if (form.onlinePaymentType === OnlinePaymentType.HOURLY_RATE) {
+                      updateForm("onlinePaymentType", OnlinePaymentType.FIXED_PRICE);
+                    }
+                  }}
                   className={cn(
                     "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
                     form.paymentMethod === PaymentMethod.ESCROW
@@ -519,7 +527,7 @@ export default function PostJobPage() {
                     onChange={(e) => updateForm("salaryType", e.target.value)}
                     className={inputClass}
                   >
-                    <option value="HOURLY">Theo giờ</option>
+                    {form.paymentMethod !== PaymentMethod.ESCROW && <option value="HOURLY">Theo giờ</option>}
                     <option value="FIXED">Khoán (cố định / công)</option>
                   </select>
                 </div>
@@ -650,7 +658,7 @@ export default function PostJobPage() {
                       className={inputClass}
                     >
                       <option value={OnlinePaymentType.FIXED_PRICE}>Khoán toàn bộ (Fixed-price)</option>
-                      <option value={OnlinePaymentType.HOURLY_RATE}>Trả theo giờ (Hourly-rate)</option>
+                      {form.paymentMethod !== PaymentMethod.ESCROW && <option value={OnlinePaymentType.HOURLY_RATE}>Trả theo giờ (Hourly-rate)</option>}
                     </select>
                   </div>
                   {form.onlinePaymentType === OnlinePaymentType.FIXED_PRICE ? (

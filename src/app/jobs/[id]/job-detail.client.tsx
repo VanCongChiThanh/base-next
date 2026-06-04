@@ -1055,7 +1055,7 @@ export default function JobDetailPageClient({
                           Lưu ý: Chỉ xác nhận hoàn thành khi bạn đã hoàn tất công việc{job?.paymentMethod === PaymentMethod.P2P ? " (và đã nhận đủ tiền nếu giao dịch trực tiếp)" : ""}.
                         </p>
                       </div>
-                    ) : job.salaryType === "HOURLY" ? (
+                    ) : (job.jobType === JobType.ONLINE ? job.onlinePaymentType === "HOURLY_RATE" : job.salaryType === "HOURLY") ? (
                       <button
                         onClick={() => setShowLogHoursModal(true)}
                         className="w-full py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl hover:shadow-md transition-all shadow-sm flex items-center justify-center gap-2"
