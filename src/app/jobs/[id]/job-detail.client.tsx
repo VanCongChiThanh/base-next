@@ -14,7 +14,7 @@ import {
   JobProgressInline,
 } from "@/components/job";
 import { ConfirmModal } from "@/components/common";
-import { ScamAnalysisModal } from "@/components/ai/scam-analysis-modal";
+import { ScamAnalysisAlert } from "@/components/ai/scam-analysis-alert";
 import { MatchedCandidates } from "@/components/ai/matched-candidates";
 import { BankAccountReminder } from "@/components/profile";
 import { useAuth, useChat } from "@/contexts";
@@ -77,7 +77,6 @@ export default function JobDetailPageClient({
   const [showLogHoursModal, setShowLogHoursModal] = useState(false);
   const [loggedHoursInput, setLoggedHoursInput] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [showScamCheck, setShowScamCheck] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savingJob, setSavingJob] = useState(false);
   const [p2pBankAccounts, setP2pBankAccounts] = useState<BankAccount[]>([]);
@@ -495,6 +494,8 @@ export default function JobDetailPageClient({
               <Link href="/jobs" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mb-4 transition-colors font-medium">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg> Quay lại danh sách
               </Link>
+              
+              {!isEmployer && isAuthenticated && <ScamAnalysisAlert jobId={job.id} />}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
@@ -810,8 +811,11 @@ export default function JobDetailPageClient({
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Quay lại
+              Quay lại danh sách
             </Link>
+
+            {!isEmployer && isAuthenticated && <ScamAnalysisAlert jobId={job.id} />}
+
 
             <div className="flex flex-col sm:flex-row sm:items-start gap-4">
               <div className="flex-1">
@@ -1613,12 +1617,6 @@ export default function JobDetailPageClient({
                   </h3>
                   <div className="space-y-2">
                     <button
-                      onClick={() => setShowScamCheck(true)}
-                      className="w-full py-2.5 text-sm font-medium text-indigo-700 bg-white border border-indigo-200 rounded-xl hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
-                    >
-                      <span>🔍</span> Kiểm tra tin lừa đảo
-                    </button>
-                    <button
                       onClick={handleToggleSave}
                       disabled={savingJob}
                       className={`w-full py-2.5 text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2 ${
@@ -1670,16 +1668,6 @@ export default function JobDetailPageClient({
           jobId={job.id}
           isOpen={showReport}
           onClose={() => setShowReport(false)}
-        />
-      )}
-
-      {/* Scam Analysis Modal */}
-      {job && (
-        <ScamAnalysisModal
-          isOpen={showScamCheck}
-          onClose={() => setShowScamCheck(false)}
-          jobId={job.id}
-          jobTitle={job.title}
         />
       )}
 
