@@ -63,5 +63,21 @@ export const paymentService = {
   confirmMilestoneReceipt(milestoneId: string) {
     return apiClient.post<Milestone>(`/escrow/milestones/${milestoneId}/confirm-receipt`);
   },
+
+  async getWorkerMilestones(page = 1, limit = 10, status?: string) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.append('status', status);
+
+    const response = await apiClient.getFull<Milestone[]>(`/worker/milestones?${params}`);
+
+    return {
+      data: response.data ?? [],
+      total: response.meta?.pagination?.total ?? response.data?.length ?? 0,
+    };
+  },
+
+  reportMilestoneNotReceived(milestoneId: string) {
+    return apiClient.post<{ success: boolean }>(`/escrow/milestones/${milestoneId}/report-not-received`);
+  },
 };
 

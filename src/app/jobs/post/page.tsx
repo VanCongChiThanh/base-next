@@ -18,6 +18,7 @@ import { ApiError } from "@/types";
 import { cn } from "@/lib/utils";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
 import { UpgradePrompt } from "@/components/common/upgrade-prompt";
+import { useEntitlements } from "@/contexts/entitlement-context";
 import { toast } from "react-hot-toast";
 
 const ONLINE_SKILL_NAMES = ["Thiết kế", "Marketing", "Gia sư", "Chụp ảnh", "MC"];
@@ -37,6 +38,7 @@ export default function PostJobPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [hireId, setHireId] = useState<string | null>(null);
+  const { entitlements, isLoading: isEntitlementsLoading, refreshEntitlements } = useEntitlements();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -164,6 +166,18 @@ export default function PostJobPage() {
     [wards],
   );
 
+  const monthlyPostLimit = entitlements?.features?.["job.post.monthly_limit"];
+  const monthlyPostUsed = entitlements?.features?.["job.post.monthly_used"];
+  const monthlyPostRemaining =
+    entitlements?.features?.["job.post.monthly_remaining"];
+  const hasUnlimitedMonthlyPosts = Boolean(
+    entitlements?.features?.["job.post.unlimited"],
+  );
+  const isOutOfMonthlyPosts =
+    !hasUnlimitedMonthlyPosts &&
+    typeof monthlyPostRemaining === "number" &&
+    monthlyPostRemaining <= 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -225,6 +239,7 @@ export default function PostJobPage() {
       }
 
       const job = await jobService.createJob(payload);
+      await refreshEntitlements();
       router.push(`/jobs/${job.id}`);
     } catch (err) {
       const msg = getErrorMessage(err as ApiError);
@@ -277,6 +292,46 @@ export default function PostJobPage() {
           {/* Upgrade prompt - only shows when quota is low */}
           <div className="mb-6">
             <UpgradePrompt />
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  Lượt đăng bài tháng này
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {isEntitlementsLoading
+                    ? "Đang tải thông tin gói..."
+                    : hasUnlimitedMonthlyPosts
+                      ? "Gói hiện tại cho phép đăng bài không giới hạn."
+                      : typeof monthlyPostRemaining === "number"
+                        ? `Bạn còn ${monthlyPostRemaining} lượt đăng trong tháng này.`
+                        : "Chưa có thông tin giới hạn đăng bài."}
+                </p>
+              </div>
+              <div
+                className={cn(
+                  "rounded-xl px-4 py-2 text-center text-sm font-semibold",
+                  isOutOfMonthlyPosts
+                    ? "bg-red-50 text-red-700"
+                    : "bg-blue-50 text-blue-700",
+                )}
+              >
+                {hasUnlimitedMonthlyPosts
+                  ? "Không giới hạn"
+                  : typeof monthlyPostRemaining === "number"
+                    ? `${monthlyPostRemaining} lượt còn lại`
+                    : "--"}
+              </div>
+            </div>
+            {!hasUnlimitedMonthlyPosts &&
+              typeof monthlyPostUsed === "number" &&
+              typeof monthlyPostLimit === "number" && (
+                <div className="mt-3 text-xs text-gray-400">
+                  Đã dùng {monthlyPostUsed}/{monthlyPostLimit} lượt đăng bài.
+                </div>
+              )}
           </div>
 
           {error && (
@@ -874,10 +929,14 @@ export default function PostJobPage() {
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isOutOfMonthlyPosts}
                 className="px-8 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl hover:shadow-lg hover:shadow-blue-200 disabled:opacity-50 transition-all"
               >
-                {isSubmitting ? "Đang đăng..." : "Đăng tuyển"}
+                {isSubmitting
+                  ? "Đang đăng..."
+                  : isOutOfMonthlyPosts
+                    ? "Đã hết lượt đăng"
+                    : "Đăng tuyển"}
               </button>
             </div>
           </form>

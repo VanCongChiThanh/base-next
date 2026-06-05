@@ -92,8 +92,10 @@ export default function AdminPaymentsPage() {
       await adminService.releaseMilestonePayment(confirmModal.milestoneId, "Admin đã giải ngân");
       toast.success("Giải ngân thành công");
       fetchMilestones();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Lỗi khi giải ngân");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Lỗi khi giải ngân";
+      toast.error(message);
     } finally {
       setIsReleasing(false);
       setConfirmModal({ isOpen: false, milestoneId: null });
@@ -270,7 +272,7 @@ export default function AdminPaymentsPage() {
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
-            Giải ngân Milestone
+            Giải ngân Escrow
           </button>
         </nav>
       </div>
@@ -282,7 +284,7 @@ export default function AdminPaymentsPage() {
         onClose={() => setConfirmModal({ isOpen: false, milestoneId: null })}
         onConfirm={handleReleaseMilestone}
         title="Xác nhận giải ngân"
-        message="Xác nhận đã chuyển tiền và giải ngân cho milestone này?"
+        message="Xác nhận đã chuyển tiền và giải ngân khoản escrow này cho người lao động?"
         confirmLabel="Giải ngân"
         variant="primary"
         isLoading={isReleasing}

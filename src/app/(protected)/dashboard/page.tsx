@@ -9,13 +9,28 @@ import { JobStatusBadge, ApplicationStatusBadge } from "@/components/job";
 import { UpgradePrompt } from "@/components/common/upgrade-prompt";
 import { BankAccountReminder } from "@/components/profile";
 import { useAuth, useChat } from "@/contexts";
-import { jobService } from "@/services";
-import { Job, JobApplication, ApplicationStatus } from "@/types";
+import { jobService, paymentService } from "@/services";
+import { Job, JobApplication, ApplicationStatus, Milestone } from "@/types";
+import { MilestoneStatus } from "@/types/enums";
 import { formatRelativeTime } from "@/lib/utils";
 
 import { toast } from "react-hot-toast";
 
-type Tab = "posted" | "applied" | "invitations";
+type Tab = "posted" | "applied" | "invitations" | "payments";
+
+type Invitation = {
+  id: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | string;
+  jobId: string;
+  createdAt: string;
+  job?: {
+    title?: string;
+  };
+  employer?: {
+    firstName?: string;
+    lastName?: string;
+  };
+};
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -23,7 +38,9 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("posted");
   const [myJobs, setMyJobs] = useState<Job[]>([]);
   const [workerHistory, setWorkerHistory] = useState<JobApplication[]>([]);
-  const [invitations, setInvitations] = useState<any[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [paymentMilestones, setPaymentMilestones] = useState<Milestone[]>([]);
+  const [paymentTotal, setPaymentTotal] = useState(0);
   const [loadingTab, setLoadingTab] = useState<Tab | null>("posted");
   const isLoading = loadingTab === activeTab;
 
@@ -41,6 +58,12 @@ export default function DashboardPage() {
         } else if (activeTab === "invitations") {
           const data = await jobService.getMyInvitations();
           if (!cancelled) setInvitations(data);
+        } else if (activeTab === "payments") {
+          const data = await paymentService.getWorkerMilestones(1, 20);
+          if (!cancelled) {
+            setPaymentMilestones(data?.data ?? []);
+            setPaymentTotal(data?.total ?? 0);
+          }
         }
       } catch {
         // ignore
@@ -61,7 +84,7 @@ export default function DashboardPage() {
       // Refresh
       const data = await jobService.getMyInvitations();
       setInvitations(data);
-    } catch (err) {
+    } catch {
       toast.error("Không thể phản hồi lời mời");
     }
   };
@@ -130,6 +153,16 @@ export default function DashboardPage() {
               }`}
             >
               Lời mời việc làm {invitations.filter(i => i.status === 'PENDING').length > 0 && <span className="ml-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs">{invitations.filter(i => i.status === 'PENDING').length}</span>}
+            </button>
+            <button
+              onClick={() => setActiveTab("payments")}
+              className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "payments"
+                  ? "bg-white text-blue-700 shadow-sm"
+                  : "text-gray-500 hover:text-blue-600"
+              }`}
+            >
+              Tài chính
             </button>
           </div>
 
@@ -355,6 +388,118 @@ export default function DashboardPage() {
                       </div>
                     </Link>
                   ))}
+                </div>
+              )}
+            </>
+          ) : activeTab === "payments" ? (
+            /* Payment milestones */
+            <>
+              <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900">
+                    Quản lý giải ngân Escrow
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Mọi milestone hoặc giao dịch Escrow của bạn sẽ hiện ở đây để tiện theo dõi.
+                  </p>
+                </div>
+                <Link
+                  href="/payments"
+                  className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-blue-700"
+                >
+                  Xem trang tài chính
+                </Link>
+              </div>
+
+              {paymentMilestones.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-4 text-3xl">
+                    💰
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    Chưa có giao dịch Escrow nào
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-4">
+                    Khi admin giải ngân hoặc milestone có cập nhật thanh toán, thông tin sẽ xuất hiện ở đây.
+                  </p>
+                  <Link
+                    href="/jobs"
+                    className="inline-flex px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl hover:shadow-md hover:shadow-blue-200 transition-all"
+                  >
+                    Tìm việc
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {paymentMilestones.map((milestone) => {
+                    const isReleased = milestone.status === MilestoneStatus.RELEASED;
+                    const hasConfirmed = !!milestone.workerReceivedAt;
+
+                    return (
+                      <Link
+                        key={milestone.id}
+                        href={milestone.escrow?.jobId ? `/jobs/${milestone.escrow.jobId}` : "/payments"}
+                        className="block bg-white rounded-2xl border border-blue-100 p-5 hover:shadow-md hover:shadow-blue-50 hover:border-blue-200 transition-all"
+                      >
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                              <h3 className="truncate text-base font-semibold text-gray-900">
+                                {milestone.title}
+                              </h3>
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                  isReleased
+                                    ? hasConfirmed
+                                      ? "bg-emerald-50 text-emerald-700"
+                                      : "bg-amber-50 text-amber-700"
+                                    : "bg-blue-50 text-blue-700"
+                                }`}
+                              >
+                                {isReleased
+                                  ? hasConfirmed
+                                    ? "Đã xác nhận nhận tiền"
+                                    : "Admin đã giải ngân"
+                                  : milestone.status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500">
+                              {milestone.escrow?.job?.title ?? "Công việc Escrow"}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-400">
+                              {milestone.releasedAt
+                                ? `Giải ngân ${formatRelativeTime(milestone.releasedAt)}`
+                                : `Tạo ${formatRelativeTime(milestone.createdAt)}`}
+                            </p>
+                            {isReleased && !hasConfirmed && (
+                              <p className="mt-2 text-xs font-medium text-amber-600">
+                                Admin đã bấm giải ngân, vui lòng vào chi tiết công việc hoặc trang tài chính để xác nhận khi đã nhận tiền.
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-left sm:text-right">
+                            <p className="text-lg font-bold text-blue-600">
+                              {Number(milestone.amount).toLocaleString("vi-VN")}đ
+                            </p>
+                            <p className="mt-1 text-xs text-gray-400">
+                              {hasConfirmed ? "Hoàn tất" : "Đang theo dõi"}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+
+                  {paymentTotal > paymentMilestones.length && (
+                    <div className="pt-2 text-center">
+                      <Link
+                        href="/payments"
+                        className="text-sm font-semibold text-blue-600 hover:underline"
+                      >
+                        Xem tất cả {paymentTotal} milestone →
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
             </>
