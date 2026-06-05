@@ -2,9 +2,12 @@
 
 import { useAuth } from "@/contexts";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useEffect, useRef, useState } from "react";
+import { categoryService } from "@/services";
+import { JobCategory } from "@/types";
 
 function useCountUp(target: number, duration = 2000, start = false) {
   const [count, setCount] = useState(0);
@@ -80,8 +83,47 @@ function StatsSection() {
   );
 }
 
+const CATEGORY_IMAGE_MAP: Record<string, string> = {
+  "Giao hàng": "/img/landing/cat-delivery.jpg",
+  "Phục vụ nhà hàng": "/img/landing/cat-serving.jpg",
+  "Dọn trọ,nhà,văn phòng": "/img/landing/cat-cleaning.jpg",
+  "Kho vận": "/img/landing/cat-warehouse.jpg",
+  "Trợ giúp sự kiện": "/img/landing/cat-event.jpg",
+  "Bán hàng": "/img/landing/cat-sales.jpg",
+  "Nhập liệu": "/img/landing/cat-data-entry.jpg",  
+  "Lập trình": "/img/landing/cat-coding.jpg",
+  "Tin học văn phòng": "/img/landing/cat-office.jpg",
+};
+
+const DEFAULT_CATEGORY_IMAGE = "/img/landing/hero-main.jpg";
+
 export default function HomePageClient() {
   const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  const [categories, setCategories] = useState<JobCategory[]>([]);
+  const [activeCategory, setActiveCategory] = useState<JobCategory | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAllCategories, setShowAllCategories] = useState(false);
+
+  useEffect(() => {
+    categoryService.getAll().then((data) => {
+      const filtered = data.filter(c => c.name !== "Khác");
+      setCategories(filtered);
+      if (filtered.length > 0) {
+        setActiveCategory(filtered[0]);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/jobs?search=${encodeURIComponent(searchQuery)}`);
+    } else {
+      router.push(`/jobs`);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -97,129 +139,188 @@ export default function HomePageClient() {
   return (
     <>
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          33% { transform: translateY(-20px) rotate(1deg); }
-          66% { transform: translateY(-10px) rotate(-1deg); }
-        }
-        @keyframes float2 {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-30px); }
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-        @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 0.8; }
-          100% { transform: scale(1.5); opacity: 0; }
-        }
-        @keyframes gradient-shift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .float-1 { animation: float 6s ease-in-out infinite; }
-        .float-2 { animation: float2 8s ease-in-out infinite; }
-        .float-3 { animation: float 7s ease-in-out infinite 2s; }
-        .shimmer-text {
-          background: linear-gradient(90deg, #2563eb, #0ea5e9, #8b5cf6, #2563eb);
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: shimmer 4s linear infinite;
-        }
-        .hero-gradient {
-          background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 40%, #faf5ff 100%);
-          background-size: 400% 400%;
-          animation: gradient-shift 8s ease infinite;
-        }
-        .card-hover {
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .card-hover:hover {
-          transform: translateY(-6px) scale(1.01);
-        }
-        .pulse-dot::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 9999px;
-          animation: pulse-ring 2s ease-out infinite;
-          background: currentColor;
-          opacity: 0.4;
+        .card-hover { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .card-hover:hover { transform: translateY(-6px) scale(1.01); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        @keyframes textCarouselFix {
+          0%, 20% { transform: translateY(0); }
+          25%, 45% { transform: translateY(-1.2em); }
+          50%, 70% { transform: translateY(-2.4em); }
+          75%, 95% { transform: translateY(-3.6em); }
+          100% { transform: translateY(-4.8em); }
         }
       `}</style>
 
       <Navbar />
-      <main className="flex-1 overflow-hidden">
-
-        {/* ── Hero ── */}
-        <section className="relative hero-gradient min-h-[92vh] flex items-center overflow-hidden">
-          {/* Animated blobs */}
-          <div className="absolute top-10 left-10 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl float-1 pointer-events-none" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-violet-300/20 rounded-full blur-3xl float-2 pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sky-200/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Floating shapes */}
-          <div className="absolute top-24 right-[15%] w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-200/50 backdrop-blur-sm float-1 hidden lg:block" />
-          <div className="absolute bottom-32 left-[12%] w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-200/50 backdrop-blur-sm float-3 hidden lg:block" />
-          <div className="absolute top-1/3 right-[8%] w-8 h-8 rounded-lg bg-emerald-500/20 float-2 hidden lg:block" />
-
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
-            <div className="max-w-3xl mx-auto text-center">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-blue-100 shadow-sm text-sm font-medium text-blue-700 mb-8 hover:scale-105 transition-transform cursor-default">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
-                </span>
-                Nền tảng việc làm thời vụ #1 Việt Nam
+      <main className="flex-1 bg-white">
+        
+        {/* Section 1: Hero */}
+        <section className="relative pt-20 pb-0 overflow-hidden bg-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-gray-900 mb-6 text-center leading-[1.2]">
+              <div className="mb-2">Tìm việc</div>
+              <div className="h-[1.2em] overflow-hidden text-blue-600 block m-0 p-0 relative">
+                <div style={{ animation: 'textCarouselFix 12s infinite cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                  <div className="h-[1.2em] flex items-center justify-center">dọn dẹp,</div>
+                  <div className="h-[1.2em] flex items-center justify-center">giao hàng,</div>
+                  <div className="h-[1.2em] flex items-center justify-center">phục vụ,</div>
+                  <div className="h-[1.2em] flex items-center justify-center">lập trình,</div>
+                  <div className="h-[1.2em] flex items-center justify-center">dọn dẹp,</div>
+                </div>
               </div>
+              <div className="mt-2">dễ dàng.</div>
+            </h1>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight mb-6">
-                <span className="text-gray-900">Tìm việc làm </span>
-                <span className="shimmer-text">thời vụ</span>
-                <br />
-                <span className="text-gray-900">nhanh & dễ dàng</span>
-              </h1>
-
-              <p className="text-lg sm:text-xl text-gray-500 max-w-xl mx-auto mb-10 leading-relaxed">
-                Kết nối người tìm việc với nhà tuyển dụng.{" "}
-                <span className="font-semibold text-blue-600">Hàng ngàn công việc</span>{" "}
-                thời vụ mới mỗi ngày trên khắp Việt Nam.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/jobs"
-                  className="group relative w-full sm:w-auto px-10 py-4 text-base font-semibold text-white rounded-2xl overflow-hidden shadow-xl shadow-blue-300/40 hover:shadow-blue-400/50 hover:-translate-y-1 transition-all duration-300"
-                  style={{ background: "linear-gradient(135deg, #2563eb, #0284c7)" }}
-                >
-                  <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                  Tìm việc ngay →
-                </Link>
-                <Link
-                  href="/jobs/post"
-                  className="w-full sm:w-auto px-10 py-4 text-base font-semibold text-blue-600 bg-white/80 backdrop-blur-sm border-2 border-blue-100 rounded-2xl hover:bg-white hover:border-blue-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-                >
-                  Đăng tuyển miễn phí
-                </Link>
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-6 relative">
+              <div className="relative flex items-center w-full h-16 rounded-2xl bg-white shadow-xl shadow-blue-100/50 border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all">
+                <div className="pl-6 flex items-center pointer-events-none">
+                  <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  className="w-full h-full pl-4 pr-32 bg-transparent border-none focus:ring-0 text-lg text-gray-900 placeholder-gray-400 outline-none"
+                  placeholder="Mô tả công việc bạn cần..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button type="submit" className="absolute right-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors">
+                  Tìm kiếm
+                </button>
               </div>
+            </form>
 
-              {/* Trust badges */}
-              <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-gray-400">
-                {["🔒 Bảo mật tuyệt đối", "⚡ Kết nối tức thì", "✅ Xác minh danh tính", "🤖 AI chống lừa đảo"].map(t => (
-                  <span key={t} className="flex items-center gap-1 font-medium">{t}</span>
-                ))}
+            <p className="text-gray-500 font-medium">
+              Được tin tưởng bởi 10K+ người • 4.9/5 <span className="text-yellow-400">⭐</span> với hơn 500 đánh giá
+            </p>
+          </div>
+
+          <div className="w-full mt-12 px-4 sm:px-12 md:px-24">
+            <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] relative mx-auto semi-circle-clip overflow-hidden shadow-2xl">
+              <img src="/img/landing/hero-main.jpg" alt="GigWork Heroes" className="w-full h-full object-cover object-center" />
+            </div>
+          </div>
+        </section>
+
+        {/* Section 2: Categories */}
+        <section className="py-20 bg-gray-50/50">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Chuyên gia cho mọi công việc tại</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-10">Khu vực của bạn.</h2>
+
+            {/* Tabs */}
+            <div className="flex overflow-x-auto hide-scrollbar border-b border-gray-200 justify-start lg:justify-center mb-8 gap-2 pb-2">
+              {(showAllCategories ? categories : categories.slice(0, 5)).map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`flex flex-col items-center min-w-[90px] p-3 rounded-xl transition-colors ${activeCategory?.id === cat.id ? 'bg-white shadow-sm border-b-2 border-blue-600' : 'hover:bg-gray-100 text-gray-600'}`}
+                >
+                  <span className="text-2xl mb-2">{cat.icon || "✨"}</span>
+                  <span className={`text-sm whitespace-nowrap font-medium ${activeCategory?.id === cat.id ? 'text-blue-600' : ''}`}>{cat.name}</span>
+                </button>
+              ))}
+              {categories.length > 5 && (
+                <button
+                  onClick={() => setShowAllCategories(!showAllCategories)}
+                  className="flex flex-col items-center min-w-[90px] p-3 rounded-xl transition-colors hover:bg-gray-100 text-gray-600"
+                >
+                  <span className="text-2xl mb-2">{showAllCategories ? "➖" : "➕"}</span>
+                  <span className="text-sm whitespace-nowrap font-medium">{showAllCategories ? "Thu gọn" : "Xem thêm"}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Active Category Display */}
+            {activeCategory && (
+              <AnimatedSection className="w-full h-[400px] md:h-[500px] rounded-3xl overflow-hidden relative shadow-xl group cursor-pointer" key={activeCategory.id}>
+                <img 
+                  src={CATEGORY_IMAGE_MAP[activeCategory.name] || DEFAULT_CATEGORY_IMAGE} 
+                  alt={activeCategory.name} 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                <div className="absolute bottom-6 left-8 text-left">
+                  <h3 className="text-3xl md:text-4xl font-bold text-white mb-2">{activeCategory.name}</h3>
+                  <Link href={`/jobs?category=${activeCategory.id}`} className="inline-flex items-center gap-2 text-white font-medium hover:text-blue-300 transition-colors">
+                    Xem chuyên gia <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </div>
+              </AnimatedSection>
+            )}
+          </div>
+        </section>
+
+        {/* Section 3: Why choose GigWork */}
+        <section className="py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Tại sao người dùng yêu thích GigWork.</h2>
+              <p className="text-lg text-gray-500">Mỗi ngày, hàng ngàn người dùng GigWork để tìm việc và tuyển dụng — và chúng tôi luôn đồng hành cùng bạn.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="p-6 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all bg-white">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Kết nối nhanh hơn.</h3>
+                  <p className="text-gray-600">Chia sẻ chi tiết về công việc bạn cần và chúng tôi sẽ tìm người phù hợp nhất ngay lập tức.</p>
+                </div>
+                <div className="p-6 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all bg-white">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Chỉ những ứng viên đã xác minh.</h3>
+                  <p className="text-gray-600">Chúng tôi chỉ hiển thị những người đã được xác minh danh tính qua AI để đảm bảo an toàn.</p>
+                </div>
+                <div className="p-6 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all bg-white">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Hoàn thành đúng cam kết — đảm bảo.</h3>
+                  <p className="text-gray-600">Nếu công việc không đúng như đã thỏa thuận, bạn được hoàn tiền qua hệ thống Escrow an toàn.</p>
+                </div>
+              </div>
+              <div className="relative h-[600px] flex items-center justify-center">
+                <div className="absolute inset-0 bg-blue-50/50 rounded-full blur-3xl" />
+                <img src="/img/landing/phone-mockup.png" alt="GigWork App" className="relative h-[90%] object-contain drop-shadow-2xl z-10" />
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── Stats ── */}
+        {/* Section 4: Explore more projects */}
+        <section className="py-20 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Khám phá thêm việc làm.</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Link href="/jobs?type=GIG" className="group relative rounded-3xl overflow-hidden h-[300px] md:h-[400px] shadow-lg">
+                <img src="/img/landing/explore-gig.jpg" alt="Việc thời vụ" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-white">Việc thời vụ</h3>
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-blue-600 transition-colors">
+                    <span aria-hidden="true">&rarr;</span>
+                  </div>
+                </div>
+              </Link>
+              <Link href="/jobs?type=ONLINE" className="group relative rounded-3xl overflow-hidden h-[300px] md:h-[400px] shadow-lg">
+                <img src="/img/landing/explore-online.jpg" alt="Việc Online" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-white">Việc Online</h3>
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-blue-600 transition-colors">
+                    <span aria-hidden="true">&rarr;</span>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 5: Stats */}
         <StatsSection />
 
-        {/* ── How it works ── */}
+        {/* Section 6: How it works */}
         <section className="py-20 bg-gradient-to-b from-white to-blue-50/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimatedSection className="text-center mb-14">
@@ -229,13 +330,11 @@ export default function HomePageClient() {
             </AnimatedSection>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-              {/* Connector line */}
               <div className="hidden md:block absolute top-[3.5rem] left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-blue-200 via-sky-300 to-emerald-200" />
-
               {[
-                { step: "01", title: "Tạo hồ sơ", desc: "Đăng ký và hoàn thiện hồ sơ cá nhân với kỹ năng, kinh nghiệm của bạn.", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", color: "from-blue-500 to-blue-400", delay: "0ms" },
-                { step: "02", title: "Tìm & ứng tuyển", desc: "Duyệt danh sách việc làm, lọc theo khu vực & danh mục, nộp đơn nhanh chóng.", icon: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z", color: "from-sky-500 to-sky-400", delay: "150ms" },
-                { step: "03", title: "Làm việc & nhận tiền", desc: "Hoàn thành công việc, nhận đánh giá tốt và xây dựng uy tín trên nền tảng.", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1", color: "from-emerald-500 to-emerald-400", delay: "300ms" },
+                { step: "01", title: "Tạo hồ sơ", desc: "Đăng ký và hoàn thiện hồ sơ cá nhân với kỹ năng, kinh nghiệm của bạn.", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", color: "from-blue-500 to-blue-400" },
+                { step: "02", title: "Tìm & ứng tuyển", desc: "Duyệt danh sách việc làm, lọc theo khu vực & danh mục, nộp đơn nhanh chóng.", icon: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z", color: "from-sky-500 to-sky-400" },
+                { step: "03", title: "Làm việc & nhận tiền", desc: "Hoàn thành công việc, nhận đánh giá tốt và xây dựng uy tín trên nền tảng.", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1", color: "from-emerald-500 to-emerald-400" },
               ].map((item) => (
                 <AnimatedSection key={item.step}>
                   <div className="card-hover relative bg-white rounded-3xl border border-blue-100/80 p-8 shadow-sm hover:shadow-xl hover:shadow-blue-100/60">
@@ -256,12 +355,11 @@ export default function HomePageClient() {
           </div>
         </section>
 
-
-        {/* ── CTA ── */}
+        {/* Section 7: CTA */}
         <section className="py-20 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #1d4ed8, #2563eb, #0284c7)" }}>
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl float-2" />
-            <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-white/5 rounded-full blur-3xl float-1" />
+            <div className="absolute top-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
           </div>
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <AnimatedSection>

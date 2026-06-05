@@ -111,3 +111,27 @@ textarea {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
 }
+
+/* Landing Page Animations */
+@keyframes textCarousel {
+  0%, 20% { transform: translateY(0); }
+  25%, 45% { transform: translateY(-20%); }
+  50%, 70% { transform: translateY(-40%); }
+  75%, 95% { transform: translateY(-60%); }
+  100% { transform: translateY(-80%); }
+}
+
+.semi-circle-clip {
+  clip-path: ellipse(150% 100% at 50% 100%);
+}
+@media (min-width: 768px) {
+  .semi-circle-clip {
+    clip-path: ellipse(100% 100% at 50% 100%);
+  }
+}
+@media (min-width: 1024px) {
+  .semi-circle-clip {
+    clip-path: ellipse(80% 100% at 50% 100%);
+  }
+}
+
