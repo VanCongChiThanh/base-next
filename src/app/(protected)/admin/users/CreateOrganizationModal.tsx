@@ -7,7 +7,12 @@ interface Props {
   isLoading?: boolean;
 }
 
-export function CreateOrganizationModal({ isOpen, onClose, onSubmit, isLoading }: Props) {
+export function CreateOrganizationModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  isLoading,
+}: Props) {
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -22,65 +27,93 @@ export function CreateOrganizationModal({ isOpen, onClose, onSubmit, isLoading }
     e.preventDefault();
     await onSubmit(formData);
     // Reset form after submit
-    setFormData({ email: "", firstName: "", lastName: "", password: "", companyName: "" });
+    setFormData({
+      email: "",
+      firstName: "",
+      lastName: "",
+      password: "",
+      companyName: "",
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/50 p-4">
       <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-        <h3 className="mb-4 text-xl font-bold text-gray-900">Tạo tổ chức / doanh nghiệp</h3>
+        <h3 className="mb-4 text-xl font-bold text-gray-900">
+          Tạo tổ chức / doanh nghiệp
+        </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Tên công ty</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Tên công ty
+            </label>
             <input
               type="text"
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               value={formData.companyName}
-              onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, companyName: e.target.value })
+              }
             />
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Tên người quản trị</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Tên người quản trị
+              </label>
               <input
                 type="text"
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, firstName: e.target.value })
+                }
               />
             </div>
             <div className="flex-1">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Họ người quản trị</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Họ người quản trị
+              </label>
               <input
                 type="text"
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, lastName: e.target.value })
+                }
               />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Email người quản trị</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Email người quản trị
+            </label>
             <input
               type="email"
               required
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Mật khẩu người quản trị</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Mật khẩu người quản trị
+            </label>
             <input
               type="password"
               required
               minLength={6}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
             />
           </div>
           <div className="mt-6 flex justify-end gap-3">
