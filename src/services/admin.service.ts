@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api-client";
-import { User, ApiSuccessResponse, PaginationMeta, Job, PaymentConfirmation, Dispute } from "@/types";
+import { User, ApiSuccessResponse, PaginationMeta, Job, PaymentConfirmation, Dispute, Milestone } from "@/types";
 import { Role } from "@/types/enums";
 
 export interface AdminGetUsersParams {
@@ -123,7 +123,28 @@ export const adminService = {
   // ==================== ADMIN PAYMENTS ====================
   async getPayments(params: { page?: number; limit?: number; status?: string } = {}): Promise<PaginatedResult<PaymentConfirmation>> {
     const query = buildQuery(params);
-    return apiClient.get<PaginatedResult<PaymentConfirmation>>(`/admin/payments${query}`);
+    const res = await apiClient.requestFull<PaymentConfirmation[]>(`/admin/payments${query}`);
+    return {
+      data: res.data || [],
+      total: res.meta?.pagination?.total || 0,
+      page: res.meta?.pagination?.page || 1,
+      limit: res.meta?.pagination?.limit || 10,
+    };
+  },
+
+  async getAdminMilestones(params: { page?: number; limit?: number; status?: string } = {}): Promise<PaginatedResult<Milestone>> {
+    const query = buildQuery(params);
+    const res = await apiClient.requestFull<Milestone[]>(`/admin/escrow/milestones${query}`);
+    return {
+      data: res.data || [],
+      total: res.meta?.pagination?.total || 0,
+      page: res.meta?.pagination?.page || 1,
+      limit: res.meta?.pagination?.limit || 10,
+    };
+  },
+
+  async releaseMilestonePayment(id: string, note: string = "Admin giải ngân"): Promise<Milestone> {
+    return apiClient.post<Milestone>(`/admin/escrow/milestones/${id}/release`, { note });
   },
 
   // ==================== ADMIN REPORTS ====================

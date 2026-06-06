@@ -8,6 +8,7 @@ import { ApplicationProgress } from "@/types";
 import { ApplicationProgressBar } from "@/components/job";
 import { ConfirmModal } from "@/components/common";
 import { Navbar } from "@/components/layout/navbar";
+import { BankAccountReminder } from "@/components/profile";
 
 function useLiveProgress(applicationId: string) {
   const [progress, setProgress] = useState<ApplicationProgress | null>(null);
@@ -83,7 +84,7 @@ export default function ApplicationProgressPage() {
     setActionLoading(true);
     try {
       await jobService.cancelApplication(progress.applicationId);
-      router.push("/worker/job-history");
+      router.push("/dashboard");
     } finally {
       setActionLoading(false);
     }
@@ -222,6 +223,8 @@ export default function ApplicationProgressPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <div className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {!isEmployerView && <BankAccountReminder />}
+        
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => router.back()}

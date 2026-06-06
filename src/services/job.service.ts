@@ -136,6 +136,10 @@ export const jobService = {
     return apiClient.post(`/jobs/${jobId}/complete-assignment`);
   },
 
+  async completeOnlineJob(jobId: string): Promise<Job> {
+    return apiClient.put<Job>(`/jobs/${jobId}/complete-online`);
+  },
+
   async logHours(jobId: string, loggedHours: number): Promise<any> {
     return apiClient.post(`/jobs/${jobId}/log-hours`, { loggedHours });
   },

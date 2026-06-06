@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Notification, NotificationType } from "@/types";
-import { getNotificationTitle, getNotificationMessage } from "@/lib";
+import { getNotificationTitle, getNotificationMessage, getNotificationRoute } from "@/lib";
 
 interface ToastProps {
   notification: Notification;
@@ -151,6 +151,16 @@ function Toast({ notification, onClose, onClick }: ToastProps) {
         <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
           {getNotificationMessage(notification)}
         </p>
+        {getNotificationRoute(notification) && (
+          <div className="mt-2">
+            <span className="text-xs font-semibold text-blue-600 flex items-center">
+              Xem chi tiết
+              <svg className="w-3 h-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </div>
+        )}
       </div>
 
       <button

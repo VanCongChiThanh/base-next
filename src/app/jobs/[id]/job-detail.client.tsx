@@ -11,10 +11,12 @@ import {
   ReportModal,
   ReviewSection,
   EscrowSection,
+  JobProgressInline,
 } from "@/components/job";
 import { ConfirmModal } from "@/components/common";
-import { ScamAnalysisModal } from "@/components/ai/scam-analysis-modal";
+import { ScamAnalysisAlert } from "@/components/ai/scam-analysis-alert";
 import { MatchedCandidates } from "@/components/ai/matched-candidates";
+import { BankAccountReminder } from "@/components/profile";
 import { useAuth, useChat } from "@/contexts";
 import { jobService, paymentService, reviewService } from "@/services";
 import { saveJob, unsaveJob, checkJobSaved } from "@/services/ai.service";
@@ -32,6 +34,9 @@ import {
   PaymentMethod,
   BankAccount,
   PaymentStatus,
+  OnlinePaymentType,
+  ApplicationProgress,
+  Escrow,
 } from "@/types";
 import { formatDateTime, formatRelativeTime } from "@/lib/utils";
 import { getErrorMessage } from "@/lib/api-client";
@@ -54,6 +59,8 @@ export default function JobDetailPageClient({
     null,
   );
   const [coverLetter, setCoverLetter] = useState("");
+  const [appProgress, setAppProgress] = useState<ApplicationProgress | null>(null);
+  const [escrow, setEscrow] = useState<Escrow | null>(null);
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -65,8 +72,11 @@ export default function JobDetailPageClient({
   const [showReport, setShowReport] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [showWorkerCompleteConfirm, setShowWorkerCompleteConfirm] = useState(false);
+  const [showConfirmReceipt, setShowConfirmReceipt] = useState(false);
+  const [showLogHoursModal, setShowLogHoursModal] = useState(false);
+  const [loggedHoursInput, setLoggedHoursInput] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [showScamCheck, setShowScamCheck] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savingJob, setSavingJob] = useState(false);
   const [p2pBankAccounts, setP2pBankAccounts] = useState<BankAccount[]>([]);
@@ -74,8 +84,8 @@ export default function JobDetailPageClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  const isEmployer = user && job && user.id === job.employerId;
-  const isWorkerAndAuthenticated = !isEmployer && isAuthenticated;
+  const isEmployer = user && job && (user.id === job.employerId || user.id === (job as any).postedById);
+  const isWorkerAndAuthenticated = !isEmployer && isAuthenticated && user?.role === "USER";
 
   // Calculate estimated earnings
   const durationMs = job && job.endTime && job.startTime ? new Date(job.endTime).getTime() - new Date(job.startTime).getTime() : 0;
@@ -109,7 +119,21 @@ export default function JobDetailPageClient({
     if (isWorkerAndAuthenticated && job) {
       jobService
         .getMyApplication(job.id)
-        .then(setMyApplication)
+        .then(async (app) => {
+          setMyApplication(app);
+          if (app) {
+            try {
+              const progress = await jobService.getApplicationProgress(app.id);
+              setAppProgress(progress);
+              if (job.paymentMethod === PaymentMethod.ESCROW) {
+                const escrowData = await paymentService.getEscrowByJob(job.id);
+                setEscrow(escrowData);
+              }
+            } catch (err) {
+              // ignore
+            }
+          }
+        })
         .catch(() => {});
     }
   }, [isWorkerAndAuthenticated, job]);
@@ -163,10 +187,12 @@ export default function JobDetailPageClient({
     }
   };
 
-  const canReview = !!(isAuthenticated && job && (
-    myApplication?.status === ApplicationStatus.ACCEPTED ||
-    (isEmployer && applications.some(a => a.status === ApplicationStatus.ACCEPTED))
-  ));
+  const canReview = !!(isAuthenticated && job && 
+    (job.status === JobStatus.COMPLETED || job.status === JobStatus.SETTLED) &&
+    (
+      myApplication?.status === ApplicationStatus.ACCEPTED ||
+      (isEmployer && applications.some(a => a.status === ApplicationStatus.ACCEPTED))
+    ));
   const revieweeId = isEmployer
     ? applications.find(a => a.status === ApplicationStatus.ACCEPTED)?.workerId
     : job?.employerId;
@@ -223,6 +249,40 @@ export default function JobDetailPageClient({
     }
   };
 
+  const handleApproveComplete = async () => {
+    if (!job) return;
+    setActionLoading("approve_complete");
+    setError("");
+    try {
+      await jobService.completeAssignment(job.id);
+      setSuccess("Đã xác nhận hoàn thành công việc!");
+      // Tải lại applications để cập nhật trạng thái
+      const apps = await jobService.getJobApplications(job.id);
+      setApplications(apps);
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleApprovePayment = async () => {
+    if (!job) return;
+    setActionLoading("approve_payment");
+    setError("");
+    try {
+      await jobService.markPaid(job.id);
+      setSuccess("Đã xác nhận thanh toán!");
+      // Tải lại applications
+      const apps = await jobService.getJobApplications(job.id);
+      setApplications(apps);
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleRespondAcceptance = async (accept: boolean) => {
     if (!myApplication) return;
     setActionLoading(myApplication.id);
@@ -268,6 +328,87 @@ export default function JobDetailPageClient({
       const updated = await jobService.completeJob(id);
       setJob(updated);
       setSuccess("Công việc đã hoàn thành!");
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleWorkerComplete = async () => {
+    setShowWorkerCompleteConfirm(false);
+    setActionLoading("complete");
+    try {
+      await jobService.completeAssignment(id);
+      setSuccess("Đã xác nhận hoàn thành công việc!");
+      const updated = await jobService.getJob(id);
+      setJob(updated);
+      // Refresh progress
+      if (myApplication) {
+        const progress = await jobService.getApplicationProgress(myApplication.id);
+        setAppProgress(progress);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleLogHours = async (hours: number) => {
+    setShowLogHoursModal(false);
+    setActionLoading("logHours");
+    try {
+      await jobService.logHours(id, hours);
+      setSuccess("Đã báo cáo số giờ làm!");
+      const updated = await jobService.getJob(id);
+      setJob(updated);
+      if (myApplication) {
+        const progress = await jobService.getApplicationProgress(myApplication.id);
+        setAppProgress(progress);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmHours = async (appId: string) => {
+    setActionLoading("confirmHours_" + appId);
+    try {
+      await jobService.confirmHours(id);
+      setSuccess("Đã xác nhận số giờ làm!");
+      const updated = await jobService.getJob(id);
+      setJob(updated);
+      const apps = await jobService.getJobApplications(id);
+      setApplications(apps);
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleWorkerConfirmReceipt = async () => {
+    setShowConfirmReceipt(false);
+    setActionLoading("confirmReceipt");
+    try {
+      await jobService.confirmPaymentReceipt(id);
+      try {
+        await paymentService.confirmPayment(id);
+      } catch (e) {
+        console.error("Auto confirm final payment failed", e);
+      }
+      setSuccess("Đã xác nhận nhận đủ thanh toán!");
+      const updated = await jobService.getJob(id);
+      setJob(updated);
+      if (myApplication) {
+        const progress = await jobService.getApplicationProgress(myApplication.id);
+        setAppProgress(progress);
+      }
+      const updatedPayments = await paymentService.getJobPayments(id);
+      setPayments(updatedPayments);
     } catch (err) {
       setError(getErrorMessage(err as ApiError));
     } finally {
@@ -353,6 +494,8 @@ export default function JobDetailPageClient({
               <Link href="/jobs" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mb-4 transition-colors font-medium">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg> Quay lại danh sách
               </Link>
+              
+              {!isEmployer && isAuthenticated && <ScamAnalysisAlert jobId={job.id} />}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
@@ -380,6 +523,10 @@ export default function JobDetailPageClient({
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             {error && <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>}
             {success && <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">{success}</div>}
+
+            {isWorkerAndAuthenticated && (
+              <BankAccountReminder />
+            )}
 
             {/* Job Details Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -534,9 +681,7 @@ export default function JobDetailPageClient({
                             {(app.status === ApplicationStatus.PENDING || app.status === ApplicationStatus.ACCEPTED || app.status === ApplicationStatus.EMPLOYER_ACCEPTED) && (
                               <button onClick={() => openChat(app.id, app.status as ApplicationStatus, job.title)} className="px-3 py-1.5 text-xs font-medium bg-white border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Nhắn tin">💬 Chat</button>
                             )}
-                            {app.status === ApplicationStatus.ACCEPTED && (
-                              <Link href={`/applications/${app.id}/progress`} className="px-3 py-1.5 text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors">📈 Tiến trình</Link>
-                            )}
+                            {/* Tiến trình UI has been merged into this page */}
                             {app.status === ApplicationStatus.ACCEPTED && job.paymentMethod === PaymentMethod.P2P && (
                               <button onClick={() => setShowBankModal(true)} className="px-3 py-1.5 text-xs font-medium bg-purple-50 border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">🏦 Ngân hàng</button>
                             )}
@@ -546,6 +691,43 @@ export default function JobDetailPageClient({
                                 <button onClick={() => handleReject(app.id)} disabled={actionLoading === app.id} className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors">Từ chối</button>
                               </>
                             )}
+                            {app.assignment?.status === "HOURS_SUBMITTED" && (
+                              <div className="flex flex-col items-end gap-1">
+                                <div className="text-xs text-gray-600">
+                                  Báo cáo: <span className="font-bold text-gray-900">{app.assignment.loggedHours} giờ</span>
+                                  {job.salaryPerHour && (
+                                    <span className="ml-1 text-emerald-600 font-medium">
+                                      ({Number((app.assignment.loggedHours || 0) * Number(job.salaryPerHour)).toLocaleString("vi-VN")} đ)
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => handleConfirmHours(app.id)}
+                                  disabled={actionLoading === "confirmHours_" + app.id}
+                                  className="px-3 py-1.5 text-xs font-bold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50"
+                                >
+                                  {actionLoading === "confirmHours_" + app.id ? "Đang xử lý..." : "Xác nhận số giờ làm"}
+                                </button>
+                              </div>
+                            )}
+                            {(app.assignment?.status === "ASSIGNED" || app.assignment?.status === "IN_PROGRESS") && job.salaryType !== "HOURLY" ? (
+                              <button
+                                onClick={handleApproveComplete}
+                                disabled={actionLoading === "approve_complete"}
+                                className="px-3 py-1.5 text-xs font-bold text-white bg-teal-500 rounded-lg hover:bg-teal-600 transition-all disabled:opacity-50"
+                              >
+                                {actionLoading === "approve_complete" ? "Đang xử lý..." : "Xác nhận hoàn thành"}
+                              </button>
+                            ) : null}
+                            {app.assignment?.status === "PAYMENT_PENDING" ? (
+                              <button
+                                onClick={handleApprovePayment}
+                                disabled={actionLoading === "approve_payment"}
+                                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-all disabled:opacity-50"
+                              >
+                                {actionLoading === "approve_payment" ? "Đang xử lý..." : (job.paymentMethod === PaymentMethod.P2P ? "Xác nhận thanh toán" : "Xác nhận")}
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -555,8 +737,8 @@ export default function JobDetailPageClient({
               </div>
             </div>
 
-            {/* Escrow Section */}
-            {job.jobType === JobType.ONLINE && job.paymentMethod === PaymentMethod.ESCROW && (
+            {/* Escrow Section - only for FIXED_PRICE, not HOURLY_RATE */}
+            {job.jobType === JobType.ONLINE && job.paymentMethod === PaymentMethod.ESCROW && job.onlinePaymentType !== "HOURLY_RATE" && (
               <div className="mt-6"><EscrowSection job={job} /></div>
             )}
             
@@ -629,8 +811,11 @@ export default function JobDetailPageClient({
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Quay lại
+              Quay lại danh sách
             </Link>
+
+            {!isEmployer && isAuthenticated && <ScamAnalysisAlert jobId={job.id} />}
+
 
             <div className="flex flex-col sm:flex-row sm:items-start gap-4">
               <div className="flex-1">
@@ -655,7 +840,8 @@ export default function JobDetailPageClient({
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                       />
                     </svg>
-                    {job.employer.firstName} {job.employer.lastName}
+                    {job.postedBy ? `${job.postedBy.firstName} ${job.postedBy.lastName}` : `${job.employer.firstName} ${job.employer.lastName}`}
+                    {job.employerProfile?.companyName ? ` - ${job.employerProfile.companyName}` : ''}
                   </span>
                   <span className="text-blue-200">|</span>
                   <span>{formatRelativeTime(job.createdAt)}</span>
@@ -708,6 +894,18 @@ export default function JobDetailPageClient({
               {isEmployer && (
                 <MatchedCandidates job={job} />
               )}
+
+              {/* Worker Milestone Progress */}
+              {job.jobType === JobType.ONLINE &&
+                job.paymentMethod === PaymentMethod.ESCROW &&
+                job.onlinePaymentType !== OnlinePaymentType.HOURLY_RATE &&
+                myApplication && appProgress && (
+                  <JobProgressInline
+                    progress={appProgress}
+                    escrow={escrow}
+                    jobId={job.id}
+                  />
+                )}
 
               {/* Description */}
               <div className="bg-white rounded-2xl border border-blue-100 p-6">
@@ -772,8 +970,8 @@ export default function JobDetailPageClient({
                   </div>
                 )}
 
-              {/* Escrow Section for Online Jobs */}
-              {job.jobType === JobType.ONLINE && job.paymentMethod === PaymentMethod.ESCROW && (
+              {/* Escrow Section for Online Jobs - only for FIXED_PRICE, not HOURLY_RATE */}
+              {job.jobType === JobType.ONLINE && job.paymentMethod === PaymentMethod.ESCROW && job.onlinePaymentType !== "HOURLY_RATE" && (
                 <EscrowSection job={job} />
               )}
 
@@ -832,6 +1030,111 @@ export default function JobDetailPageClient({
                 </div>
               )}
 
+              {/* Worker Complete Assignment */}
+              {!isEmployer &&
+                myApplication?.status === ApplicationStatus.ACCEPTED &&
+                (appProgress?.assignment?.status === "IN_PROGRESS" || appProgress?.assignment?.status === "ASSIGNED") && (
+                  <div className="bg-white rounded-2xl border border-blue-200 p-5 shadow-sm flex flex-col gap-3 mt-4">
+                    {showWorkerCompleteConfirm ? (
+                      <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                        <p className="text-sm text-emerald-800 mb-3 font-medium">
+                          Xác nhận bạn đã hoàn tất công việc?
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleWorkerComplete}
+                            disabled={actionLoading === "complete"}
+                            className="flex-1 py-1.5 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === "complete" ? "Đang xử lý..." : "Xác nhận"}
+                          </button>
+                          <button
+                            onClick={() => setShowWorkerCompleteConfirm(false)}
+                            disabled={actionLoading === "complete"}
+                            className="flex-1 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                          >
+                            Quay lại
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-emerald-700/80 text-center italic mt-3 leading-relaxed">
+                          Lưu ý: Chỉ xác nhận hoàn thành khi bạn đã hoàn tất công việc{job?.paymentMethod === PaymentMethod.P2P ? " (và đã nhận đủ tiền nếu giao dịch trực tiếp)" : ""}.
+                        </p>
+                      </div>
+                    ) : (job.jobType === JobType.ONLINE ? job.onlinePaymentType === "HOURLY_RATE" : job.salaryType === "HOURLY") ? (
+                      <button
+                        onClick={() => setShowLogHoursModal(true)}
+                        className="w-full py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl hover:shadow-md transition-all shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <span>⏱️</span> Báo cáo số giờ làm
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowWorkerCompleteConfirm(true)}
+                        className="w-full py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl hover:shadow-md transition-all shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <span>✅</span> Hoàn thành công việc
+                      </button>
+                    )}
+                  </div>
+                )}
+
+              {/* Worker Hours Submitted Info */}
+              {!isEmployer &&
+                myApplication?.status === ApplicationStatus.ACCEPTED &&
+                appProgress?.assignment?.status === "HOURS_SUBMITTED" && (
+                  <div className="bg-blue-50 rounded-2xl border border-blue-200 p-5 shadow-sm mt-4 text-center">
+                    <p className="text-sm font-semibold text-blue-800">
+                      Đã báo cáo: <span className="text-xl mx-1">{appProgress.assignment.loggedHours}</span> giờ
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">Đang chờ đối tác xác nhận số giờ làm này.</p>
+                  </div>
+                )}
+
+              {/* Worker Payment Receipt Confirmation */}
+              {!isEmployer &&
+                myApplication?.status === ApplicationStatus.ACCEPTED &&
+                appProgress?.assignment?.status === "PAYMENT_SENT" && (
+                  <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-5 shadow-sm mt-4">
+                    {showConfirmReceipt ? (
+                      <div className="bg-white p-4 rounded-xl border border-emerald-100">
+                        <p className="text-sm text-emerald-800 mb-3 font-medium">
+                          Bạn chắc chắn đã nhận đủ tiền chứ?
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleWorkerConfirmReceipt}
+                            disabled={actionLoading === "confirmReceipt"}
+                            className="flex-1 py-1.5 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === "confirmReceipt" ? "Đang xử lý..." : "Xác nhận"}
+                          </button>
+                          <button
+                            onClick={() => setShowConfirmReceipt(false)}
+                            disabled={actionLoading === "confirmReceipt"}
+                            className="flex-1 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                          >
+                            Quay lại
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => setShowConfirmReceipt(true)}
+                          className="w-full py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl hover:shadow-md transition-all shadow-sm flex items-center justify-center gap-2"
+                        >
+                          Xác nhận đã nhận đủ thanh toán
+                        </button>
+                        {!isEmployer && job?.paymentMethod !== PaymentMethod.ESCROW && (
+                          <p className="text-[11px] text-emerald-700/80 text-center italic mt-1 leading-relaxed">
+                            Lưu ý: Bạn chỉ được bấm xác nhận này khi thực tế đã nhận được tiền.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
               {/* Final Payment Confirmation - only after job completed */}
               {(job.status === JobStatus.COMPLETED || job.status === JobStatus.SETTLED) && job.jobType !== JobType.ONLINE && (isEmployer || myApplication?.status === ApplicationStatus.ACCEPTED) && (
                 <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-5">
@@ -839,15 +1142,22 @@ export default function JobDetailPageClient({
                     Xác nhận thanh toán
                   </h3>
                   {!isConfirmedByMe ? (
-                    <button
-                      onClick={handleConfirmPayment}
-                      disabled={actionLoading === "payment"}
-                      className="w-full py-2.5 text-sm font-semibold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all"
-                    >
-                      {actionLoading === "payment"
-                        ? "Đang xử lý..."
-                        : isEmployer ? "Xác nhận đã thanh toán" : "Xác nhận đã nhận tiền"}
-                    </button>
+                    <div className="w-full">
+                      <button
+                        onClick={handleConfirmPayment}
+                        disabled={actionLoading === "payment"}
+                        className="w-full py-2.5 text-sm font-semibold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                      >
+                        {actionLoading === "payment"
+                          ? "Đang xử lý..."
+                          : isEmployer ? "Xác nhận đã thanh toán" : (job.paymentMethod === PaymentMethod.P2P ? "Xác nhận đã nhận đủ thanh toán" : "Xác nhận hoàn thành")}
+                      </button>
+                      {!isEmployer && job.paymentMethod === PaymentMethod.P2P && (
+                        <p className="text-[11px] text-emerald-700/80 text-center italic mt-2 leading-relaxed">
+                          Lưu ý: Bạn chỉ được bấm xác nhận này khi thực tế đã nhận được tiền.
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <div className="space-y-1">
                       <p className="text-sm text-emerald-600 font-medium flex items-center gap-1">
@@ -868,55 +1178,52 @@ export default function JobDetailPageClient({
                       )}
                     </div>
                   )}
+                </div>
+              )}
 
-                  {/* Dispute option */}
-                  {!hasOpenDispute && !isFullyConfirmed && (
-                    <div className="mt-3 pt-3 border-t border-emerald-200">
-                      {!showDisputeForm ? (
+              {/* Dispute option - Available to involved parties before settlement */}
+              {(isEmployer || myApplication?.status === ApplicationStatus.ACCEPTED) && !hasOpenDispute && job.status !== JobStatus.SETTLED && job.status !== JobStatus.CANCELLED && (
+                <div className="bg-white rounded-2xl border border-red-100 p-5 shadow-sm mt-4">
+                  {!showDisputeForm ? (
+                    <button
+                      onClick={() => setShowDisputeForm(true)}
+                      className="text-sm text-red-600 hover:text-red-700 font-semibold transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Có vấn đề? Tạo khiếu nại
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-red-800">Tạo khiếu nại</h3>
+                      <textarea
+                        value={disputeReason}
+                        onChange={(e) => setDisputeReason(e.target.value)}
+                        placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."
+                        className="w-full px-3 py-2 rounded-xl border border-red-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => setShowDisputeForm(true)}
-                          className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                          onClick={handleCreateDispute}
+                          disabled={actionLoading === "dispute" || !disputeReason.trim()}
+                          className="flex-1 py-2 text-xs font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 disabled:opacity-50 transition-all shadow-sm"
                         >
-                          Có vấn đề? Tạo khiếu nại
+                          {actionLoading === "dispute" ? "Đang gửi..." : "Gửi khiếu nại"}
                         </button>
-                      ) : (
-                        <div className="space-y-2">
-                          <textarea
-                            value={disputeReason}
-                            onChange={(e) => setDisputeReason(e.target.value)}
-                            placeholder="Mô tả vấn đề bạn gặp phải..."
-                            className="w-full px-3 py-2 rounded-lg border border-red-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
-                            rows={3}
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={handleCreateDispute}
-                              disabled={
-                                actionLoading === "dispute" ||
-                                !disputeReason.trim()
-                              }
-                              className="flex-1 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 transition-all"
-                            >
-                              Gửi khiếu nại
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowDisputeForm(false);
-                                setDisputeReason("");
-                              }}
-                              className="px-3 py-1.5 text-xs text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all"
-                            >
-                              Huỷ
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                        <button
+                          onClick={() => {
+                            setShowDisputeForm(false);
+                            setDisputeReason("");
+                          }}
+                          disabled={actionLoading === "dispute"}
+                          className="flex-1 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 disabled:opacity-50 transition-all"
+                        >
+                          Hủy
+                        </button>
+                      </div>
                     </div>
-                  )}
-                  {hasOpenDispute && (
-                    <p className="mt-2 text-xs text-amber-600 font-medium">
-                      ⚠ Đang có khiếu nại mở
-                    </p>
                   )}
                 </div>
               )}
@@ -1295,9 +1602,9 @@ export default function JobDetailPageClient({
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">
-                      {job.employer.firstName} {job.employer.lastName}
-                    </p>
+                    <Link href={`/employer/${job.employerId}`} className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                      {job.employerProfile?.companyName || `${job.employer.firstName} ${job.employer.lastName}`}
+                    </Link>
                     <p className="text-xs text-gray-400">Nhà tuyển dụng</p>
                   </div>
                 </div>
@@ -1310,12 +1617,6 @@ export default function JobDetailPageClient({
                     <span>🛡️</span> Công cụ AI
                   </h3>
                   <div className="space-y-2">
-                    <button
-                      onClick={() => setShowScamCheck(true)}
-                      className="w-full py-2.5 text-sm font-medium text-indigo-700 bg-white border border-indigo-200 rounded-xl hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
-                    >
-                      <span>🔍</span> Kiểm tra tin lừa đảo
-                    </button>
                     <button
                       onClick={handleToggleSave}
                       disabled={savingJob}
@@ -1371,16 +1672,6 @@ export default function JobDetailPageClient({
         />
       )}
 
-      {/* Scam Analysis Modal */}
-      {job && (
-        <ScamAnalysisModal
-          isOpen={showScamCheck}
-          onClose={() => setShowScamCheck(false)}
-          jobId={job.id}
-          jobTitle={job.title}
-        />
-      )}
-
       {/* Confirmation Modals */}
       <ConfirmModal
         isOpen={showCancelConfirm}
@@ -1403,6 +1694,66 @@ export default function JobDetailPageClient({
         variant="success"
         isLoading={actionLoading === "complete"}
       />
+      <ConfirmModal
+        isOpen={showWorkerCompleteConfirm}
+        onClose={() => setShowWorkerCompleteConfirm(false)}
+        onConfirm={handleWorkerComplete}
+        title="Hoàn thành công việc"
+        message="Xác nhận rằng bạn đã hoàn tất công việc?"
+        confirmLabel="Xác nhận"
+        variant="success"
+        isLoading={actionLoading === "complete"}
+      />
+
+      {/* Log Hours Modal */}
+      {showLogHoursModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Báo cáo số giờ làm</h3>
+              <p className="text-sm text-gray-500 mb-6">Nhập tổng số giờ bạn đã làm cho công việc này. Đối tác sẽ cần xác nhận trước khi thanh toán.</p>
+              
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Số giờ đã làm</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.5"
+                    value={loggedHoursInput}
+                    onChange={(e) => setLoggedHoursInput(e.target.value)}
+                    placeholder="VD: 8.5"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium text-gray-900"
+                    autoFocus
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">giờ</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogHoursModal(false)}
+                  disabled={actionLoading === "logHours"}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={() => {
+                    if (Number(loggedHoursInput) > 0) {
+                      handleLogHours(Number(loggedHoursInput));
+                    }
+                  }}
+                  disabled={!loggedHoursInput || Number(loggedHoursInput) <= 0 || actionLoading === "logHours"}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {actionLoading === "logHours" ? "Đang xử lý..." : "Gửi báo cáo"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

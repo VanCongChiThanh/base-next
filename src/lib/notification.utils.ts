@@ -130,16 +130,16 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
 
   // Escrow / Milestones
   [NotificationType.ESCROW_DEPOSITED]: {
-    title: "Ký quá hạn thành công",
-    message: "Đã ký quá hạn thành công cho công việc {jobTitle}.",
+    title: "Ký quỹ thành công",
+    message: "Đã ký quỹ thành công cho công việc {jobTitle}.",
   },
   [NotificationType.ESCROW_RELEASED]: {
     title: "Tiền đã được giải ngân",
     message: "Tiền đã được giải ngân thành công cho {milestoneTitle}.",
   },
   [NotificationType.ESCROW_REFUNDED]: {
-    title: "Hoàn tiền ký quá hạn",
-    message: "Tiền ký quá hạn đã được hoàn lại cho nhà tuyển dụng.",
+    title: "Hoàn tiền ký quỹ",
+    message: "Tiền ký quỹ đã được hoàn lại cho nhà tuyển dụng.",
   },
   [NotificationType.MILESTONE_SUBMITTED]: {
     title: "Milestone đã được nộp",
@@ -158,8 +158,8 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
     message: "Nhà tuyển dụng đã chấp nhận kết quả milestone {milestoneTitle}.",
   },
   [NotificationType.MILESTONE_RELEASED]: {
-    title: "Milestone được giải ngân",
-    message: "Tiền của milestone {milestoneTitle} đã được giải ngân.",
+    title: "Tiền giải ngân Milestone đã được gửi",
+    message: "Tiền của milestone {milestoneTitle} đã được Admin chuyển khoản. Vui lòng kiểm tra tài khoản và xác nhận Đã Nhận Tiền.",
   },
   [NotificationType.MILESTONE_REVISION_REQUESTED]: {
     title: "Yêu cầu chỉnh sửa",
@@ -203,7 +203,7 @@ export function getNotificationTitle(notification: Notification): string {
 }
 
 /**
- * Render message tá»« notification
+ * Render message từ notification
  */
 export function getNotificationMessage(notification: Notification): string {
   if (!notification?.type) return "";
@@ -218,6 +218,11 @@ export function getNotificationMessage(notification: Notification): string {
 
   if (notification.type === NotificationType.JOB_APPLICATION_RECEIVED && notification.data?.isDirectHire) {
     return `Bạn nhận được lời đề nghị Thuê ngay cho công việc: ${notification.data?.jobTitle || 'Chưa cập nhật'}.`;
+  }
+
+  // If backend provides a custom message and the template doesn't explicitly format it, use the custom message
+  if (notification.data?.message && !template.message.includes("{message}")) {
+    return String(notification.data.message);
   }
 
   return formatTemplate(template.message, notification.data);
@@ -248,6 +253,18 @@ export function getNotificationRoute(
     switch (notification.type) {
       case NotificationType.JOB_APPLICATION_RECEIVED:
       case NotificationType.JOB_CANCELLED:
+      case NotificationType.PAYMENT_DISPUTED:
+      case NotificationType.DISPUTE_RESOLVED:
+      case NotificationType.REVIEW_RECEIVED:
+      case NotificationType.ESCROW_DEPOSITED:
+      case NotificationType.ESCROW_RELEASED:
+      case NotificationType.ESCROW_REFUNDED:
+      case NotificationType.MILESTONE_SUBMITTED:
+      case NotificationType.MILESTONE_PROPOSED:
+      case NotificationType.MILESTONE_PROPOSAL_RESPONDED:
+      case NotificationType.MILESTONE_APPROVED:
+      case NotificationType.MILESTONE_RELEASED:
+      case NotificationType.MILESTONE_REVISION_REQUESTED:
         return dataJobId ? `/jobs/${dataJobId}` : null;
 
       case NotificationType.JOB_COMPLETED:
@@ -256,15 +273,6 @@ export function getNotificationRoute(
       case NotificationType.PAYMENT_CONFIRMED:
       case NotificationType.JOB_APPLICATION_ACCEPTED:
       case NotificationType.JOB_APPLICATION_REJECTED:
-        return dataApplicationId
-          ? `/applications/${dataApplicationId}/progress`
-          : dataJobId
-            ? `/jobs/${dataJobId}`
-            : null;
-
-      case NotificationType.PAYMENT_DISPUTED:
-      case NotificationType.DISPUTE_RESOLVED:
-      case NotificationType.REVIEW_RECEIVED:
         return dataJobId ? `/jobs/${dataJobId}` : null;
 
       default:
@@ -277,7 +285,7 @@ export function getNotificationRoute(
       return `/orders/${refId}`;
 
     case ReferenceType.PAYMENT:
-      return `/payments/${refId}`;
+      return dataJobId ? `/jobs/${dataJobId}` : null;
 
     case ReferenceType.USER:
       return `/users/${refId}`;
@@ -298,7 +306,7 @@ export function getNotificationRoute(
       return `/jobs/${refId}`;
 
     case ReferenceType.JOB_APPLICATION:
-      return `/applications/${refId}/progress`;
+      return dataJobId ? `/jobs/${dataJobId}` : null;
 
     case ReferenceType.REVIEW:
       return dataJobId ? `/jobs/${dataJobId}` : null;
@@ -306,7 +314,27 @@ export function getNotificationRoute(
     case ReferenceType.DISPUTE:
       return dataJobId ? `/jobs/${dataJobId}` : null;
 
+    case "ESCROW" as ReferenceType:
+    case "MILESTONE" as ReferenceType:
+      return dataJobId ? `/jobs/${dataJobId}` : null;
+
     default:
+      // Fallback: check notification type one more time in case refType was unexpected
+      if (
+        [
+          NotificationType.ESCROW_DEPOSITED,
+          NotificationType.ESCROW_RELEASED,
+          NotificationType.ESCROW_REFUNDED,
+          NotificationType.MILESTONE_SUBMITTED,
+          NotificationType.MILESTONE_PROPOSED,
+          NotificationType.MILESTONE_PROPOSAL_RESPONDED,
+          NotificationType.MILESTONE_APPROVED,
+          NotificationType.MILESTONE_RELEASED,
+          NotificationType.MILESTONE_REVISION_REQUESTED,
+        ].includes(notification.type)
+      ) {
+        return dataJobId ? `/jobs/${dataJobId}` : null;
+      }
       return null;
   }
 }

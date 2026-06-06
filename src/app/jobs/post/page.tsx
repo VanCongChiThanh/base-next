@@ -18,7 +18,11 @@ import { ApiError } from "@/types";
 import { cn } from "@/lib/utils";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
 import { UpgradePrompt } from "@/components/common/upgrade-prompt";
+import { useEntitlements } from "@/contexts/entitlement-context";
+import { useAuth } from "@/contexts";
 import { toast } from "react-hot-toast";
+import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 
 const ONLINE_SKILL_NAMES = ["Thiết kế", "Marketing", "Gia sư", "Chụp ảnh", "MC"];
 const GIG_SKILL_NAMES = ["Phục vụ", "Pha chế", "Nấu ăn", "Bán hàng", "Khuân vác", "Lái xe", "Dọn dẹp", "Chụp ảnh", "MC"];
@@ -37,6 +41,8 @@ export default function PostJobPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [hireId, setHireId] = useState<string | null>(null);
+  const { entitlements, isLoading: isEntitlementsLoading, refreshEntitlements } = useEntitlements();
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -164,6 +170,18 @@ export default function PostJobPage() {
     [wards],
   );
 
+  const monthlyPostLimit = entitlements?.features?.["job.post.monthly_limit"];
+  const monthlyPostUsed = entitlements?.features?.["job.post.monthly_used"];
+  const monthlyPostRemaining =
+    entitlements?.features?.["job.post.monthly_remaining"];
+  const hasUnlimitedMonthlyPosts = Boolean(
+    entitlements?.features?.["job.post.unlimited"],
+  );
+  const isOutOfMonthlyPosts =
+    !hasUnlimitedMonthlyPosts &&
+    typeof monthlyPostRemaining === "number" &&
+    monthlyPostRemaining <= 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -225,6 +243,7 @@ export default function PostJobPage() {
       }
 
       const job = await jobService.createJob(payload);
+      await refreshEntitlements();
       router.push(`/jobs/${job.id}`);
     } catch (err) {
       const msg = getErrorMessage(err as ApiError);
@@ -238,6 +257,32 @@ export default function PostJobPage() {
   const inputClass =
     "w-full px-4 py-2.5 rounded-xl border border-blue-100 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all text-sm";
   const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
+
+  const isEkycVerified = 
+    user?.role === "RECRUITER" || 
+    user?.verificationLevel === "BASIC" || 
+    user?.verificationLevel === "BUSINESS";
+
+  if (!isAuthLoading && user && !isEkycVerified) {
+    return (
+      <AuthGuard>
+        <Navbar />
+        <main className="flex-1 min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-orange-200 max-w-md text-center">
+            <AlertTriangle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Chưa xác thực eKYC</h2>
+            <p className="text-gray-600 mb-6">
+              Bạn cần phải hoàn tất xác minh danh tính (eKYC) trước khi có thể đăng tin tuyển dụng. Điều này giúp đảm bảo an toàn cho cộng đồng của chúng tôi.
+            </p>
+            <Link href="/profile" className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+              Đi đến Xác thực ngay
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </AuthGuard>
+    );
+  }
 
   return (
     <AuthGuard>
@@ -277,6 +322,46 @@ export default function PostJobPage() {
           {/* Upgrade prompt - only shows when quota is low */}
           <div className="mb-6">
             <UpgradePrompt />
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  Lượt đăng bài tháng này
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  {isEntitlementsLoading
+                    ? "Đang tải thông tin gói..."
+                    : hasUnlimitedMonthlyPosts
+                      ? "Gói hiện tại cho phép đăng bài không giới hạn."
+                      : typeof monthlyPostRemaining === "number"
+                        ? `Bạn còn ${monthlyPostRemaining} lượt đăng trong tháng này.`
+                        : "Chưa có thông tin giới hạn đăng bài."}
+                </p>
+              </div>
+              <div
+                className={cn(
+                  "rounded-xl px-4 py-2 text-center text-sm font-semibold",
+                  isOutOfMonthlyPosts
+                    ? "bg-red-50 text-red-700"
+                    : "bg-blue-50 text-blue-700",
+                )}
+              >
+                {hasUnlimitedMonthlyPosts
+                  ? "Không giới hạn"
+                  : typeof monthlyPostRemaining === "number"
+                    ? `${monthlyPostRemaining} lượt còn lại`
+                    : "--"}
+              </div>
+            </div>
+            {!hasUnlimitedMonthlyPosts &&
+              typeof monthlyPostUsed === "number" &&
+              typeof monthlyPostLimit === "number" && (
+                <div className="mt-3 text-xs text-gray-400">
+                  Đã dùng {monthlyPostUsed}/{monthlyPostLimit} lượt đăng bài.
+                </div>
+              )}
           </div>
 
           {error && (
@@ -410,7 +495,15 @@ export default function PostJobPage() {
 
                 <button
                   type="button"
-                  onClick={() => updateForm("paymentMethod", PaymentMethod.ESCROW)}
+                  onClick={() => {
+                    updateForm("paymentMethod", PaymentMethod.ESCROW);
+                    if (form.salaryType === "HOURLY") {
+                      updateForm("salaryType", "FIXED");
+                    }
+                    if (form.onlinePaymentType === OnlinePaymentType.HOURLY_RATE) {
+                      updateForm("onlinePaymentType", OnlinePaymentType.FIXED_PRICE);
+                    }
+                  }}
                   className={cn(
                     "relative p-4 rounded-xl border-2 transition-all duration-200 text-left",
                     form.paymentMethod === PaymentMethod.ESCROW
@@ -519,7 +612,7 @@ export default function PostJobPage() {
                     onChange={(e) => updateForm("salaryType", e.target.value)}
                     className={inputClass}
                   >
-                    <option value="HOURLY">Theo giờ</option>
+                    {form.paymentMethod !== PaymentMethod.ESCROW && <option value="HOURLY">Theo giờ</option>}
                     <option value="FIXED">Khoán (cố định / công)</option>
                   </select>
                 </div>
@@ -650,7 +743,7 @@ export default function PostJobPage() {
                       className={inputClass}
                     >
                       <option value={OnlinePaymentType.FIXED_PRICE}>Khoán toàn bộ (Fixed-price)</option>
-                      <option value={OnlinePaymentType.HOURLY_RATE}>Trả theo giờ (Hourly-rate)</option>
+                      {form.paymentMethod !== PaymentMethod.ESCROW && <option value={OnlinePaymentType.HOURLY_RATE}>Trả theo giờ (Hourly-rate)</option>}
                     </select>
                   </div>
                   {form.onlinePaymentType === OnlinePaymentType.FIXED_PRICE ? (
@@ -866,10 +959,14 @@ export default function PostJobPage() {
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isOutOfMonthlyPosts}
                 className="px-8 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl hover:shadow-lg hover:shadow-blue-200 disabled:opacity-50 transition-all"
               >
-                {isSubmitting ? "Đang đăng..." : "Đăng tuyển"}
+                {isSubmitting
+                  ? "Đang đăng..."
+                  : isOutOfMonthlyPosts
+                    ? "Đã hết lượt đăng"
+                    : "Đăng tuyển"}
               </button>
             </div>
           </form>

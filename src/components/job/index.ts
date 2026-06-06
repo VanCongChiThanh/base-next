@@ -8,3 +8,4 @@ export { ReportModal } from "./report-modal";
 export { ChatDrawer } from "./chat-drawer";
 export { ReviewSection } from "./review-section";
 export { EscrowSection } from "./escrow-section";
+export { JobProgressInline } from "./job-progress-inline";

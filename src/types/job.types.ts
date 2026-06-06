@@ -163,6 +163,12 @@ export interface Job {
     avatarUrl: string | null;
     verificationLevel?: string;
   };
+  postedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+  } | null;
   jobSkills: JobSkill[];
   applications?: JobApplication[];
   employerProfile?: EmployerProfileInfo | null;
@@ -209,6 +215,7 @@ export interface JobApplication {
     workerProfile?: any;
   };
   job?: Job;
+  assignment?: JobAssignment;
 }
 
 export interface JobAssignment {
@@ -275,6 +282,8 @@ export interface EmployerProfile {
   userId: string;
   companyName: string | null;
   companyDescription: string | null;
+  bannerUrl?: string | null;
+  galleryUrls?: string[] | null;
   phone: string | null;
   provinceCode: string | null;
   wardCode: string | null;
@@ -390,6 +399,8 @@ export interface CreateWorkerProfileRequest {
 export interface CreateEmployerProfileRequest {
   companyName?: string;
   companyDescription?: string;
+  bannerUrl?: string;
+  galleryUrls?: string[];
   phone?: string;
   provinceCode?: string;
   wardCode?: string;
@@ -456,7 +467,16 @@ export interface Milestone {
   submittedAt: string | null;
   approvedAt: string | null;
   releasedAt: string | null;
+  workerReceivedAt?: string | null;
   createdAt: string;
+  escrow?: Escrow;
+  worker?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    bankAccounts?: BankAccount[];
+  };
 }
 
 export interface Escrow {
@@ -474,6 +494,7 @@ export interface Escrow {
   fundedAt: string | null;
   milestones: Milestone[];
   createdAt: string;
+  job?: Job;
 }
 
 export interface MatchedCandidate {

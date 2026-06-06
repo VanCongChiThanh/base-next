@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { userService } from "@/services";
-import { BankAccount, CreateBankAccountRequest } from "@/types";
+import { BankAccount } from "@/types";
+import { BankAccountForm } from "./bank-account-form";
 
 // ─── Local helpers ───────────────────────────────────────────────────────────
 
@@ -33,23 +34,6 @@ const StarIcon = ({ filled }: { filled?: boolean }) => (
   </svg>
 );
 
-// ─── Vietnamese popular banks ─────────────────────────────────────────────────
-const POPULAR_BANKS = [
-  "Vietcombank", "VietinBank", "BIDV", "Agribank", "Techcombank",
-  "MBBank", "ACB", "VPBank", "TPBank", "OCB", "SeABank", "MSB",
-  "HDBank", "SHB", "VIB", "NCB", "Nam A Bank", "Sacombank",
-  "ABBANK", "LienViet PostBank",
-];
-
-// ─── Form blank state ─────────────────────────────────────────────────────────
-const BLANK_FORM: CreateBankAccountRequest = {
-  bankName: "",
-  accountNumber: "",
-  accountName: "",
-  qrCodeUrl: "",
-  isDefault: false,
-};
-
 // ─────────────────────────────────────────────────────────────────────────────
 export function BankAccountManager() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
@@ -57,7 +41,6 @@ export function BankAccountManager() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<CreateBankAccountRequest>({ ...BLANK_FORM });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -73,26 +56,7 @@ export function BankAccountManager() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(""); setSuccess("");
-    if (!form.bankName || !form.accountNumber || !form.accountName) {
-      setError("Vui lòng điền đầy đủ thông tin bắt buộc.");
-      return;
-    }
-    setSaving(true);
-    try {
-      await userService.addBankAccount(form);
-      setSuccess("Đã thêm tài khoản!");
-      setShowForm(false);
-      setForm({ ...BLANK_FORM });
-      await load();
-    } catch {
-      setError("Không thể thêm tài khoản. Vui lòng thử lại.");
-    } finally {
-      setSaving(false);
-    }
-  };
+
 
   const handleSetDefault = async (id: string) => {
     setSaving(true);
@@ -148,108 +112,17 @@ export function BankAccountManager() {
 
       {/* Add Form */}
       {showForm && (
-        <form onSubmit={handleAdd}
-          className="bg-gradient-to-br from-blue-50 to-sky-50 rounded-2xl border border-blue-200 p-5 space-y-4"
-        >
-          <h4 className="text-sm font-semibold text-blue-900">Thêm tài khoản mới</h4>
-
-          {/* Bank name */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Tên ngân hàng <span className="text-red-400">*</span>
-            </label>
-            <select
-              value={form.bankName}
-              onChange={e => setForm(f => ({ ...f, bankName: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-blue-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-300"
-            >
-              <option value="">-- Chọn ngân hàng --</option>
-              {POPULAR_BANKS.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Account number + name */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Số tài khoản <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.accountNumber}
-                onChange={e => setForm(f => ({ ...f, accountNumber: e.target.value }))}
-                placeholder="VD: 1234567890"
-                className="w-full px-3 py-2.5 rounded-xl border border-blue-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Tên chủ tài khoản <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.accountName}
-                onChange={e => setForm(f => ({ ...f, accountName: e.target.value.toUpperCase() }))}
-                placeholder="VD: NGUYEN VAN A"
-                className="w-full px-3 py-2.5 rounded-xl border border-blue-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
-              />
-            </div>
-          </div>
-
-          {/* QR Code URL */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              URL ảnh mã QR <span className="text-gray-400 font-normal">(tuỳ chọn)</span>
-            </label>
-            <input
-              type="url"
-              value={form.qrCodeUrl || ""}
-              onChange={e => setForm(f => ({ ...f, qrCodeUrl: e.target.value }))}
-              placeholder="https://..."
-              className="w-full px-3 py-2.5 rounded-xl border border-blue-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
-            />
-            {form.qrCodeUrl && (
-              <div className="mt-2 flex justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.qrCodeUrl} alt="QR Preview"
-                  className="w-32 h-32 object-contain rounded-xl border border-blue-100 bg-white" />
-              </div>
-            )}
-          </div>
-
-          {/* Default */}
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={form.isDefault || false}
-              onChange={e => setForm(f => ({ ...f, isDefault: e.target.checked }))}
-              className="w-4 h-4 rounded accent-blue-600"
-            />
-            <span className="text-xs text-gray-700 group-hover:text-blue-700 transition-colors">
-              Đặt làm tài khoản mặc định
-            </span>
-          </label>
-
-          {/* Actions */}
-          <div className="flex gap-2 pt-1">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-all"
-            >
-              {saving ? "Đang lưu..." : "Lưu tài khoản"}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShowForm(false); setForm({ ...BLANK_FORM }); setError(""); }}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-all"
-            >
-              Huỷ
-            </button>
-          </div>
-        </form>
+        <BankAccountForm 
+          onSuccess={() => {
+            setShowForm(false);
+            setSuccess("Đã thêm tài khoản!");
+            load();
+          }}
+          onCancel={() => {
+            setShowForm(false);
+            setError("");
+          }}
+        />
       )}
 
       {/* Account List */}

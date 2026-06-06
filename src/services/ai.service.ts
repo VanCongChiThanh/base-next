@@ -182,8 +182,8 @@ export async function matchCandidates(jobId: string, limit?: number): Promise<Ma
 
 // ─── Scam Detection ───
 
-export async function analyzeJob(jobId: string): Promise<ScamAnalysisResult> {
-  return apiClient.post<ScamAnalysisResult>("/ai/analyze-job", { jobId });
+export async function analyzeJob(jobId: string): Promise<ScamAnalysisResult | null> {
+  return apiClient.get<ScamAnalysisResult | null>(`/ai/analyze-job/${jobId}`);
 }
 
 export async function analyzeJobContent(data: {

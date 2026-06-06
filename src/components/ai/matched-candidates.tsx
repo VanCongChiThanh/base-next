@@ -7,12 +7,15 @@ import { MatchedCandidate, Job } from "@/types";
 import { getErrorMessage } from "@/lib/api-client";
 import { jobService } from "@/services";
 import { toast } from "react-hot-toast";
+import { useEntitlements } from "@/contexts";
 
 interface MatchedCandidatesProps {
   job: Job;
 }
 
 export function MatchedCandidates({ job }: MatchedCandidatesProps) {
+  const { hasFeature } = useEntitlements();
+  const isAIAvailable = hasFeature('ai.candidate_match.enabled');
   const [candidates, setCandidates] = useState<MatchedCandidate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -59,28 +62,40 @@ export function MatchedCandidates({ job }: MatchedCandidatesProps) {
           </h2>
           <p className="text-sm text-gray-500">Tìm kiếm các ứng viên phù hợp nhất bằng công nghệ AI.</p>
         </div>
-        <button
-          onClick={handleMatch}
-          disabled={loading}
-          className="self-start sm:self-auto px-4 py-2.5 bg-purple-50 text-purple-600 rounded-xl font-medium hover:bg-purple-100 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 border border-purple-200 whitespace-nowrap shrink-0"
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Đang phân tích...
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Tìm ứng viên ({candidates.length > 0 ? 'Tìm lại' : '1 Click'})
-            </>
-          )}
-        </button>
+        {isAIAvailable ? (
+          <button
+            onClick={handleMatch}
+            disabled={loading}
+            className="self-start sm:self-auto px-4 py-2.5 bg-purple-50 text-purple-600 rounded-xl font-medium hover:bg-purple-100 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 border border-purple-200 whitespace-nowrap shrink-0"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Đang phân tích...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Tìm ứng viên ({candidates.length > 0 ? 'Tìm lại' : '1 Click'})
+              </>
+            )}
+          </button>
+        ) : (
+          <Link
+            href="/pricing"
+            className="self-start sm:self-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-medium hover:from-amber-600 hover:to-orange-600 transition-all shadow-md flex items-center justify-center gap-2 border border-orange-400 whitespace-nowrap shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+            Nâng cấp gói Premium
+          </Link>
+        )}
       </div>
 
       {error && <div className="p-3 bg-red-50 text-red-700 rounded-xl text-sm mb-4">{error}</div>}

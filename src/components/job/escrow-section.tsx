@@ -82,6 +82,27 @@ export function EscrowSection({ job }: EscrowSectionProps) {
     }
   };
 
+  const handleRetryPayment = async () => {
+    if (!escrow) return;
+    try {
+      setActionLoading("retry");
+      setError("");
+      const validMilestones = escrow.milestones.map(m => ({
+        title: m.title,
+        description: m.description || "",
+        amount: m.amount
+      }));
+      const res = await paymentService.createEscrow(job.id, validMilestones);
+      if (res.checkoutUrl) {
+        window.location.href = res.checkoutUrl;
+      }
+    } catch (err: unknown) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleSubmitMilestone = async (milestoneId: string) => {
     try {
       setActionLoading(`submit-${milestoneId}`);
@@ -112,6 +133,19 @@ export function EscrowSection({ job }: EscrowSectionProps) {
       setSuccess(
         action === "approve" ? "Đã duyệt milestone" : "Đã yêu cầu chỉnh sửa",
       );
+      await fetchEscrow();
+    } catch (err: unknown) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmReceipt = async (milestoneId: string) => {
+    try {
+      setActionLoading(`confirm-${milestoneId}`);
+      await paymentService.confirmMilestoneReceipt(milestoneId);
+      setSuccess("Đã xác nhận nhận được tiền");
       await fetchEscrow();
     } catch (err: unknown) {
       setError(getErrorMessage(err as ApiError));
@@ -312,6 +346,16 @@ export function EscrowSection({ job }: EscrowSectionProps) {
                 Trạng thái:{" "}
                 {escrow.status === EscrowStatus.FUNDED
                   ? "Đã ký quỹ"
+                  : escrow.status === EscrowStatus.PENDING
+                  ? "Chờ thanh toán"
+                  : escrow.status === EscrowStatus.PARTIALLY_RELEASED
+                  ? "Đã giải ngân một phần"
+                  : escrow.status === EscrowStatus.FULLY_RELEASED
+                  ? "Đã giải ngân toàn bộ"
+                  : escrow.status === EscrowStatus.REFUNDED
+                  ? "Đã hoàn tiền"
+                  : escrow.status === EscrowStatus.DISPUTED
+                  ? "Đang tranh chấp"
                   : escrow.status}
               </p>
             </div>
@@ -322,6 +366,22 @@ export function EscrowSection({ job }: EscrowSectionProps) {
               </p>
             </div>
           </div>
+
+          {isEmployer && escrow.status === EscrowStatus.PENDING && escrow.payosCheckoutUrl && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h4 className="font-semibold text-amber-800">Thanh toán ký quỹ chưa hoàn tất</h4>
+                <p className="text-sm text-amber-700">Vui lòng hoàn tất thanh toán để người làm có thể bắt đầu công việc.</p>
+              </div>
+              <button
+                onClick={handleRetryPayment}
+                disabled={actionLoading === "retry"}
+                className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl transition shadow-sm whitespace-nowrap disabled:opacity-50"
+              >
+                {actionLoading === "retry" ? "Đang tạo lại..." : "Tiếp tục thanh toán"}
+              </button>
+            </div>
+          )}
 
           <div className="space-y-4">
             {escrow.milestones.map((m) => (
@@ -377,6 +437,27 @@ export function EscrowSection({ job }: EscrowSectionProps) {
                       </button>
                     </div>
                   )}
+
+                {/* Worker confirm receipt */}
+                {isWorker && m.status === MilestoneStatus.RELEASED && (
+                  <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                    {!m.workerReceivedAt ? (
+                      <button
+                        onClick={() => handleConfirmReceipt(m.id)}
+                        disabled={actionLoading === `confirm-${m.id}`}
+                        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        Xác nhận đã nhận tiền
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg text-sm font-medium">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        Đã nhận tiền lúc {formatDateTime(m.workerReceivedAt)}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Employer actions */}
                 {isEmployer && m.status === MilestoneStatus.SUBMITTED && (

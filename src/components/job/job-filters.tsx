@@ -213,7 +213,6 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
         {[
           { value: "" as const, label: "Tất cả", icon: "💼" },
           { value: JobType.GIG, label: "Thời vụ", icon: "⚡" },
-          { value: JobType.PART_TIME, label: "Part-time", icon: "🕐" },
           { value: JobType.ONLINE, label: "Online", icon: "🌐" },
         ].map((type) => (
           <button
