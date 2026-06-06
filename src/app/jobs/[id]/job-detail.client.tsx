@@ -542,7 +542,7 @@ export default function JobDetailPageClient({
                   <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                     <h2 className="text-lg font-bold text-gray-900 mb-4">Kỹ năng yêu cầu</h2>
                     <div className="flex flex-wrap gap-2">
-                      {job.jobSkills.map(js => <span key={js.id} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-100">{js.skill.name}</span>)}
+                      {job.jobSkills.map(js => <span key={js.id} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-100">{js.skill?.name}</span>)}
                     </div>
                   </div>
                 )}
@@ -551,7 +551,7 @@ export default function JobDetailPageClient({
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                   <h2 className="text-lg font-bold text-gray-900 mb-4">Tổng quan</h2>
                   <div className="space-y-4 text-sm">
-                    <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Danh mục</span><span className="font-medium text-gray-900">{job.category.name}</span></div>
+                    <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Danh mục</span><span className="font-medium text-gray-900">{job.category?.name}</span></div>
                     {job.jobType === JobType.PART_TIME ? (
                       <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Thời gian</span><span className="font-medium text-gray-900">{formatDateTime(job.startTime!)} - {formatDateTime(job.endTime!)}</span></div>
                     ) : (
@@ -929,7 +929,7 @@ export default function JobDetailPageClient({
                         key={js.id}
                         className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl text-sm font-medium"
                       >
-                        {js.skill.name}
+                        {js.skill?.name}
                       </span>
                     ))}
                   </div>
@@ -1419,7 +1419,7 @@ export default function JobDetailPageClient({
                       <div>
                         <p className="text-xs text-gray-400">Danh mục</p>
                         <p className="text-sm text-gray-700 font-medium">
-                          {job.category.icon} {job.category.name}
+                          {job.category?.icon} {job.category?.name}
                         </p>
                       </div>
                     </div>
