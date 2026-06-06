@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts';
 import { 
   LayoutDashboard, 
   Briefcase, 
@@ -23,6 +24,7 @@ const navItems = [
 
 export function OrgSidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   return (
     <div className="flex h-screen w-64 flex-col bg-slate-900 text-white border-r border-slate-800">
@@ -73,6 +75,7 @@ export function OrgSidebar() {
           Cài đặt
         </Link>
         <button
+          onClick={logout}
           className="flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
         >
           <LogOut className="w-5 h-5 mr-3 text-rose-500" />

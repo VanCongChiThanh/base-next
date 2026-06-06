@@ -40,7 +40,8 @@ export function JobCard({ job }: JobCardProps) {
 
   const isEmployerVerified =
     job.employer?.verificationLevel === "BASIC" ||
-    job.employer?.verificationLevel === "BUSINESS";
+    job.employer?.verificationLevel === "BUSINESS" ||
+    profile?.isVerifiedBusiness === true;
 
   return (
     <Link href={`/jobs/${job.id}`} className="block group">
