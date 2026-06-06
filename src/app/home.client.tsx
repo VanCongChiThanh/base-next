@@ -217,7 +217,7 @@ export default function HomePageClient() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat)}
-                  className={`flex flex-col items-center min-w-[90px] p-3 rounded-xl transition-colors ${activeCategory?.id === cat.id ? 'bg-white shadow-sm border-b-2 border-blue-600' : 'hover:bg-gray-100 text-gray-600'}`}
+                  className={`flex flex-col items-center min-w-[90px] p-3 rounded-xl transition-colors shrink-0 ${activeCategory?.id === cat.id ? 'bg-white shadow-sm border-b-2 border-blue-600' : 'hover:bg-gray-100 text-gray-600'}`}
                 >
                   <span className="text-2xl mb-2">{cat.icon || "✨"}</span>
                   <span className={`text-sm whitespace-nowrap font-medium ${activeCategory?.id === cat.id ? 'text-blue-600' : ''}`}>{cat.name}</span>
@@ -226,7 +226,7 @@ export default function HomePageClient() {
               {categories.length > 5 && (
                 <button
                   onClick={() => setShowAllCategories(!showAllCategories)}
-                  className="flex flex-col items-center min-w-[90px] p-3 rounded-xl transition-colors hover:bg-gray-100 text-gray-600"
+                  className="flex flex-col items-center min-w-[90px] p-3 rounded-xl transition-colors hover:bg-gray-100 text-gray-600 shrink-0"
                 >
                   <span className="text-2xl mb-2">{showAllCategories ? "➖" : "➕"}</span>
                   <span className="text-sm whitespace-nowrap font-medium">{showAllCategories ? "Thu gọn" : "Xem thêm"}</span>

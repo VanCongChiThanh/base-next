@@ -179,8 +179,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     eventSource.onmessage = (event) => {
       try {
         const parsed = JSON.parse(event.data);
-        // SSE trả về { data: notification }, cần lấy .data
-        const notification: Notification = parsed.data || parsed;
+        // NestJS SSE serializes MessageEvent.data. So parsed is already the Notification object.
+        const notification: Notification = parsed.id ? parsed : (parsed.data || parsed);
         console.log("SSE notification:", notification);
 
         if (!notification?.id) {
