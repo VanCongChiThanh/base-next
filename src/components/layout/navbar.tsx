@@ -94,14 +94,16 @@ export function Navbar() {
   ];
 
   const userLinks = isAuthenticated
-    ? [
-        { href: "/dashboard", label: "Quản lý việc làm" },
-        { href: "/saved-jobs", label: "Việc đã lưu" },
-        { href: "/profile", label: "Hồ sơ" },
-      ]
+    ? user?.role === Role.ORGANIZATION
+      ? [{ href: "/org/dashboard", label: "Dashboard Tổ chức" }]
+      : [
+          { href: "/dashboard", label: "Quản lý việc làm" },
+          { href: "/saved-jobs", label: "Việc đã lưu" },
+          { href: "/profile", label: "Hồ sơ" },
+        ]
     : [];
 
-  const workerLinks = isAuthenticated
+  const workerLinks = isAuthenticated && user?.role !== Role.ORGANIZATION
     ? [{ href: "/services/new", label: "Đăng Thuê Tôi" }]
     : [];
 

@@ -19,7 +19,10 @@ import { cn } from "@/lib/utils";
 import { SearchableCombobox } from "@/components/common/searchable-combobox";
 import { UpgradePrompt } from "@/components/common/upgrade-prompt";
 import { useEntitlements } from "@/contexts/entitlement-context";
+import { useAuth } from "@/contexts";
 import { toast } from "react-hot-toast";
+import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 
 const ONLINE_SKILL_NAMES = ["Thiết kế", "Marketing", "Gia sư", "Chụp ảnh", "MC"];
 const GIG_SKILL_NAMES = ["Phục vụ", "Pha chế", "Nấu ăn", "Bán hàng", "Khuân vác", "Lái xe", "Dọn dẹp", "Chụp ảnh", "MC"];
@@ -39,6 +42,7 @@ export default function PostJobPage() {
   const [error, setError] = useState("");
   const [hireId, setHireId] = useState<string | null>(null);
   const { entitlements, isLoading: isEntitlementsLoading, refreshEntitlements } = useEntitlements();
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -253,6 +257,32 @@ export default function PostJobPage() {
   const inputClass =
     "w-full px-4 py-2.5 rounded-xl border border-blue-100 bg-white text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 transition-all text-sm";
   const labelClass = "block text-sm font-medium text-gray-700 mb-1.5";
+
+  const isEkycVerified = 
+    user?.role === "RECRUITER" || 
+    user?.verificationLevel === "BASIC" || 
+    user?.verificationLevel === "BUSINESS";
+
+  if (!isAuthLoading && user && !isEkycVerified) {
+    return (
+      <AuthGuard>
+        <Navbar />
+        <main className="flex-1 min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-orange-200 max-w-md text-center">
+            <AlertTriangle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Chưa xác thực eKYC</h2>
+            <p className="text-gray-600 mb-6">
+              Bạn cần phải hoàn tất xác minh danh tính (eKYC) trước khi có thể đăng tin tuyển dụng. Điều này giúp đảm bảo an toàn cho cộng đồng của chúng tôi.
+            </p>
+            <Link href="/profile" className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors">
+              Đi đến Xác thực ngay
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </AuthGuard>
+    );
+  }
 
   return (
     <AuthGuard>

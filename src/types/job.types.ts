@@ -163,6 +163,12 @@ export interface Job {
     avatarUrl: string | null;
     verificationLevel?: string;
   };
+  postedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+  } | null;
   jobSkills: JobSkill[];
   applications?: JobApplication[];
   employerProfile?: EmployerProfileInfo | null;
@@ -276,6 +282,8 @@ export interface EmployerProfile {
   userId: string;
   companyName: string | null;
   companyDescription: string | null;
+  bannerUrl?: string | null;
+  galleryUrls?: string[] | null;
   phone: string | null;
   provinceCode: string | null;
   wardCode: string | null;
@@ -391,6 +399,8 @@ export interface CreateWorkerProfileRequest {
 export interface CreateEmployerProfileRequest {
   companyName?: string;
   companyDescription?: string;
+  bannerUrl?: string;
+  galleryUrls?: string[];
   phone?: string;
   provinceCode?: string;
   wardCode?: string;

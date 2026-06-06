@@ -75,8 +75,8 @@ export function JobCard({ job }: JobCardProps) {
               {job.title}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              {profile?.companyName ||
-                `${job.employer.firstName} ${job.employer.lastName}`}
+              {job.postedBy ? `${job.postedBy.firstName} ${job.postedBy.lastName}` : `${job.employer.firstName} ${job.employer.lastName}`}
+              {profile?.companyName ? ` - ${profile.companyName}` : ''}
               {profile && profile.totalReviews > 0 && (
                 <span className="ml-2 text-xs text-amber-500">
                   ★ {Number(profile.ratingAvg).toFixed(1)} (

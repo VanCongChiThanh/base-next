@@ -840,7 +840,8 @@ export default function JobDetailPageClient({
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                       />
                     </svg>
-                    {job.employer.firstName} {job.employer.lastName}
+                    {job.postedBy ? `${job.postedBy.firstName} ${job.postedBy.lastName}` : `${job.employer.firstName} ${job.employer.lastName}`}
+                    {job.employerProfile?.companyName ? ` - ${job.employerProfile.companyName}` : ''}
                   </span>
                   <span className="text-blue-200">|</span>
                   <span>{formatRelativeTime(job.createdAt)}</span>
@@ -1601,9 +1602,9 @@ export default function JobDetailPageClient({
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">
-                      {job.employer.firstName} {job.employer.lastName}
-                    </p>
+                    <Link href={`/employer/${job.employerId}`} className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                      {job.employerProfile?.companyName || `${job.employer.firstName} ${job.employer.lastName}`}
+                    </Link>
                     <p className="text-xs text-gray-400">Nhà tuyển dụng</p>
                   </div>
                 </div>

@@ -13,7 +13,9 @@ import { userService, authService } from "@/services";
 
 /** Returns the appropriate redirect path based on user role */
 export function getRedirectByRole(user: User | null): string {
-  return user?.role === Role.ADMIN ? "/admin" : "/";
+  if (user?.role === Role.ADMIN) return "/admin";
+  if (user?.role === Role.ORGANIZATION) return "/org/dashboard";
+  return "/";
 }
 import apiClient from "@/lib/api-client";
 

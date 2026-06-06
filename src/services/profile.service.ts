@@ -50,4 +50,8 @@ export const profileService = {
   async updateEmployerPrivacy(settings: Partial<EmployerPrivacySettings>): Promise<EmployerProfile> {
     return apiClient.patch<EmployerProfile>("/profiles/employer/me/privacy", { privacySettings: settings });
   },
+
+  async getEmployerProfileByUserId(userId: string): Promise<EmployerProfile> {
+    return apiClient.get<EmployerProfile>(`/profiles/employer/${userId}`);
+  },
 };
