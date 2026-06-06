@@ -17,9 +17,9 @@ import { CreateOrganizationModal } from "./CreateOrganizationModal";
 import { AssignPlanModal } from "./AssignPlanModal";
 
 const ROLE_OPTIONS = [
-  { value: Role.USER, label: "User" },
-  { value: Role.ORGANIZATION, label: "Organization" },
-  { value: Role.ADMIN, label: "Admin" },
+  { value: Role.USER, label: "Người dùng" },
+  { value: Role.ORGANIZATION, label: "Tổ chức/Doanh nghiệp" },
+  { value: Role.ADMIN, label: "Quản trị" },
 ];
 
 function getNextRole(current: Role): Role {
@@ -28,9 +28,15 @@ function getNextRole(current: Role): Role {
   return Role.ADMIN;
 }
 
+function getRoleLabel(role: Role): string {
+  if (role === Role.ADMIN) return "Quản trị";
+  if (role === Role.ORGANIZATION) return "Tổ chức/Doanh nghiệp";
+  return "Người dùng";
+}
+
 const VERIFIED_OPTIONS = [
-  { value: "true", label: "Verified" },
-  { value: "false", label: "Not verified" },
+  { value: "true", label: "Đã xác thực" },
+  { value: "false", label: "Chưa xác thực" },
 ];
 
 export default function AdminUsersPage() {
@@ -113,7 +119,7 @@ export default function AdminUsersPage() {
     setIsDeleting(true);
     try {
       await adminService.deleteUser(deleteTarget.id);
-      showToast("User deleted successfully", "success");
+      showToast("Xóa người dùng thành công", "success");
       setDeleteTarget(null);
       fetchUsers();
     } catch (err) {
@@ -129,7 +135,10 @@ export default function AdminUsersPage() {
     const newRole = getNextRole(roleChangeTarget.role);
     try {
       await adminService.updateUserRole(roleChangeTarget.id, newRole);
-      showToast(`Role updated to ${newRole}`, "success");
+      showToast(
+        `Đổi vai trò thành ${getRoleLabel(newRole)} thành công`,
+        "success",
+      );
       setRoleChangeTarget(null);
       fetchUsers();
     } catch (err) {
@@ -139,7 +148,10 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleAssignPlan = async (userId: string, data: { planCode: string; note: string }) => {
+  const handleAssignPlan = async (
+    userId: string,
+    data: { planCode: string; note: string },
+  ) => {
     setIsAssigningPlan(true);
     try {
       await adminService.assignPlan(userId, data);
@@ -157,7 +169,7 @@ export default function AdminUsersPage() {
     setIsCreatingOrg(true);
     try {
       await adminService.createOrganization(data);
-      showToast("Organization created successfully", "success");
+      showToast("Tạo tổ chức / doanh nghiệp thành công", "success");
       setIsCreateModalOpen(false);
       fetchUsers();
     } catch (err) {
@@ -172,7 +184,7 @@ export default function AdminUsersPage() {
   const columns = [
     {
       key: "user",
-      label: "User",
+      label: "Người dùng",
       render: (user: User) => (
         <div className="flex items-center gap-3">
           <Avatar
@@ -192,7 +204,7 @@ export default function AdminUsersPage() {
     },
     {
       key: "role",
-      label: "Role",
+      label: "Vai trò",
       sortable: true,
       render: (user: User) => (
         <Badge
@@ -204,22 +216,22 @@ export default function AdminUsersPage() {
                 : "info"
           }
         >
-          {user.role}
+          {getRoleLabel(user.role)}
         </Badge>
       ),
     },
     {
       key: "isEmailVerified",
-      label: "Status",
+      label: "Trạng thái",
       render: (user: User) => (
         <Badge variant={user.isEmailVerified ? "success" : "warning"}>
-          {user.isEmailVerified ? "Verified" : "Unverified"}
+          {user.isEmailVerified ? "Đã xác thực" : "Chưa xác thực"}
         </Badge>
       ),
     },
     {
       key: "createdAt",
-      label: "Joined",
+      label: "Ngày tham gia",
       sortable: true,
       render: (user: User) => (
         <span className="text-gray-500">
@@ -243,7 +255,7 @@ export default function AdminUsersPage() {
               setRoleChangeTarget(user);
             }}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Change role"
+            title="Thay đổi vai trò"
           >
             <svg
               className="w-4 h-4"
@@ -267,8 +279,18 @@ export default function AdminUsersPage() {
             className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
             title="Nâng cấp gói"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              />
             </svg>
           </button>
           <button
@@ -277,7 +299,7 @@ export default function AdminUsersPage() {
               setDeleteTarget(user);
             }}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Delete user"
+            title="Xóa người dùng"
           >
             <svg
               className="w-4 h-4"
@@ -303,20 +325,31 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Người dùng</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage user accounts and permissions ·{" "}
-            <span className="font-medium text-gray-700">{total}</span> total users
+            Quản lý tài khoản và quyền hạn ·{" "}
+            <span className="font-medium text-gray-700">{total}</span> người
+            dùng
           </p>
         </div>
         <button
           onClick={() => setIsCreateModalOpen(true)}
           className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          <svg
+            className="mr-2 h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
           </svg>
-          Create Organization
+          Tạo tổ chức / doanh nghiệp
         </button>
       </div>
 
@@ -325,20 +358,20 @@ export default function AdminUsersPage() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search by name or email..."
+          placeholder="Tìm theo tên hoặc email..."
           className="flex-1 max-w-md"
         />
         <SelectFilter
           value={roleFilter}
           onChange={setRoleFilter}
           options={ROLE_OPTIONS}
-          placeholder="All roles"
+          placeholder="Tất cả vai trò"
         />
         <SelectFilter
           value={verifiedFilter}
           onChange={setVerifiedFilter}
           options={VERIFIED_OPTIONS}
-          placeholder="All status"
+          placeholder="Tất cả trạng thái"
         />
       </div>
 
@@ -351,14 +384,14 @@ export default function AdminUsersPage() {
         sortOrder={sortOrder}
         onSort={handleSort}
         rowKey={(user) => user.id}
-        emptyMessage="No users found"
+        emptyMessage="Không tìm thấy người dùng"
       />
 
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
-          Showing {users.length ? (page - 1) * limit + 1 : 0}–
-          {Math.min(page * limit, total)} of {total}
+          Hiển thị {users.length ? (page - 1) * limit + 1 : 0}–
+          {Math.min(page * limit, total)} trên {total}
         </p>
         <Pagination
           page={page}
@@ -372,9 +405,9 @@ export default function AdminUsersPage() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
-        title="Delete User"
-        message={`Are you sure you want to delete "${deleteTarget?.firstName} ${deleteTarget?.lastName}"? This action cannot be undone.`}
-        confirmText="Delete"
+        title="Xóa người dùng"
+        message={`Bạn có chắc muốn xóa "${deleteTarget?.firstName} ${deleteTarget?.lastName}" không? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa"
         variant="danger"
         isLoading={isDeleting}
       />
@@ -384,9 +417,9 @@ export default function AdminUsersPage() {
         isOpen={!!roleChangeTarget}
         onClose={() => setRoleChangeTarget(null)}
         onConfirm={handleRoleChange}
-        title="Change Role"
-        message={`Change "${roleChangeTarget?.firstName} ${roleChangeTarget?.lastName}" role from ${roleChangeTarget?.role} to ${roleChangeTarget ? getNextRole(roleChangeTarget.role) : ""}?`}
-        confirmText="Confirm"
+        title="Thay đổi vai trò"
+        message={`Thay đổi vai trò của "${roleChangeTarget?.firstName} ${roleChangeTarget?.lastName}" từ ${roleChangeTarget ? getRoleLabel(roleChangeTarget.role) : ""} thành ${roleChangeTarget ? getRoleLabel(getNextRole(roleChangeTarget.role)) : ""}?`}
+        confirmText="Xác nhận"
         variant="warning"
         isLoading={isChangingRole}
       />

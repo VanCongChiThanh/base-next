@@ -28,10 +28,10 @@ export function CreateOrganizationModal({ isOpen, onClose, onSubmit, isLoading }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/50 p-4">
       <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-        <h3 className="mb-4 text-xl font-bold text-gray-900">Create Organization</h3>
+        <h3 className="mb-4 text-xl font-bold text-gray-900">Tạo tổ chức / doanh nghiệp</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Company Name</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Tên công ty</label>
             <input
               type="text"
               required
@@ -42,7 +42,7 @@ export function CreateOrganizationModal({ isOpen, onClose, onSubmit, isLoading }
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Admin First Name</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Tên người quản trị</label>
               <input
                 type="text"
                 required
@@ -52,7 +52,7 @@ export function CreateOrganizationModal({ isOpen, onClose, onSubmit, isLoading }
               />
             </div>
             <div className="flex-1">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Admin Last Name</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Họ người quản trị</label>
               <input
                 type="text"
                 required
@@ -63,7 +63,7 @@ export function CreateOrganizationModal({ isOpen, onClose, onSubmit, isLoading }
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Admin Email</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Email người quản trị</label>
             <input
               type="email"
               required
@@ -73,7 +73,7 @@ export function CreateOrganizationModal({ isOpen, onClose, onSubmit, isLoading }
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Admin Password</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Mật khẩu người quản trị</label>
             <input
               type="password"
               required
@@ -90,14 +90,14 @@ export function CreateOrganizationModal({ isOpen, onClose, onSubmit, isLoading }
               disabled={isLoading}
               className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
-              Cancel
+              Hủy
             </button>
             <button
               type="submit"
               disabled={isLoading}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoading ? "Creating..." : "Create Organization"}
+              {isLoading ? "Đang tạo..." : "Tạo tổ chức / doanh nghiệp"}
             </button>
           </div>
         </form>

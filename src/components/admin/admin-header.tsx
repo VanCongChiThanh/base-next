@@ -25,9 +25,8 @@ export function AdminHeader({ onMobileMenuToggle }: AdminHeaderProps) {
         </button>
         <div>
           <h1 className="text-base sm:text-lg font-semibold text-gray-800 leading-tight">
-            Quản trị hệ thống
+            Admin Dashboard
           </h1>
-          <p className="text-xs text-gray-400 hidden sm:block">Administration Panel</p>
         </div>
       </div>
 
