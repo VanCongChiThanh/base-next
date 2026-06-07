@@ -168,8 +168,8 @@ export function JobCard({ job }: JobCardProps) {
                 <>
                   <span className="text-base font-bold text-blue-600">
                     {job.onlinePaymentType === "FIXED_PRICE"
-                      ? `${job.totalBudget?.toLocaleString("vi-VN")}đ`
-                      : `${job.hourlyRateMin?.toLocaleString("vi-VN")}đ - ${job.hourlyRateMax?.toLocaleString("vi-VN")}đ`}
+                      ? `${Number(job.totalBudget || 0).toLocaleString("vi-VN")}đ`
+                      : `${Number(job.hourlyRateMin || 0).toLocaleString("vi-VN")}đ - ${Number(job.hourlyRateMax || 0).toLocaleString("vi-VN")}đ`}
                   </span>
                   <span className="text-xs text-gray-400">
                     /{job.onlinePaymentType === "FIXED_PRICE" ? "khoán" : "giờ"}
