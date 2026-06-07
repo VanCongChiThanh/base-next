@@ -622,14 +622,15 @@ export default function PostJobPage() {
                     <span className="text-red-400">*</span>
                   </label>
                   <input
-                    type="number"
-                    min={0}
+                    type="text"
+                    inputMode="numeric"
                     required
-                    value={form.salaryPerHour}
-                    onChange={(e) =>
-                      updateForm("salaryPerHour", e.target.value)
-                    }
-                    placeholder="VD: 50000"
+                    value={form.salaryPerHour ? Number(form.salaryPerHour).toLocaleString("vi-VN") : ""}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      updateForm("salaryPerHour", val);
+                    }}
+                    placeholder="VD: 50.000"
                     className={inputClass}
                   />
                 </div>
@@ -750,12 +751,15 @@ export default function PostJobPage() {
                     <div>
                       <label className={labelClass}>Ngân sách dự kiến (đ)</label>
                       <input
-                        type="number"
-                        min={0}
+                        type="text"
+                        inputMode="numeric"
                         required
-                        value={form.totalBudget}
-                        onChange={(e) => updateForm("totalBudget", e.target.value)}
-                        placeholder="VD: 5000000"
+                        value={form.totalBudget ? Number(form.totalBudget).toLocaleString("vi-VN") : ""}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          updateForm("totalBudget", val);
+                        }}
+                        placeholder="VD: 5.000.000"
                         className={inputClass}
                       />
                     </div>
@@ -764,23 +768,29 @@ export default function PostJobPage() {
                       <div className="flex-1">
                         <label className={labelClass}>Rate tối thiểu (đ/h)</label>
                         <input
-                          type="number"
-                          min={0}
+                          type="text"
+                          inputMode="numeric"
                           required
-                          value={form.hourlyRateMin}
-                          onChange={(e) => updateForm("hourlyRateMin", e.target.value)}
-                          placeholder="VD: 100000"
+                          value={form.hourlyRateMin ? Number(form.hourlyRateMin).toLocaleString("vi-VN") : ""}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            updateForm("hourlyRateMin", val);
+                          }}
+                          placeholder="VD: 100.000"
                           className={inputClass}
                         />
                       </div>
                       <div className="flex-1">
                         <label className={labelClass}>Rate tối đa (đ/h)</label>
                         <input
-                          type="number"
-                          min={0}
-                          value={form.hourlyRateMax}
-                          onChange={(e) => updateForm("hourlyRateMax", e.target.value)}
-                          placeholder="VD: 500000"
+                          type="text"
+                          inputMode="numeric"
+                          value={form.hourlyRateMax ? Number(form.hourlyRateMax).toLocaleString("vi-VN") : ""}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            updateForm("hourlyRateMax", val);
+                          }}
+                          placeholder="VD: 500.000"
                           className={inputClass}
                         />
                       </div>
