@@ -375,6 +375,8 @@ export interface JobFilterParams {
   longitude?: number;
   radius?: number;
   jobType?: JobType;
+  employerId?: string;
+  status?: JobStatus;
 }
 
 export interface CreateReviewRequest {
