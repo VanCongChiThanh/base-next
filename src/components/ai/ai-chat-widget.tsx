@@ -380,22 +380,21 @@ function AssistantMessageBody({
   const workers = normalized.filter((r): r is WorkerReference => r.type === "worker");
   const hasCards = jobs.length > 0 || workers.length > 0;
 
-  if (hasCards && jobs.length > 0) {
-    return (
-      <p className="text-sm leading-relaxed text-gray-700">
-        Mình tìm thấy <strong>{jobs.length}</strong> công việc phù hợp 👇
-      </p>
-    );
-  }
-  if (hasCards && workers.length > 0) {
-    return (
-      <p className="text-sm leading-relaxed text-gray-700">
-        Mình tìm thấy <strong>{workers.length}</strong> ứng viên phù hợp 👇
-      </p>
-    );
-  }
-
-  return <MarkdownText text={content} />;
+  return (
+    <div className="space-y-2">
+      {content && <MarkdownText text={content} />}
+      {hasCards && jobs.length > 0 && (
+        <p className="text-sm leading-relaxed text-gray-700 mt-2">
+          Mình tìm thấy <strong>{jobs.length}</strong> công việc phù hợp 👇
+        </p>
+      )}
+      {hasCards && workers.length > 0 && jobs.length === 0 && (
+        <p className="text-sm leading-relaxed text-gray-700 mt-2">
+          Mình tìm thấy <strong>{workers.length}</strong> ứng viên phù hợp 👇
+        </p>
+      )}
+    </div>
+  );
 }
 
 // ─── Main widget ─────────────────────────────────────────────────────────────
