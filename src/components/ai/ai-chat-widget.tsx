@@ -590,7 +590,18 @@ export function AiChatWidget() {
             </div>
           )}
 
-          {messages.map((msg, i) => (
+          {messages.map((msg, i) => {
+            // Don't render the placeholder assistant bubble until it actually
+            // has content/references — otherwise an empty box shows next to the
+            // "Đang xử lý..." indicator.
+            if (
+              msg.role === "assistant" &&
+              !msg.content &&
+              (!msg.references || msg.references.length === 0)
+            ) {
+              return null;
+            }
+            return (
             <div
               key={i}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
@@ -613,9 +624,10 @@ export function AiChatWidget() {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
 
-          {isLoading && (
+          {isLoading && !messages[messages.length - 1]?.content && (
             <div className="flex justify-start">
               <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
                 <div className="flex gap-1.5 items-center">
