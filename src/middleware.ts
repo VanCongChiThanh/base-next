@@ -18,7 +18,7 @@ const authRoutes = [
   "/reset-password",
 ];
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check for access token in cookies (for SSR) or allow client-side check

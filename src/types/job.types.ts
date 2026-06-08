@@ -162,6 +162,7 @@ export interface Job {
     lastName: string;
     avatarUrl: string | null;
     verificationLevel?: string;
+    role?: string;
   };
   postedBy?: {
     id: string;
