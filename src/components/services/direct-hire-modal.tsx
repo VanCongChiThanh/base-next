@@ -126,7 +126,7 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { value: "GIG", label: "Theo giờ/ca" },
-                  { value: "PART_TIME", label: "Dài hạn" },
+                  // { value: "PART_TIME", label: "Dài hạn" },
                   { value: "FIXED_PACKAGE", label: "Khoán" },
                 ].map((option) => (
                   <button
@@ -163,7 +163,7 @@ export function DirectHireModal({ isOpen, onClose, service }: DirectHireModalPro
             {isFixedPackage ? (
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">
-                  Deadline (không bắt buộc)
+                  Thời gian (không bắt buộc)
                 </label>
                 <input
                   type="datetime-local"

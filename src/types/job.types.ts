@@ -249,6 +249,7 @@ export interface Review {
   job: {
     id: string;
     title: string;
+    isDirectHire?: boolean;
   };
   createdAt: string;
 }

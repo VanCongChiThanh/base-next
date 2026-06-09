@@ -194,7 +194,7 @@ export default function HomePageClient() {
             </form>
 
             <p className="text-gray-500 font-medium">
-              Được tin tưởng bởi 10K+ người • 4.9/5 <span className="text-yellow-400">⭐</span> với hơn 500 đánh giá
+              Kết nối người cần việc và người tìm việc nhanh chóng, an toàn và minh bạch
             </p>
           </div>
 

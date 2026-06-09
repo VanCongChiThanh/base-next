@@ -1602,7 +1602,14 @@ export default function JobDetailPageClient({
                     )}
                   </div>
                   <div>
-                    <Link href={`/employer/${job.employerId}`} className="font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                    <Link
+                      href={
+                        job.employer.role === "ORGANIZATION" || job.employer.role === "RECRUITER"
+                          ? `/employer/${job.employerId}`
+                          : `/users/${job.employerId}`
+                      }
+                      className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                    >
                       {job.employerProfile?.companyName || `${job.employer.firstName} ${job.employer.lastName}`}
                     </Link>
                     <p className="text-xs text-gray-400">Nhà tuyển dụng</p>
