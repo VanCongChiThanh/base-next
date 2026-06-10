@@ -281,7 +281,7 @@ export default function AdminCategoriesPage() {
                 >
                   <option value="">-- Chọn loại (Tất cả) --</option>
                   <option value="ONLINE">Việc làm Online</option>
-                  <option value="GIG">Việc làm Gig</option>
+                  <option value="GIG">Việc làm thời vụ</option>
                 </select>
               </div>
               <div>

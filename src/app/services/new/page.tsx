@@ -74,7 +74,13 @@ export default function PostServicePage() {
   }, [form.provinceCode]);
 
   const updateForm = (field: string, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === "type") {
+        next.categoryId = "";
+      }
+      return next;
+    });
   };
 
   const toggleSkill = (skillId: string) => {
@@ -88,11 +94,13 @@ export default function PostServicePage() {
 
   const categoryOptions = useMemo(
     () =>
-      categories.map((c) => ({
-        value: c.id,
-        label: `${c.icon ?? ""} ${c.name}`.trim(),
-      })),
-    [categories],
+      categories
+        .filter((c) => !c.type || c.type === (form.type === ServiceType.ONLINE ? "ONLINE" : "GIG"))
+        .map((c) => ({
+          value: c.id,
+          label: `${c.icon ?? ""} ${c.name}`.trim(),
+        })),
+    [categories, form.type],
   );
 
   const provinceOptions = useMemo(
