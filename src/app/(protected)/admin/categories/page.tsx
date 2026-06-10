@@ -25,7 +25,7 @@ export default function AdminCategoriesPage() {
   const [search, setSearch] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formState, setFormState] = useState({ id: "", name: "", description: "", icon: "📌" });
+  const [formState, setFormState] = useState({ id: "", name: "", description: "", icon: "📌", type: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
@@ -60,7 +60,7 @@ export default function AdminCategoriesPage() {
   }, [fetchData]);
 
   const handleOpenAdd = () => {
-    setFormState({ id: "", name: "", description: "", icon: "📌" });
+    setFormState({ id: "", name: "", description: "", icon: "📌", type: "" });
     setIsModalOpen(true);
   };
 
@@ -70,6 +70,7 @@ export default function AdminCategoriesPage() {
       name: item.name,
       description: item.description || "",
       icon: item.icon || "📌",
+      type: item.type || "",
     });
     setIsModalOpen(true);
   };
@@ -86,6 +87,7 @@ export default function AdminCategoriesPage() {
             name: formState.name,
             description: formState.description,
             icon: formState.icon,
+            type: formState.type || null,
           });
           showToast("Cập nhật danh mục công việc thành công", "success");
         } else {
@@ -93,6 +95,7 @@ export default function AdminCategoriesPage() {
             name: formState.name,
             description: formState.description,
             icon: formState.icon,
+            type: formState.type || null,
           });
           showToast("Thêm danh mục công việc thành công", "success");
         }
@@ -155,6 +158,11 @@ export default function AdminCategoriesPage() {
           )}
           <div>
             <p className="font-semibold text-gray-900">{item.name}</p>
+            {activeType === "job" && item.type && (
+              <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                {item.type === "ONLINE" ? "Online" : item.type === "GIG" ? "Gig" : item.type}
+              </span>
+            )}
           </div>
         </div>
       ),
@@ -263,15 +271,29 @@ export default function AdminCategoriesPage() {
           </div>
 
           {activeType === "job" && (
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Biểu tượng (Icon / Emoji)</label>
-              <input
-                value={formState.icon}
-                onChange={(e) => setFormState({ ...formState, icon: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none"
-                placeholder="Vd: 📌"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Loại công việc</label>
+                <select
+                  value={formState.type}
+                  onChange={(e) => setFormState({ ...formState, type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none"
+                >
+                  <option value="">-- Chọn loại (Tất cả) --</option>
+                  <option value="ONLINE">Việc làm Online</option>
+                  <option value="GIG">Việc làm Gig</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Biểu tượng (Icon / Emoji)</label>
+                <input
+                  value={formState.icon}
+                  onChange={(e) => setFormState({ ...formState, icon: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  placeholder="Vd: 📌"
+                />
+              </div>
+            </>
           )}
 
           <div>

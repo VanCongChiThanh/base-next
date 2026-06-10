@@ -112,6 +112,7 @@ export interface JobCategory {
   name: string;
   description: string | null;
   icon: string | null;
+  type?: "ONLINE" | "GIG" | null;
 }
 
 export interface Skill {
@@ -249,6 +250,7 @@ export interface Review {
   job: {
     id: string;
     title: string;
+    isDirectHire?: boolean;
   };
   createdAt: string;
 }
