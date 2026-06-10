@@ -7,7 +7,7 @@ import { MatchedCandidate, Job } from "@/types";
 import { getErrorMessage } from "@/lib/api-client";
 import { jobService } from "@/services";
 import { toast } from "react-hot-toast";
-import { useEntitlements } from "@/contexts";
+import { useAuth, useEntitlements } from "@/contexts";
 
 interface MatchedCandidatesProps {
   job: Job;
@@ -15,13 +15,22 @@ interface MatchedCandidatesProps {
 
 export function MatchedCandidates({ job }: MatchedCandidatesProps) {
   const { hasFeature } = useEntitlements();
+  const { user } = useAuth();
   const isAIAvailable = hasFeature('ai.candidate_match.enabled');
+  
+  // Mặc định ROLE USER (Cá nhân) sẽ không thấy khối này nếu không có quyền
+  const isPersonalRole = user?.role !== "ORGANIZATION" && user?.role !== "RECRUITER";
+  
   const [candidates, setCandidates] = useState<MatchedCandidate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [inviting, setInviting] = useState<string | null>(null);
   const [invited, setInvited] = useState<Record<string, boolean>>({});
+
+  if (isPersonalRole && !isAIAvailable) {
+    return null;
+  }
 
   const handleMatch = async () => {
     try {

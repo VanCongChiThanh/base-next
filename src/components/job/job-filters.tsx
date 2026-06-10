@@ -126,12 +126,19 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
   const categoryOptions = useMemo(
     () => [
       { value: "", label: "Tất cả danh mục" },
-      ...categories.map((c) => ({
-        value: c.id,
-        label: `${c.icon ?? ""} ${c.name}`.trim(),
-      })),
+      ...categories
+        .filter((c) => {
+          if (!jobType) return true;
+          if (!c.type) return true;
+          if (jobType === JobType.ONLINE) return c.type === "ONLINE";
+          return c.type === "GIG";
+        })
+        .map((c) => ({
+          value: c.id,
+          label: `${c.icon ?? ""} ${c.name}`.trim(),
+        })),
     ],
-    [categories],
+    [categories, jobType],
   );
 
   const provinceOptions = useMemo(
@@ -217,7 +224,10 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
         ].map((type) => (
           <button
             key={type.value}
-            onClick={() => setJobType(type.value)}
+            onClick={() => {
+              setJobType(type.value);
+              setCategoryId("");
+            }}
             className={cn(
               "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all border",
               jobType === type.value

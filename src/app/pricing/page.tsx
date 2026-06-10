@@ -195,7 +195,8 @@ export default function PricingPage() {
 
   useEffect(() => {
     if (isAuthenticated && user?.role) {
-      setActiveScope(user.role === "ORGANIZATION" ? "ORGANIZATION" : "EMPLOYER");
+      const isOrgRole = user.role === "ORGANIZATION" || user.role === "RECRUITER";
+      setActiveScope(isOrgRole ? "ORGANIZATION" : "EMPLOYER");
     }
   }, [isAuthenticated, user?.role]);
 
@@ -276,8 +277,8 @@ export default function PricingPage() {
             ) : (
               <div className="mt-8 flex justify-center">
                 <span className="inline-flex items-center gap-2 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 px-6 py-2.5 text-sm font-bold text-white shadow-lg">
-                  <span className="text-lg">{user?.role === "ORGANIZATION" ? "🏢" : "👤"}</span>
-                  Gói dịch vụ dành cho {user?.role === "ORGANIZATION" ? "Tổ chức" : "Cá nhân"}
+                  <span className="text-lg">{(user?.role === "ORGANIZATION" || user?.role === "RECRUITER") ? "🏢" : "👤"}</span>
+                  Gói dịch vụ dành cho {(user?.role === "ORGANIZATION" || user?.role === "RECRUITER") ? "Tổ chức" : "Cá nhân"}
                 </span>
               </div>
             )}

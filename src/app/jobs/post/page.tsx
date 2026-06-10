@@ -114,6 +114,7 @@ export default function PostJobPage() {
       const next = { ...prev, [field]: value };
       if (field === "jobType") {
         next.skillIds = [];
+        next.categoryId = "";
       }
       return next;
     });
@@ -133,11 +134,13 @@ export default function PostJobPage() {
 
   const categoryOptions = useMemo(
     () =>
-      categories.map((c) => ({
-        value: c.id,
-        label: `${c.icon ?? ""} ${c.name}`.trim(),
-      })),
-    [categories],
+      categories
+        .filter((c) => !c.type || c.type === (form.jobType === JobType.ONLINE ? "ONLINE" : "GIG"))
+        .map((c) => ({
+          value: c.id,
+          label: `${c.icon ?? ""} ${c.name}`.trim(),
+        })),
+    [categories, form.jobType],
   );
 
   const filteredSkills = useMemo(() => {
