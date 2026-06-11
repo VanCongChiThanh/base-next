@@ -186,11 +186,13 @@ export default function ApplicationProgressPage() {
       ? String(progress.workerInfo.id)
       : null;
   const isEmployerView =
-    !!currentUserId && !!employerId && currentUserId === employerId;
+    !!currentUserId &&
+    !!employerId &&
+    (currentUserId === employerId ||
+      (user?.role === "RECRUITER" && user.organizationId === employerId));
   const canAccessConversation =
     !!currentUserId &&
-    ((!!employerId && currentUserId === employerId) ||
-      (!!workerId && currentUserId === workerId));
+    (isEmployerView || (!!workerId && currentUserId === workerId));
   const viewAs = isEmployerView ? "employer" : "worker";
 
   if (!canAccessConversation) {
