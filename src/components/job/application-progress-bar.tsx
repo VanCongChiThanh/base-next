@@ -17,6 +17,7 @@ interface Props {
   onConfirmHours?: () => void;
   onMarkPaid?: () => void;
   onConfirmReceipt?: () => void;
+  onRequestRefund?: () => void;
 }
 
 const STEP_ICONS: Record<string, string> = {
@@ -150,6 +151,7 @@ export function ApplicationProgressBar({
   onConfirmHours,
   onMarkPaid,
   onConfirmReceipt,
+  onRequestRefund,
 }: Props) {
   const [loggedHoursInput, setLoggedHoursInput] = useState("");
   const [showLogHoursModal, setShowLogHoursModal] = useState(false);
@@ -576,6 +578,17 @@ export function ApplicationProgressBar({
                   className="w-full py-3 mt-2 rounded-xl bg-white hover:bg-red-50 border border-red-200 text-red-600 font-medium text-sm transition-all disabled:opacity-50"
                 >
                   {isLoading ? "Processing..." : "Rút đơn ứng tuyển"}
+                </button>
+              )}
+
+              {/* REQUEST REFUND FOR EMPLOYER */}
+              {onRequestRefund && viewAs === "employer" && assignment?.status !== "COMPLETED" && assignment?.status !== "CANCELLED" && (
+                <button
+                  onClick={onRequestRefund}
+                  disabled={isLoading}
+                  className="w-full py-3 mt-2 rounded-xl bg-white hover:bg-red-50 border border-red-200 text-red-600 font-medium text-sm transition-all shadow-sm hover:shadow-md disabled:opacity-50"
+                >
+                  {isLoading ? "Processing..." : "Yêu cầu hoàn tiền"}
                 </button>
               )}
 

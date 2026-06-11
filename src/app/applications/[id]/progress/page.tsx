@@ -10,6 +10,7 @@ import { ReviewSection } from "@/components/job";
 import { ConfirmModal } from "@/components/common";
 import { Navbar } from "@/components/layout/navbar";
 import { BankAccountReminder } from "@/components/profile";
+import { paymentService } from "@/services/payment.service";
 
 function useLiveProgress(applicationId: string) {
   const [progress, setProgress] = useState<ApplicationProgress | null>(null);
@@ -44,6 +45,8 @@ export default function ApplicationProgressPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
   const [workerReviews, setWorkerReviews] = useState<Review[]>([]);
 
   // Load worker reviews when progress is available
@@ -142,6 +145,22 @@ export default function ApplicationProgressPage() {
       await refresh();
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleRequestRefund = async () => {
+    if (!progress || !refundReason.trim()) return;
+    setActionLoading(true);
+    setShowRefundModal(false);
+    try {
+      await paymentService.requestRefund(progress.jobId, progress.applicationId, refundReason);
+      alert("Đã gửi yêu cầu hoàn tiền thành công. Quản trị viên sẽ xử lý sớm.");
+      await refresh();
+    } catch (e: any) {
+      alert("Lỗi: " + (e?.response?.data?.message || e.message || "Không thể yêu cầu hoàn tiền"));
+    } finally {
+      setActionLoading(false);
+      setRefundReason("");
     }
   };
 
@@ -291,6 +310,7 @@ export default function ApplicationProgressPage() {
           onConfirmHours={handleConfirmHours}
           onMarkPaid={handleMarkPaid}
           onConfirmReceipt={handleConfirmReceipt}
+          onRequestRefund={progress.paymentMethod === 'ESCROW' ? () => setShowRefundModal(true) : undefined}
         />
 
         {/* Review Section for Employer to review Worker */}
@@ -335,11 +355,44 @@ export default function ApplicationProgressPage() {
         onClose={() => setShowCancelConfirm(false)}
         onConfirm={handleCancel}
         title="Rút đơn ứng tuyển"
-        message="Bạn có chắc chắn muốn rút đơn ứng tuyển này? Hành động này không thể hoàn tác."
-        variant="danger"
-        confirmLabel="Rút đơn"
+        message="Bạn có chắc chắn muốn rút đơn ứng tuyển? Hành động này không thể hoàn tác."
+        confirmLabel="Đồng ý rút"
         isLoading={actionLoading}
       />
+
+      {showRefundModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Yêu cầu hoàn tiền</h3>
+            <p className="text-sm text-gray-600 mb-4">Vui lòng cho biết lý do bạn muốn yêu cầu hoàn tiền cho khoản ký quỹ này.</p>
+            <div className="space-y-2 mb-6">
+              <label className="text-sm font-semibold text-gray-700">Lý do</label>
+              <textarea
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                placeholder="Nhập lý do..."
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRefundModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                Huỷ
+              </button>
+              <button
+                onClick={handleRequestRefund}
+                disabled={actionLoading || !refundReason.trim()}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={showCompleteConfirm}

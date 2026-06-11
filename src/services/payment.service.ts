@@ -36,6 +36,14 @@ export const paymentService = {
     return apiClient.post<{ checkoutUrl: string; escrowId: string }>(`/escrow`, { jobId, milestones });
   },
 
+  createApplicationEscrow(jobId: string, appId: string) {
+    return apiClient.post<{ checkoutUrl: string; escrowId: string }>(`/jobs/${jobId}/applications/${appId}/escrow`);
+  },
+
+  requestRefund(jobId: string, appId: string, reason: string) {
+    return apiClient.post<{ success: boolean; escrowId: string; status: string }>(`/jobs/${jobId}/applications/${appId}/request-refund`, { reason });
+  },
+
   getEscrowByJob(jobId: string) {
     return apiClient.get<Escrow>(`/escrow/job/${jobId}`);
   },

@@ -47,6 +47,7 @@ export interface ApplicationProgress {
   jobAddress: string;
   jobType: string;
   onlinePaymentType: string;
+  paymentMethod?: string;
   startTime: string;
   endTime: string;
   salaryType?: string | null;
