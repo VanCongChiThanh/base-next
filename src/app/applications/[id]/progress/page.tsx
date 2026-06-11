@@ -179,47 +179,14 @@ export default function ApplicationProgressPage() {
     "id" in progress.employerInfo
       ? String(progress.employerInfo.id)
       : null;
-  const workerId =
-    progress.workerInfo &&
-    typeof progress.workerInfo === "object" &&
-    "id" in progress.workerInfo
-      ? String(progress.workerInfo.id)
-      : null;
-  const isEmployerView =
-    !!currentUserId &&
-    !!employerId &&
-    (currentUserId === employerId ||
-      (user?.role === "RECRUITER" && user.organizationId === employerId));
-  const canAccessConversation =
-    !!currentUserId &&
-    (isEmployerView || (!!workerId && currentUserId === workerId));
-  const viewAs = isEmployerView ? "employer" : "worker";
 
-  if (!canAccessConversation) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4">
-          <div className="max-w-md w-full rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
-            <p className="text-2xl mb-2">🔒</p>
-            <h2 className="text-gray-900 font-semibold">
-              Không thể mở tiến trình này
-            </h2>
-            <p className="text-sm text-amber-800 mt-2">
-              Chỉ ứng viên của đơn và nhà tuyển dụng của công việc mới được xem
-              chat trong tiến trình.
-            </p>
-            <button
-              onClick={() => router.back()}
-              className="mt-4 text-blue-600 font-medium text-sm hover:underline"
-            >
-              ← Quay lại trang trước
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Backend đã validate quyền truy cập rồi (trả về 200).
+  // Ở đây chỉ cần xác định giao diện hiển thị: employer hay worker.
+  const isEmployerView =
+    user?.role === "RECRUITER" ||
+    (!!currentUserId && !!employerId && currentUserId === employerId);
+
+  const viewAs = isEmployerView ? "employer" : "worker";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
