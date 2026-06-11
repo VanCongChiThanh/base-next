@@ -147,6 +147,21 @@ export const adminService = {
     return apiClient.post<Milestone>(`/admin/escrow/milestones/${id}/release`, { note });
   },
 
+  async getAdminEscrows(params: { page?: number; limit?: number; status?: string } = {}): Promise<PaginatedResult<any>> {
+    const query = buildQuery(params);
+    const res = await apiClient.requestFull<any[]>(`/admin/escrows${query}`);
+    return {
+      data: res.data || [],
+      total: res.meta?.pagination?.total || 0,
+      page: res.meta?.pagination?.page || 1,
+      limit: res.meta?.pagination?.limit || 10,
+    };
+  },
+
+  async refundEscrow(id: string, reason: string): Promise<any> {
+    return apiClient.post<any>(`/admin/escrow/${id}/refund`, { reason });
+  },
+
   // ==================== ADMIN REPORTS ====================
   async getReports(params: { page?: number; limit?: number; status?: string } = {}): Promise<PaginatedResult<Report>> {
     const query = buildQuery(params);

@@ -231,10 +231,18 @@ export default function JobDetailPageClient({
   const handleAccept = async (appId: string) => {
     setActionLoading(appId);
     try {
-      await jobService.acceptApplication(id, appId);
-      const apps = await jobService.getJobApplications(id);
-      setApplications(apps);
-      setSuccess("Đã chấp nhận ứng viên!");
+      if (job?.paymentMethod === PaymentMethod.ESCROW || (job as any)?.paymentMethod === 'ESCROW') {
+        const res = await paymentService.createApplicationEscrow(id, appId);
+        if (res.checkoutUrl) {
+          window.location.href = res.checkoutUrl;
+          return; // Redirecting to PayOS
+        }
+      } else {
+        await jobService.acceptApplication(id, appId);
+        const apps = await jobService.getJobApplications(id);
+        setApplications(apps);
+        setSuccess("Đã chấp nhận ứng viên!");
+      }
     } catch (err) {
       setError(getErrorMessage(err as ApiError));
     } finally {
@@ -586,12 +594,23 @@ export default function JobDetailPageClient({
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
                   <h2 className="text-lg font-bold text-gray-900 mb-4">Tổng quan</h2>
                   <div className="space-y-4 text-sm">
-                    <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Danh mục</span><span className="font-medium text-gray-900">{job.category?.name}</span></div>
-                    {job.jobType === JobType.PART_TIME ? (
-                      <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Thời gian</span><span className="font-medium text-gray-900">{formatDateTime(job.startTime!)} - {formatDateTime(job.endTime!)}</span></div>
-                    ) : (
-                      <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Deadline</span><span className="font-medium text-gray-900">{formatDateTime(job.deadline!)}</span></div>
-                    )}
+                    <div className="flex justify-between pb-3 border-b border-gray-100"><span className="text-gray-500">Danh mục</span><span className="font-medium text-gray-900">{job.category?.name || "Khác"}</span></div>
+                    {job.startTime ? (
+                      <div className="flex justify-between pb-3 border-b border-gray-100">
+                        <span className="text-gray-500">Thời gian</span>
+                        <span className="font-medium text-gray-900">
+                          {formatDateTime(job.startTime)}
+                          {job.endTime ? ` - ${formatDateTime(job.endTime)}` : ""}
+                        </span>
+                      </div>
+                    ) : job.deadline ? (
+                      <div className="flex justify-between pb-3 border-b border-gray-100">
+                        <span className="text-gray-500">Deadline</span>
+                        <span className="font-medium text-gray-900">
+                          {formatDateTime(job.deadline)}
+                        </span>
+                      </div>
+                    ) : null}
                     <div className="flex justify-between"><span className="text-gray-500">Hình thức thanh toán</span><span className="font-medium text-gray-900">{job.paymentMethod === PaymentMethod.ESCROW ? "Ký quỹ (Escrow)" : job.paymentMethod === PaymentMethod.P2P ? "Trực tiếp" : "Tiền mặt"}</span></div>
                   </div>
                 </div>
@@ -1560,17 +1579,7 @@ export default function JobDetailPageClient({
                   </div>
 
                   {/* Time */}
-                  {job.jobType === JobType.ONLINE ? (
-                    <div className="flex items-start gap-3">
-                      <span className="text-xl">📅</span>
-                      <div>
-                        <p className="text-xs text-gray-400">Deadline</p>
-                        <p className="text-sm text-gray-700 font-medium">
-                          {formatDateTime(job.deadline || job.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
+                  {job.startTime ? (
                     <div className="flex items-start gap-3">
                       <svg
                         className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0"
@@ -1588,14 +1597,26 @@ export default function JobDetailPageClient({
                       <div>
                         <p className="text-xs text-gray-400">Thời gian</p>
                         <p className="text-sm text-gray-700 font-medium">
-                          {formatDateTime(job.startTime || job.createdAt)}
+                          {formatDateTime(job.startTime)}
                         </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          đến {formatDateTime(job.endTime || job.createdAt)}
+                        {job.endTime && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            đến {formatDateTime(job.endTime)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : job.deadline ? (
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl">📅</span>
+                      <div>
+                        <p className="text-xs text-gray-400">Deadline</p>
+                        <p className="text-sm text-gray-700 font-medium">
+                          {formatDateTime(job.deadline)}
                         </p>
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Location */}
                   {job.jobType !== JobType.ONLINE && (

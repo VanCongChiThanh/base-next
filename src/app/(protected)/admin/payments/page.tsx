@@ -34,7 +34,7 @@ const statusBadge: Record<string, { label: string; variant: "success" | "warning
 };
 
 export default function AdminPaymentsPage() {
-  const [activeTab, setActiveTab] = useState<"offline" | "milestone">("offline");
+  const [activeTab, setActiveTab] = useState<"offline" | "milestone" | "refund">("offline");
 
   // State for offline payments
   const [payments, setPayments] = useState<PaymentConfirmation[]>([]);
@@ -49,6 +49,13 @@ export default function AdminPaymentsPage() {
   const [milestonePage, setMilestonePage] = useState(1);
   const [milestoneStatus, setMilestoneStatus] = useState("APPROVED");
   const [milestoneLoading, setMilestoneLoading] = useState(true);
+
+  // State for escrows (refund)
+  const [escrows, setEscrows] = useState<any[]>([]);
+  const [escrowTotal, setEscrowTotal] = useState(0);
+  const [escrowPage, setEscrowPage] = useState(1);
+  const [escrowStatus, setEscrowStatus] = useState("REFUND_PENDING");
+  const [escrowLoading, setEscrowLoading] = useState(true);
 
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; milestoneId: string | null }>({ isOpen: false, milestoneId: null });
   const [isReleasing, setIsReleasing] = useState(false);
@@ -73,13 +80,25 @@ export default function AdminPaymentsPage() {
     finally { setMilestoneLoading(false); }
   }, [milestonePage, milestoneStatus]);
 
+  const fetchEscrows = useCallback(async () => {
+    setEscrowLoading(true);
+    try {
+      const res = await adminService.getAdminEscrows({ page: escrowPage, limit: 10, status: escrowStatus || undefined });
+      setEscrows(res?.data || []);
+      setEscrowTotal(res?.total || 0);
+    } catch { /* ignore */ }
+    finally { setEscrowLoading(false); }
+  }, [escrowPage, escrowStatus]);
+
   useEffect(() => {
     if (activeTab === "offline") {
       fetchPayments();
-    } else {
+    } else if (activeTab === "milestone") {
       fetchMilestones();
+    } else {
+      fetchEscrows();
     }
-  }, [activeTab, fetchPayments, fetchMilestones]);
+  }, [activeTab, fetchPayments, fetchMilestones, fetchEscrows]);
 
   const openConfirmModal = (id: string) => {
     setConfirmModal({ isOpen: true, milestoneId: id });
@@ -99,6 +118,17 @@ export default function AdminPaymentsPage() {
     } finally {
       setIsReleasing(false);
       setConfirmModal({ isOpen: false, milestoneId: null });
+    }
+  };
+
+  const handleRefundEscrow = async (escrowId: string) => {
+    if (!confirm(`Xác nhận hoàn tiền cho khoản escrow này?`)) return;
+    try {
+      await adminService.refundEscrow(escrowId, "Admin đã hoàn tiền");
+      toast.success("Hoàn tiền thành công");
+      fetchEscrows();
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi khi hoàn tiền");
     }
   };
 
@@ -245,6 +275,64 @@ export default function AdminPaymentsPage() {
     </>
   );
 
+  const renderEscrows = () => (
+    <>
+      <div className="flex gap-3 mb-4">
+        <SelectFilter value={escrowStatus} onChange={(v) => { setEscrowStatus(v); setEscrowPage(1); }} options={[
+          { label: "Chờ hoàn tiền", value: "REFUND_PENDING" },
+          { label: "Đã hoàn tiền", value: "REFUNDED" },
+        ]} placeholder="Trạng thái" />
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Mã Escrow</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Công việc</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Tổng tiền</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Trạng thái</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">Hành động</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {escrowLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}><td colSpan={5} className="px-4 py-3"><div className="h-5 bg-gray-50 rounded animate-pulse" /></td></tr>
+                ))
+              ) : escrows.length === 0 ? (
+                <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-400">Không có dữ liệu</td></tr>
+              ) : (
+                escrows.map((e) => (
+                  <tr key={e.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs">{e.id.split('-')[0]}...</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{e.job?.title || "—"}</td>
+                    <td className="px-4 py-3 font-semibold text-emerald-600">
+                      {Number(e.totalAmount).toLocaleString('vi-VN')} ₫
+                    </td>
+                    <td className="px-4 py-3"><Badge variant={e.status === 'REFUNDED' ? 'success' : 'warning'}>{e.status}</Badge></td>
+                    <td className="px-4 py-3 text-right">
+                      {e.status === "REFUND_PENDING" && (
+                        <button 
+                          onClick={() => handleRefundEscrow(e.id)}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+                        >
+                          Hoàn tiền
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        {escrowTotal > 10 && <div className="px-4 py-3 border-t border-gray-200"><Pagination page={escrowPage} totalPages={Math.ceil(escrowTotal / 10)} onPageChange={setEscrowPage} /></div>}
+      </div>
+    </>
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -274,10 +362,20 @@ export default function AdminPaymentsPage() {
           >
             Giải ngân Escrow
           </button>
+          <button
+            onClick={() => setActiveTab("refund")}
+            className={`${
+              activeTab === "refund"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            Hoàn tiền Escrow
+          </button>
         </nav>
       </div>
 
-      {activeTab === "offline" ? renderOfflinePayments() : renderMilestones()}
+      {activeTab === "offline" ? renderOfflinePayments() : activeTab === "milestone" ? renderMilestones() : renderEscrows()}
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}
