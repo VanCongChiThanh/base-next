@@ -1837,8 +1837,6 @@ export default function JobDetailPageClient({
             </div>
           </div>
         </div>
-          </div>
-        </div>
       )}
 
       <ConfirmModal
