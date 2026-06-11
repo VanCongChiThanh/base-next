@@ -175,9 +175,7 @@ export default function PricingPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const planData =
-          await subscriptionService.getPublicPlans(activeScope);
-
+        const planData = await subscriptionService.getPublicPlans(activeScope);
         if (!active) return;
         setPlans(planData);
       } finally {
