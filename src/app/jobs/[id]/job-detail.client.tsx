@@ -75,6 +75,7 @@ export default function JobDetailPageClient({
   const [showWorkerCompleteConfirm, setShowWorkerCompleteConfirm] = useState(false);
   const [showConfirmReceipt, setShowConfirmReceipt] = useState(false);
   const [showLogHoursModal, setShowLogHoursModal] = useState(false);
+  const [acceptConfirmAppId, setAcceptConfirmAppId] = useState<string | null>(null);
   const [loggedHoursInput, setLoggedHoursInput] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isSaved, setIsSaved] = useState(false);
@@ -228,8 +229,17 @@ export default function JobDetailPageClient({
     }
   };
 
+  const handleAcceptClick = (appId: string) => {
+    if (job?.paymentMethod === PaymentMethod.ESCROW || (job as any)?.paymentMethod === 'ESCROW') {
+      setAcceptConfirmAppId(appId);
+    } else {
+      handleAccept(appId);
+    }
+  };
+
   const handleAccept = async (appId: string) => {
     setActionLoading(appId);
+    setAcceptConfirmAppId(null);
     try {
       if (job?.paymentMethod === PaymentMethod.ESCROW || (job as any)?.paymentMethod === 'ESCROW') {
         const res = await paymentService.createApplicationEscrow(id, appId);
@@ -745,7 +755,7 @@ export default function JobDetailPageClient({
                             )}
                             {app.status === ApplicationStatus.PENDING && (
                               <>
-                                <button onClick={() => handleAccept(app.id)} disabled={actionLoading === app.id} className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">Nhận</button>
+                                <button onClick={() => handleAcceptClick(app.id)} disabled={actionLoading === app.id} className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">Nhận</button>
                                 <button onClick={() => handleReject(app.id)} disabled={actionLoading === app.id} className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors">Từ chối</button>
                               </>
                             )}
@@ -1828,6 +1838,21 @@ export default function JobDetailPageClient({
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!acceptConfirmAppId}
+        onClose={() => setAcceptConfirmAppId(null)}
+        onConfirm={() => {
+          if (acceptConfirmAppId) {
+            handleAccept(acceptConfirmAppId);
+          }
+        }}
+        title="Xác nhận thanh toán Escrow"
+        message={`Hệ thống sẽ chuyển hướng bạn đến cổng thanh toán PayOS để nạp quỹ Escrow cho ứng viên này. Sau khi thanh toán thành công, lời mời làm việc sẽ được gửi đi và công việc sẽ bắt đầu ngay khi ứng viên đồng ý. Bạn có muốn tiếp tục?`}
+        confirmLabel="Tiếp tục thanh toán"
+        variant="primary"
+        isLoading={!!acceptConfirmAppId && actionLoading === acceptConfirmAppId}
+      />
     </>
   );
 }
