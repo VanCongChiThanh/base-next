@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import Link from "next/link";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
@@ -154,15 +155,15 @@ export default function PricingPage() {
       }
       if (res.isTrialUpgrade) {
         await refreshEntitlements();
-        alert(
+        toast.success(
           "Đã kích hoạt gói Unlimited miễn phí trong giai đoạn dùng thử (3 tháng đầu kể từ ngày tạo tài khoản tổ chức).",
         );
         return;
       }
-      alert("Không tạo được liên kết thanh toán. Vui lòng thử lại sau.");
+      toast.error("Không tạo được liên kết thanh toán. Vui lòng thử lại sau.");
     } catch (error) {
       console.error("Lỗi khi tạo thanh toán:", error);
-      alert("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
+      toast.error("Đã có lỗi xảy ra. Vui lòng thử lại sau.");
     } finally {
       setCheckoutLoading(null);
     }
