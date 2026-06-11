@@ -66,11 +66,13 @@ export function Navbar() {
     };
 
     void checkUnreadConversations();
-    const intervalId = window.setInterval(checkUnreadConversations, 10000);
+    const intervalId = window.setInterval(checkUnreadConversations, 60000);
+    window.addEventListener("new_application_message", checkUnreadConversations);
 
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
+      window.removeEventListener("new_application_message", checkUnreadConversations);
     };
   }, [isAuthenticated, pathname, messageLinkHref]);
 

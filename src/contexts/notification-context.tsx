@@ -194,6 +194,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           setUnreadCount((prev) => prev + 1);
           setTotal((prev) => prev + 1);
           setToasts((prev) => [notification, ...prev].slice(0, 5)); // Max 5 toasts
+        } else {
+          // Dispatch custom event for message-related components to update in realtime
+          window.dispatchEvent(new CustomEvent("new_application_message", { detail: notification }));
         }
       } catch (error) {
         console.error("Failed to parse SSE notification:", error);

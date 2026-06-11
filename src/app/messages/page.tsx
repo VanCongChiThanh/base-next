@@ -83,8 +83,14 @@ export default function MessagesPage() {
 
   useEffect(() => {
     loadConversations();
-    const interval = window.setInterval(() => loadConversations(true), 10000);
-    return () => window.clearInterval(interval);
+    const interval = window.setInterval(() => loadConversations(true), 60000);
+    const handleNewMessage = () => loadConversations(true);
+    window.addEventListener("new_application_message", handleNewMessage);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("new_application_message", handleNewMessage);
+    };
   }, [loadConversations]);
 
   const selectedConversation = useMemo(
