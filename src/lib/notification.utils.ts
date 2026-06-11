@@ -103,6 +103,10 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
     title: "ứng viên đã Điểm danh",
     message: "ứng viên đã đến làm việc tại {jobTitle}.",
   },
+  [NotificationType.HOURS_LOGGED]: {
+    title: "Báo cáo số giờ làm",
+    message: "{message}",
+  },
   [NotificationType.APPLICATION_CANCELLED]: {
     title: "ứng viên hủy ứng tuyển",
     message: "Một ứng viên đã rút lý lịch cho công việc {jobTitle}.",
@@ -268,6 +272,7 @@ export function getNotificationRoute(
         return dataJobId ? `/jobs/${dataJobId}` : null;
 
       case NotificationType.JOB_COMPLETED:
+      case NotificationType.HOURS_LOGGED:
       case NotificationType.JOB_CHECKED_IN:
       case NotificationType.APPLICATION_CANCELLED:
       case NotificationType.PAYMENT_CONFIRMED:
@@ -352,6 +357,10 @@ export function getNotificationIcon(type: NotificationType): string {
     case NotificationType.ORDER_CANCELLED:
       return "package";
 
+    // Job
+    case NotificationType.HOURS_LOGGED:
+      return "clock";
+
     // Payment
     case NotificationType.PAYMENT_SUCCESS:
       return "check-circle";
@@ -396,6 +405,7 @@ export function getNotificationColor(
     case NotificationType.ORDER_SHIPPED:
       return "warning";
 
+    case NotificationType.HOURS_LOGGED:
     case NotificationType.PROMOTION:
       return "info";
 
