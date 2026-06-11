@@ -570,8 +570,8 @@ export default function JobDetailPageClient({
                 <ReviewSection
                   jobId={id}
                   reviews={reviews}
-                  canReview={canReview}
-                  revieweeId={revieweeId}
+                  canReview={false}
+                  revieweeId={undefined}
                   currentUserId={user?.id}
                   onReviewCreated={(review) => setReviews((prev) => [review, ...prev])}
                 />
@@ -709,6 +709,10 @@ export default function JobDetailPageClient({
                           <div className="flex flex-wrap justify-end gap-2">
                             {(app.status === ApplicationStatus.PENDING || app.status === ApplicationStatus.ACCEPTED || app.status === ApplicationStatus.EMPLOYER_ACCEPTED) && (
                               <button onClick={() => openChat(app.id, app.status as ApplicationStatus, job.title)} className="px-3 py-1.5 text-xs font-medium bg-white border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Nhắn tin">💬 Chat</button>
+                            )}
+                            {/* Nút Chi tiết cho phép Employer xem tiến trình và đánh giá */}
+                            {app.status === ApplicationStatus.ACCEPTED && isEmployer && (
+                              <Link href={`/applications/${app.id}/progress`} className="px-3 py-1.5 text-xs font-medium bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">Chi tiết</Link>
                             )}
                             {/* Tiến trình UI has been merged into this page */}
                             {app.status === ApplicationStatus.ACCEPTED && job.paymentMethod === PaymentMethod.P2P && (
