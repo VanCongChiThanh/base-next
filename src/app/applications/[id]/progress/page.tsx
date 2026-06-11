@@ -3,9 +3,10 @@
 import { useState, useCallback, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useChat } from "@/contexts";
-import { jobService } from "@/services";
-import { ApplicationProgress } from "@/types";
+import { jobService, reviewService } from "@/services";
+import { ApplicationProgress, Review } from "@/types";
 import { ApplicationProgressBar } from "@/components/job";
+import { ReviewSection } from "@/components/job";
 import { ConfirmModal } from "@/components/common";
 import { Navbar } from "@/components/layout/navbar";
 import { BankAccountReminder } from "@/components/profile";
@@ -43,6 +44,16 @@ export default function ApplicationProgressPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [workerReviews, setWorkerReviews] = useState<Review[]>([]);
+
+  // Load worker reviews when progress is available
+  useEffect(() => {
+    if (progress?.workerInfo?.id) {
+      reviewService.getByUser(String(progress.workerInfo.id), 1, 50)
+        .then((res) => setWorkerReviews(res?.data || (Array.isArray(res) ? res : [])))
+        .catch(() => setWorkerReviews([]));
+    }
+  }, [progress?.workerInfo?.id]);
 
   // Auto-open chat if ?chat=1 is in the URL (e.g., from notification click)
   useEffect(() => {
@@ -281,6 +292,20 @@ export default function ApplicationProgressPage() {
           onMarkPaid={handleMarkPaid}
           onConfirmReceipt={handleConfirmReceipt}
         />
+
+        {/* Review Section for Employer to review Worker */}
+        {isEmployerView && progress.assignment?.status === "COMPLETED" && (
+          <div id="review-section" className="mt-6">
+            <ReviewSection
+              jobId={progress.jobId}
+              reviews={workerReviews.filter((r) => r.revieweeId === String(progress.workerInfo?.id))}
+              canReview={true}
+              revieweeId={String(progress.workerInfo?.id)}
+              currentUserId={currentUserId ?? undefined}
+              onReviewCreated={(review) => setWorkerReviews((prev) => [review, ...prev])}
+            />
+          </div>
+        )}
 
         <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4 flex items-center gap-3">
           <svg className="w-5 h-5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

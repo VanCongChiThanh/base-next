@@ -550,12 +550,21 @@ export function ApplicationProgressBar({
                     <h3 className="text-sm font-bold text-green-900">Công việc hoàn tất!</h3>
                     <p className="text-xs text-green-700 mt-1">Giao dịch đã được xác nhận thành công.</p>
                   </div>
-                  <Link
-                    href={`/jobs/${progress.jobId}`}
-                    className="flex items-center justify-center w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg"
-                  >
-                    Xem chi tiết & Đánh giá đối tác
-                  </Link>
+                  {viewAs === "employer" ? (
+                    <button
+                      onClick={() => document.getElementById("review-section")?.scrollIntoView({ behavior: "smooth" })}
+                      className="flex items-center justify-center w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                    >
+                      ⬇ Đánh giá người lao động
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/jobs/${progress.jobId}`}
+                      className="flex items-center justify-center w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold transition-all shadow-md hover:shadow-lg"
+                    >
+                      Xem chi tiết &amp; Đánh giá đối tác
+                    </Link>
+                  )}
                 </div>
               )}
 
