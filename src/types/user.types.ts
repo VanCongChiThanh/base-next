@@ -10,5 +10,6 @@ export interface User {
   isEmailVerified: boolean;
   avatarUrl: string | null;
   verificationLevel?: VerificationLevel;
+  organizationId?: string;
   createdAt: string;
 }
