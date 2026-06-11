@@ -160,7 +160,13 @@ export default function JobDetailPageClient({
 
   useEffect(() => {
     if (job) {
-      reviewService.getByJob(job.id).then(res => setReviews(res?.data || (Array.isArray(res) ? res : []))).catch(() => {});
+      reviewService.getByJob(job.id)
+        .then(res => {
+          const all: Review[] = res?.data || (Array.isArray(res) ? res : []);
+          // Chỉ hiện review dành cho employer/tổ chức, không hiện review của employer dành cho worker
+          setReviews(all.filter(r => r.revieweeId === job.employerId));
+        })
+        .catch(() => {});
     }
   }, [job]);
 
