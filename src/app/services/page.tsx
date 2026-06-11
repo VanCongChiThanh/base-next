@@ -135,7 +135,7 @@ export default function ServicesPage() {
               </span>
             </div>
             <div className="flex flex-col items-end bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-lg font-bold whitespace-nowrap shadow-sm border border-yellow-100">
-              <span className="text-base">{Number(service.price).toLocaleString('vi-VN')}đ</span>
+              <span className="text-base">{Number(service.price).toLocaleString('vi-VN')}đ{service.priceType === 'HOURLY' ? '/giờ' : ''}</span>
               <span className="text-[10px] font-medium opacity-80">(Đề xuất)</span>
             </div>
           </div>
