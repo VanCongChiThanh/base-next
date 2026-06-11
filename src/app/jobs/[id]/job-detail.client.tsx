@@ -565,6 +565,16 @@ export default function JobDetailPageClient({
                     </div>
                   </div>
                 )}
+                
+                {/* Reviews Section */}
+                <ReviewSection
+                  jobId={id}
+                  reviews={reviews}
+                  canReview={false}
+                  revieweeId={undefined}
+                  currentUserId={user?.id}
+                  onReviewCreated={(review) => setReviews((prev) => [review, ...prev])}
+                />
               </div>
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
