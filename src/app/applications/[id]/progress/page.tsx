@@ -172,7 +172,20 @@ export default function ApplicationProgressPage() {
     );
   }
 
-  const isEmployerView = user?.role === "RECRUITER" || user?.role === "ORGANIZATION";
+  const currentUserId = user?.id ? String(user.id) : null;
+  const employerId =
+    progress.employerInfo &&
+    typeof progress.employerInfo === "object" &&
+    "id" in progress.employerInfo
+      ? String(progress.employerInfo.id)
+      : null;
+
+  // Backend đã validate quyền truy cập rồi (trả về 200).
+  // Ở đây chỉ cần xác định giao diện hiển thị: employer hay worker.
+  const isEmployerView =
+    user?.role === "RECRUITER" ||
+    (!!currentUserId && !!employerId && currentUserId === employerId);
+
   const viewAs = isEmployerView ? "employer" : "worker";
 
   return (
