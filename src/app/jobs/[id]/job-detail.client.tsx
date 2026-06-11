@@ -355,6 +355,25 @@ export default function JobDetailPageClient({
     }
   };
 
+  const handleCheckIn = async () => {
+    setActionLoading("checkIn");
+    setError("");
+    try {
+      await jobService.checkIn(id);
+      setSuccess("Đã xác nhận có mặt (Check-in)!");
+      const updated = await jobService.getJob(id);
+      setJob(updated);
+      if (myApplication) {
+        const progress = await jobService.getApplicationProgress(myApplication.id);
+        setAppProgress(progress);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleLogHours = async (hours: number) => {
     setShowLogHoursModal(false);
     setActionLoading("logHours");
@@ -895,11 +914,10 @@ export default function JobDetailPageClient({
                 <MatchedCandidates job={job} />
               )}
 
-              {/* Worker Milestone Progress */}
-              {job.jobType === JobType.ONLINE &&
-                job.paymentMethod === PaymentMethod.ESCROW &&
-                job.onlinePaymentType !== OnlinePaymentType.HOURLY_RATE &&
-                myApplication && appProgress && (
+              {/* Worker Progress */}
+              {!isEmployer &&
+                myApplication?.status === ApplicationStatus.ACCEPTED &&
+                appProgress && (
                   <JobProgressInline
                     progress={appProgress}
                     escrow={escrow}
@@ -1060,6 +1078,14 @@ export default function JobDetailPageClient({
                           Lưu ý: Chỉ xác nhận hoàn thành khi bạn đã hoàn tất công việc{job?.paymentMethod === PaymentMethod.P2P ? " (và đã nhận đủ tiền nếu giao dịch trực tiếp)" : ""}.
                         </p>
                       </div>
+                    ) : appProgress?.assignment?.status === "ASSIGNED" && job.jobType === JobType.GIG ? (
+                      <button
+                        onClick={handleCheckIn}
+                        disabled={actionLoading === "checkIn"}
+                        className="w-full py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl hover:shadow-md transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {actionLoading === "checkIn" ? "Đang xử lý..." : "📍 Đã có mặt (Check-in)"}
+                      </button>
                     ) : (job.jobType === JobType.ONLINE ? job.onlinePaymentType === "HOURLY_RATE" : job.salaryType === "HOURLY") ? (
                       <button
                         onClick={() => setShowLogHoursModal(true)}
