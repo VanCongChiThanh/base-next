@@ -850,6 +850,21 @@ export default function JobDetailPageClient({
             )}
           </div>
         </main>
+
+        <ConfirmModal
+          isOpen={!!acceptConfirmAppId}
+          onClose={() => setAcceptConfirmAppId(null)}
+          onConfirm={() => {
+            if (acceptConfirmAppId) {
+              handleAccept(acceptConfirmAppId);
+            }
+          }}
+          title="Xác nhận thanh toán Escrow"
+          message={`Hệ thống sẽ chuyển hướng bạn đến cổng thanh toán PayOS để nạp quỹ Escrow cho ứng viên này. Sau khi thanh toán thành công, lời mời làm việc sẽ được gửi đi và công việc sẽ bắt đầu ngay khi ứng viên đồng ý. Bạn có muốn tiếp tục?`}
+          confirmLabel="Tiếp tục thanh toán"
+          variant="primary"
+          isLoading={!!acceptConfirmAppId && actionLoading === acceptConfirmAppId}
+        />
       </>
     );
   }
