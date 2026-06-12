@@ -877,6 +877,60 @@ export default function JobDetailPageClient({
           variant="primary"
           isLoading={!!acceptConfirmAppId && actionLoading === acceptConfirmAppId}
         />
+        <ConfirmModal
+          isOpen={!!regularAcceptConfirmAppId}
+          onClose={() => setRegularAcceptConfirmAppId(null)}
+          onConfirm={() => {
+            if (regularAcceptConfirmAppId) {
+              handleAccept(regularAcceptConfirmAppId);
+            }
+          }}
+          title="Xác nhận duyệt ứng viên"
+          message="Bạn có chắc chắn muốn nhận ứng viên này không? Sau khi duyệt, ứng viên sẽ nhận được thông báo để bắt đầu công việc."
+          confirmLabel="Duyệt ứng viên"
+          variant="primary"
+          isLoading={!!regularAcceptConfirmAppId && actionLoading === regularAcceptConfirmAppId}
+        />
+        <ConfirmModal
+          isOpen={showApproveCompleteConfirm}
+          onClose={() => setShowApproveCompleteConfirm(false)}
+          onConfirm={handleApproveComplete}
+          title="Xác nhận hoàn thành"
+          message="Bạn có chắc chắn xác nhận ứng viên đã hoàn thành công việc được giao?"
+          confirmLabel="Xác nhận"
+          variant="success"
+          isLoading={actionLoading === "approve_complete"}
+        />
+        <ConfirmModal
+          isOpen={showApprovePaymentConfirm}
+          onClose={() => setShowApprovePaymentConfirm(false)}
+          onConfirm={handleApprovePayment}
+          title="Xác nhận thanh toán"
+          message="Bạn có chắc chắn xác nhận đã thanh toán lương cho ứng viên này?"
+          confirmLabel="Xác nhận"
+          variant="success"
+          isLoading={actionLoading === "approve_payment"}
+        />
+        <ConfirmModal
+          isOpen={showCancelConfirm}
+          onClose={() => setShowCancelConfirm(false)}
+          onConfirm={handleCancel}
+          title="Huỷ bài đăng"
+          message="Bạn có chắc chắn muốn huỷ bài đăng này không? Hành động này không thể hoàn tác."
+          confirmLabel="Huỷ bài đăng"
+          variant="danger"
+          isLoading={actionLoading === "cancel"}
+        />
+        <ConfirmModal
+          isOpen={showCompleteConfirm}
+          onClose={() => setShowCompleteConfirm(false)}
+          onConfirm={handleComplete}
+          title="Hoàn thành công việc"
+          message="Xác nhận rằng công việc này đã được hoàn thành tốt đẹp?"
+          confirmLabel="Xác nhận hoàn thành"
+          variant="success"
+          isLoading={actionLoading === "complete"}
+        />
       </>
     );
   }
@@ -1784,27 +1838,7 @@ export default function JobDetailPageClient({
       )}
 
       {/* Confirmation Modals */}
-      <ConfirmModal
-        isOpen={showCancelConfirm}
-        onClose={() => setShowCancelConfirm(false)}
-        onConfirm={handleCancel}
-        title="Huỷ bài đăng"
-        message="Bạn có chắc chắn muốn huỷ bài đăng này không? Hành động này không thể hoàn tác."
-        confirmLabel="Huỷ bài đăng"
-        variant="danger"
-        isLoading={actionLoading === "cancel"}
-      />
 
-      <ConfirmModal
-        isOpen={showCompleteConfirm}
-        onClose={() => setShowCompleteConfirm(false)}
-        onConfirm={handleComplete}
-        title="Hoàn thành công việc"
-        message="Xác nhận rằng công việc này đã được hoàn thành tốt đẹp?"
-        confirmLabel="Xác nhận hoàn thành"
-        variant="success"
-        isLoading={actionLoading === "complete"}
-      />
       <ConfirmModal
         isOpen={showWorkerCompleteConfirm}
         onClose={() => setShowWorkerCompleteConfirm(false)}
@@ -1814,40 +1848,6 @@ export default function JobDetailPageClient({
         confirmLabel="Xác nhận"
         variant="success"
         isLoading={actionLoading === "complete"}
-      />
-      <ConfirmModal
-        isOpen={!!regularAcceptConfirmAppId}
-        onClose={() => setRegularAcceptConfirmAppId(null)}
-        onConfirm={() => {
-          if (regularAcceptConfirmAppId) {
-            handleAccept(regularAcceptConfirmAppId);
-          }
-        }}
-        title="Xác nhận duyệt ứng viên"
-        message="Bạn có chắc chắn muốn nhận ứng viên này không? Sau khi duyệt, ứng viên sẽ nhận được thông báo để bắt đầu công việc."
-        confirmLabel="Duyệt ứng viên"
-        variant="primary"
-        isLoading={!!regularAcceptConfirmAppId && actionLoading === regularAcceptConfirmAppId}
-      />
-      <ConfirmModal
-        isOpen={showApproveCompleteConfirm}
-        onClose={() => setShowApproveCompleteConfirm(false)}
-        onConfirm={handleApproveComplete}
-        title="Xác nhận hoàn thành"
-        message="Bạn có chắc chắn xác nhận ứng viên đã hoàn thành công việc được giao?"
-        confirmLabel="Xác nhận"
-        variant="success"
-        isLoading={actionLoading === "approve_complete"}
-      />
-      <ConfirmModal
-        isOpen={showApprovePaymentConfirm}
-        onClose={() => setShowApprovePaymentConfirm(false)}
-        onConfirm={handleApprovePayment}
-        title="Xác nhận thanh toán"
-        message="Bạn có chắc chắn xác nhận đã thanh toán lương cho ứng viên này?"
-        confirmLabel="Xác nhận"
-        variant="success"
-        isLoading={actionLoading === "approve_payment"}
       />
 
       {/* Log Hours Modal */}
@@ -1900,20 +1900,7 @@ export default function JobDetailPageClient({
         </div>
       )}
 
-      <ConfirmModal
-        isOpen={!!acceptConfirmAppId}
-        onClose={() => setAcceptConfirmAppId(null)}
-        onConfirm={() => {
-          if (acceptConfirmAppId) {
-            handleAccept(acceptConfirmAppId);
-          }
-        }}
-        title="Xác nhận thanh toán Escrow"
-        message={`Hệ thống sẽ chuyển hướng bạn đến cổng thanh toán PayOS để nạp quỹ Escrow cho ứng viên này. Sau khi thanh toán thành công, lời mời làm việc sẽ được gửi đi và công việc sẽ bắt đầu ngay khi ứng viên đồng ý. Bạn có muốn tiếp tục?`}
-        confirmLabel="Tiếp tục thanh toán"
-        variant="primary"
-        isLoading={!!acceptConfirmAppId && actionLoading === acceptConfirmAppId}
-      />
+
     </>
   );
 }
