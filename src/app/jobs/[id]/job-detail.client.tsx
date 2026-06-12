@@ -76,6 +76,9 @@ export default function JobDetailPageClient({
   const [showConfirmReceipt, setShowConfirmReceipt] = useState(false);
   const [showLogHoursModal, setShowLogHoursModal] = useState(false);
   const [acceptConfirmAppId, setAcceptConfirmAppId] = useState<string | null>(null);
+  const [regularAcceptConfirmAppId, setRegularAcceptConfirmAppId] = useState<string | null>(null);
+  const [showApproveCompleteConfirm, setShowApproveCompleteConfirm] = useState(false);
+  const [showApprovePaymentConfirm, setShowApprovePaymentConfirm] = useState(false);
   const [loggedHoursInput, setLoggedHoursInput] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isSaved, setIsSaved] = useState(false);
@@ -230,18 +233,25 @@ export default function JobDetailPageClient({
   };
 
   const handleAcceptClick = (appId: string) => {
-    if (job?.paymentMethod === PaymentMethod.ESCROW || (job as any)?.paymentMethod === 'ESCROW') {
+    const isEscrow = job?.paymentMethod === PaymentMethod.ESCROW || (job as any)?.paymentMethod === 'ESCROW';
+    const isGigOrPartTime = job?.jobType === JobType.GIG || job?.jobType === JobType.PART_TIME;
+    
+    if (isEscrow && isGigOrPartTime) {
       setAcceptConfirmAppId(appId);
     } else {
-      handleAccept(appId);
+      setRegularAcceptConfirmAppId(appId);
     }
   };
 
   const handleAccept = async (appId: string) => {
     setActionLoading(appId);
     setAcceptConfirmAppId(null);
+    setRegularAcceptConfirmAppId(null);
     try {
-      if (job?.paymentMethod === PaymentMethod.ESCROW || (job as any)?.paymentMethod === 'ESCROW') {
+      const isEscrow = job?.paymentMethod === PaymentMethod.ESCROW || (job as any)?.paymentMethod === 'ESCROW';
+      const isGigOrPartTime = job?.jobType === JobType.GIG || job?.jobType === JobType.PART_TIME;
+
+      if (isEscrow && isGigOrPartTime) {
         const res = await paymentService.createApplicationEscrow(id, appId);
         if (res.checkoutUrl) {
           window.location.href = res.checkoutUrl;
@@ -275,6 +285,7 @@ export default function JobDetailPageClient({
 
   const handleApproveComplete = async () => {
     if (!job) return;
+    setShowApproveCompleteConfirm(false);
     setActionLoading("approve_complete");
     setError("");
     try {
@@ -292,6 +303,7 @@ export default function JobDetailPageClient({
 
   const handleApprovePayment = async () => {
     if (!job) return;
+    setShowApprovePaymentConfirm(false);
     setActionLoading("approve_payment");
     setError("");
     try {
@@ -780,7 +792,7 @@ export default function JobDetailPageClient({
                             )}
                             {(app.assignment?.status === "ASSIGNED" || app.assignment?.status === "IN_PROGRESS") && job.salaryType !== "HOURLY" ? (
                               <button
-                                onClick={handleApproveComplete}
+                                onClick={() => setShowApproveCompleteConfirm(true)}
                                 disabled={actionLoading === "approve_complete"}
                                 className="px-3 py-1.5 text-xs font-bold text-white bg-teal-500 rounded-lg hover:bg-teal-600 transition-all disabled:opacity-50"
                               >
@@ -789,7 +801,7 @@ export default function JobDetailPageClient({
                             ) : null}
                             {app.assignment?.status === "PAYMENT_PENDING" ? (
                               <button
-                                onClick={handleApprovePayment}
+                                onClick={() => setShowApprovePaymentConfirm(true)}
                                 disabled={actionLoading === "approve_payment"}
                                 className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-all disabled:opacity-50"
                               >
@@ -1802,6 +1814,40 @@ export default function JobDetailPageClient({
         confirmLabel="Xác nhận"
         variant="success"
         isLoading={actionLoading === "complete"}
+      />
+      <ConfirmModal
+        isOpen={!!regularAcceptConfirmAppId}
+        onClose={() => setRegularAcceptConfirmAppId(null)}
+        onConfirm={() => {
+          if (regularAcceptConfirmAppId) {
+            handleAccept(regularAcceptConfirmAppId);
+          }
+        }}
+        title="Xác nhận duyệt ứng viên"
+        message="Bạn có chắc chắn muốn nhận ứng viên này không? Sau khi duyệt, ứng viên sẽ nhận được thông báo để bắt đầu công việc."
+        confirmLabel="Duyệt ứng viên"
+        variant="primary"
+        isLoading={!!regularAcceptConfirmAppId && actionLoading === regularAcceptConfirmAppId}
+      />
+      <ConfirmModal
+        isOpen={showApproveCompleteConfirm}
+        onClose={() => setShowApproveCompleteConfirm(false)}
+        onConfirm={handleApproveComplete}
+        title="Xác nhận hoàn thành"
+        message="Bạn có chắc chắn xác nhận ứng viên đã hoàn thành công việc được giao?"
+        confirmLabel="Xác nhận"
+        variant="success"
+        isLoading={actionLoading === "approve_complete"}
+      />
+      <ConfirmModal
+        isOpen={showApprovePaymentConfirm}
+        onClose={() => setShowApprovePaymentConfirm(false)}
+        onConfirm={handleApprovePayment}
+        title="Xác nhận thanh toán"
+        message="Bạn có chắc chắn xác nhận đã thanh toán lương cho ứng viên này?"
+        confirmLabel="Xác nhận"
+        variant="success"
+        isLoading={actionLoading === "approve_payment"}
       />
 
       {/* Log Hours Modal */}
