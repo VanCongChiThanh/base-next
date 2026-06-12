@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { adminService } from "@/services/admin.service";
 import { SelectFilter, Pagination, Badge, Modal } from "@/components/admin";
+import Link from "next/link";
 import { Dispute } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 
@@ -91,7 +92,11 @@ export default function AdminDisputesPage() {
                   const badge = statusBadge[d.status] || { label: d.status, variant: "default" as const };
                   return (
                     <tr key={d.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[150px] md:max-w-[200px] truncate">{d.job?.title || "—"}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[150px] md:max-w-[200px] truncate">
+                        <Link href={`/jobs/${d.jobId}`} target="_blank" className="hover:text-blue-600 hover:underline">
+                          {d.job?.title || "—"}
+                        </Link>
+                      </td>
                       <td className="hidden md:table-cell px-4 py-3 text-gray-600">{d.raisedBy?.firstName} {d.raisedBy?.lastName}</td>
                       <td className="px-4 py-3 text-gray-600 max-w-[180px] truncate">{d.reason}</td>
                       <td className="px-4 py-3"><Badge variant={badge.variant}>{badge.label}</Badge></td>
@@ -117,7 +122,7 @@ export default function AdminDisputesPage() {
         {selected && (
           <div className="space-y-4">
             <div className="text-sm">
-              <p><span className="text-gray-500">Công việc:</span> <span className="font-medium text-gray-900">{selected.job?.title}</span></p>
+              <p><span className="text-gray-500">Công việc:</span> <Link href={`/jobs/${selected.jobId}`} target="_blank" className="font-medium text-blue-600 hover:underline">{selected.job?.title}</Link></p>
               <p className="mt-1"><span className="text-gray-500">Người tạo:</span> <span className="font-medium text-gray-900">{selected.raisedBy?.firstName} {selected.raisedBy?.lastName}</span></p>
             </div>
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
