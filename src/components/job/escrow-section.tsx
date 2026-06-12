@@ -19,8 +19,8 @@ export function EscrowSection({ job }: EscrowSectionProps) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const isEmployer = user?.id === job.employerId;
-  const isWorker = user?.id !== job.employerId && user != null;
+  const isEmployer = user && job && (user.id === job.employerId || user.id === (job as any).postedById);
+  const isWorker = user && !isEmployer;
 
   // Form states
   const [showCreateEscrow, setShowCreateEscrow] = useState(false);
