@@ -7,16 +7,17 @@ import { Footer } from "@/components/layout/footer";
 import { AuthGuard } from "@/components/auth-guard";
 import { JobStatusBadge, ApplicationStatusBadge } from "@/components/job";
 import { UpgradePrompt } from "@/components/common/upgrade-prompt";
+import { ConfirmModal } from "@/components/common/confirm-modal";
 import { BankAccountReminder } from "@/components/profile";
 import { useAuth, useChat } from "@/contexts";
-import { jobService, paymentService } from "@/services";
-import { Job, JobApplication, ApplicationStatus, Milestone } from "@/types";
+import { jobService, paymentService, workerServiceAPI } from "@/services";
+import { Job, JobApplication, ApplicationStatus, Milestone, WorkerService } from "@/types";
 import { MilestoneStatus } from "@/types/enums";
 import { formatRelativeTime } from "@/lib/utils";
 
 import { toast } from "react-hot-toast";
 
-type Tab = "posted" | "applied" | "invitations" | "payments";
+type Tab = "posted" | "applied" | "invitations" | "payments" | "services";
 
 type Invitation = {
   id: string;
@@ -41,6 +42,9 @@ export default function DashboardPage() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [paymentMilestones, setPaymentMilestones] = useState<Milestone[]>([]);
   const [paymentTotal, setPaymentTotal] = useState(0);
+  const [myServices, setMyServices] = useState<WorkerService[]>([]);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeletingService, setIsDeletingService] = useState(false);
   const [loadingTab, setLoadingTab] = useState<Tab | null>("posted");
   const isLoading = loadingTab === activeTab;
 
@@ -64,6 +68,9 @@ export default function DashboardPage() {
             setPaymentMilestones(data?.data ?? []);
             setPaymentTotal(data?.total ?? 0);
           }
+        } else if (activeTab === "services") {
+          const data = await workerServiceAPI.getMyServices();
+          if (!cancelled) setMyServices(data);
         }
       } catch {
         // ignore
@@ -97,6 +104,22 @@ export default function DashboardPage() {
       setWorkerHistory(data);
     } catch {
       toast.error("Không thể phản hồi xác nhận việc");
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    setIsDeletingService(true);
+    try {
+      await workerServiceAPI.deleteService(deleteConfirmId);
+      toast.success("Đã xóa dịch vụ thành công");
+      const data = await workerServiceAPI.getMyServices();
+      setMyServices(data);
+    } catch {
+      toast.error("Không thể xóa dịch vụ");
+    } finally {
+      setIsDeletingService(false);
+      setDeleteConfirmId(null);
     }
   };
 
@@ -164,6 +187,18 @@ export default function DashboardPage() {
             >
               Tài chính
             </button>
+            {user?.role !== "ORGANIZATION" && (
+              <button
+                onClick={() => setActiveTab("services")}
+                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  activeTab === "services"
+                    ? "bg-white text-blue-700 shadow-sm"
+                    : "text-gray-500 hover:text-blue-600"
+                }`}
+              >
+                Dịch vụ của tôi
+              </button>
+            )}
           </div>
 
           {/* Loading */}
@@ -503,6 +538,86 @@ export default function DashboardPage() {
                 </div>
               )}
             </>
+          ) : activeTab === "services" ? (
+            /* My Services */
+            <div className="space-y-6">
+              {myServices.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 mb-4">
+                    <svg
+                      className="w-8 h-8 text-blue-300"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    Chưa có dịch vụ nào
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-4">
+                    Bắt đầu đăng "Thuê tôi" để khách hàng dễ dàng tìm thấy bạn
+                  </p>
+                  <Link
+                    href="/services/new"
+                    className="inline-flex px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl hover:shadow-md hover:shadow-blue-200 transition-all"
+                  >
+                    Đăng Thuê Tôi
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {myServices.map((service) => (
+                    <div
+                      key={service.id}
+                      className="block bg-white rounded-2xl border border-blue-100 p-5 hover:shadow-md hover:shadow-blue-50 hover:border-blue-200 transition-all"
+                    >
+                      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Link href={`/services/${service.id}`} className="text-base font-semibold text-gray-900 truncate hover:text-blue-600 transition-colors">
+                              {service.title}
+                            </Link>
+                            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider ${service.isAvailableNow ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700'}`}>
+                              {service.isAvailableNow ? 'Sẵn sàng ngay' : 'Đang bận'}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 mb-1">
+                            {service.category && (
+                              <span>
+                                {service.category.icon} {service.category.name}
+                              </span>
+                            )}
+                            <span className="text-blue-200">|</span>
+                            <span>
+                              {Number(service.price).toLocaleString("vi-VN")}đ{service.priceType === 'HOURLY' ? '/giờ' : '/dịch vụ'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400">
+                            Đăng {formatRelativeTime(service.createdAt)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setDeleteConfirmId(service.id);
+                          }}
+                          className="w-full sm:w-auto text-center px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-medium text-sm rounded-xl transition-colors flex-shrink-0"
+                        >
+                          Xóa / Gỡ
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
             /* Invitations */
             <>
@@ -583,6 +698,17 @@ export default function DashboardPage() {
         </div>
       </main>
       <Footer />
+      <ConfirmModal
+        isOpen={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Xác nhận xóa dịch vụ"
+        message="Bạn có chắc chắn muốn xóa/gỡ dịch vụ này? Hành động này không thể hoàn tác."
+        confirmLabel="Xóa dịch vụ"
+        cancelLabel="Hủy"
+        variant="danger"
+        isLoading={isDeletingService}
+      />
     </AuthGuard>
   );
 }
