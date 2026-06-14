@@ -540,12 +540,14 @@ function ProfileContent() {
                             : "Bạn chưa xác thực eKYC. Hãy xác thực để mở thêm quyền đăng việc và tăng độ tin cậy."}
                         </p>
                       </div>
-                      <Link
-                        href="/ekyc"
-                        className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
-                      >
-                        {ekycVerified ? "Xác thực lại" : "Xác thực ngay"}
-                      </Link>
+                      {!ekycVerified && (
+                        <Link
+                          href="/ekyc"
+                          className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                        >
+                          Xác thực ngay
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>

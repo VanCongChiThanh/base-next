@@ -111,6 +111,11 @@ export default function ServicesPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-semibold text-gray-900 text-sm">{service.worker?.firstName} {service.worker?.lastName}</span>
+              {(service.worker as any)?.verificationLevel === "BASIC" || (service.worker as any)?.verificationLevel === "BUSINESS" ? (
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">✓ Đã xác thực</span>
+              ) : (
+                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">⚠️ Chưa xác thực</span>
+              )}
               {/* Real worker stats (only shown when there is data) */}
               <div className="flex items-center gap-2 text-xs font-semibold">
                 {Number(service.worker?.workerProfile?.totalReviews) > 0 && (

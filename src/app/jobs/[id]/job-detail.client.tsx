@@ -736,8 +736,10 @@ export default function JobDetailPageClient({
                             </Link>
                             <div>
                               <Link href={`/users/${app.workerId}`} className="font-semibold text-gray-900 hover:text-blue-600">{app.worker.firstName} {app.worker.lastName}</Link>
-                              {(app.worker.verificationLevel === "BASIC" || app.worker.verificationLevel === "BUSINESS") && (
+                              {(app.worker.verificationLevel === "BASIC" || app.worker.verificationLevel === "BUSINESS") ? (
                                 <div className="mt-0.5"><span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">✓ Đã xác thực</span></div>
+                              ) : (
+                                <div className="mt-0.5"><span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">⚠️ Chưa xác thực</span></div>
                               )}
                             </div>
                           </div>
