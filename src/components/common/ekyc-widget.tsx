@@ -424,7 +424,7 @@ export function EkycWidget({
         </div>
       )}
 
-      <div id={parentId} className={`vnpt-ekyc-container min-h-[440px] w-full sm:min-h-[520px]`} />
+      <div id={parentId} className="min-h-[440px] w-full sm:min-h-[520px]" />
     </div>
   );
 }
