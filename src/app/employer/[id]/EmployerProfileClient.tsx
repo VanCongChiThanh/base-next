@@ -127,7 +127,7 @@ export default function EmployerProfileClient({ id }: { id: string }) {
                   <div className="text-center">
                     <div className="flex items-center justify-center text-amber-500 font-bold text-lg">
                       <Star className="w-5 h-5 mr-1 fill-current" />
-                      {profile.ratingAvg > 0 ? profile.ratingAvg.toFixed(1) : "-"}
+                      {Number(profile.ratingAvg) > 0 ? Number(profile.ratingAvg).toFixed(1) : "-"}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">{profile.totalReviews} đánh giá</div>
                   </div>
