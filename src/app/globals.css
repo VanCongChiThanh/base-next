@@ -135,3 +135,15 @@ textarea {
   }
 }
 
+
+/* Fix VNPT eKYC video aspect ratio on mobile */
+.vnpt-ekyc-container video {
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.vnpt-ekyc-container canvas {
+  object-fit: cover !important;
+}
+
