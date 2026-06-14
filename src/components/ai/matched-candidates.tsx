@@ -127,7 +127,7 @@ export function MatchedCandidates({ job }: MatchedCandidatesProps) {
                   <div>
                     <h3 className="font-semibold text-gray-900">{c.fullName}</h3>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="flex items-center">⭐ {c.ratingAvg.toFixed(1)}</span>
+                      <span className="flex items-center">⭐ {Number(c.ratingAvg || 0).toFixed(1)}</span>
                       <span>•</span>
                       <span>Đã làm {c.totalJobsCompleted} job</span>
                     </div>
