@@ -297,11 +297,7 @@ export function EkycWidget({
             if (
               warningMsg.includes("mờ") || 
               warningMsg.includes("chói") ||
-              warningMsg.includes("lóa") ||
-              qFront?.blurred_likelihood === "likely" ||
-              qBack?.blurred_likelihood === "likely" ||
-              qFront?.bad_luminance_likelihood === "likely" ||
-              qBack?.bad_luminance_likelihood === "likely"
+              warningMsg.includes("lóa")
             ) {
               const msg = "Ảnh giấy tờ bị mờ, lóa hoặc thiếu sáng. Vui lòng chụp lại hình ảnh rõ nét hơn!";
               if (!isUnmounted) {
