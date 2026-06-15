@@ -19,18 +19,21 @@ import { AssignPlanModal } from "./AssignPlanModal";
 const ROLE_OPTIONS = [
   { value: Role.USER, label: "Người dùng" },
   { value: Role.ORGANIZATION, label: "Tổ chức/Doanh nghiệp" },
+  {value: Role.RECRUITER, label: "Nhân viên tuyển dụng"},
   { value: Role.ADMIN, label: "Quản trị" },
 ];
 
 function getNextRole(current: Role): Role {
   if (current === Role.ADMIN) return Role.USER;
   if (current === Role.USER) return Role.ORGANIZATION;
+  if (current === Role.ORGANIZATION) return Role.RECRUITER;
   return Role.ADMIN;
 }
 
 function getRoleLabel(role: Role): string {
   if (role === Role.ADMIN) return "Quản trị";
   if (role === Role.ORGANIZATION) return "Tổ chức/Doanh nghiệp";
+  if (role === Role.RECRUITER) return "Nhân viên tuyển dụng";
   return "Người dùng";
 }
 
@@ -213,7 +216,9 @@ export default function AdminUsersPage() {
               ? "purple"
               : user.role === Role.ORGANIZATION
                 ? "success"
-                : "info"
+                : user.role === Role.RECRUITER
+                  ? "warning"
+                  : "info"
           }
         >
           {getRoleLabel(user.role)}

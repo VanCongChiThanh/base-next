@@ -105,6 +105,25 @@ export default function HomePageClient() {
   const [activeCategory, setActiveCategory] = useState<JobCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
+
+  const features = [
+    {
+      title: "Kết nối nhanh hơn.",
+      desc: "Chia sẻ chi tiết về công việc bạn cần và chúng tôi sẽ tìm người phù hợp nhất ngay lập tức.",
+      img: "/img/landing/feature-connect.png"
+    },
+    {
+      title: "Chỉ những ứng viên đã xác minh.",
+      desc: "Chúng tôi chỉ hiển thị những người đã được xác minh danh tính qua AI để đảm bảo an toàn.",
+      img: "/img/landing/feature-verified.png"
+    },
+    {
+      title: "Hoàn thành đúng cam kết — đảm bảo.",
+      desc: "Nếu công việc không đúng như đã thỏa thuận, bạn được hoàn tiền qua hệ thống Escrow an toàn.",
+      img: "/img/landing/feature-guarantee.png"
+    }
+  ];
 
   useEffect(() => {
     categoryService.getAll().then((data) => {
@@ -150,6 +169,10 @@ export default function HomePageClient() {
           50%, 70% { transform: translateY(-2.4em); }
           75%, 95% { transform: translateY(-3.6em); }
           100% { transform: translateY(-4.8em); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
 
@@ -264,22 +287,31 @@ export default function HomePageClient() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
-                <div className="p-6 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all bg-white">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Kết nối nhanh hơn.</h3>
-                  <p className="text-gray-600">Chia sẻ chi tiết về công việc bạn cần và chúng tôi sẽ tìm người phù hợp nhất ngay lập tức.</p>
-                </div>
-                <div className="p-6 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all bg-white">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Chỉ những ứng viên đã xác minh.</h3>
-                  <p className="text-gray-600">Chúng tôi chỉ hiển thị những người đã được xác minh danh tính qua AI để đảm bảo an toàn.</p>
-                </div>
-                <div className="p-6 rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all bg-white">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Hoàn thành đúng cam kết — đảm bảo.</h3>
-                  <p className="text-gray-600">Nếu công việc không đúng như đã thỏa thuận, bạn được hoàn tiền qua hệ thống Escrow an toàn.</p>
-                </div>
+                {features.map((feature, index) => (
+                  <div
+                    key={index}
+                    onClick={() => setActiveFeature(index)}
+                    className={`p-6 rounded-2xl border transition-all cursor-pointer ${
+                      activeFeature === index
+                        ? "border-blue-500 shadow-lg bg-blue-50/50"
+                        : "border-gray-200 hover:border-blue-300 hover:shadow-md bg-white"
+                    }`}
+                  >
+                    <h3 className={`text-xl font-bold mb-2 ${activeFeature === index ? "text-blue-700" : "text-gray-900"}`}>
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600">{feature.desc}</p>
+                  </div>
+                ))}
               </div>
               <div className="relative h-[600px] flex items-center justify-center">
                 <div className="absolute inset-0 bg-blue-50/50 rounded-full blur-3xl" />
-                <img src="/img/landing/phone-mockup.png" alt="GigWork App" className="relative h-[90%] object-contain drop-shadow-2xl z-10" />
+                <img 
+                  key={activeFeature}
+                  src={features[activeFeature].img} 
+                  alt={features[activeFeature].title} 
+                  className="relative h-[90%] object-contain drop-shadow-2xl z-10 animate-[fadeIn_0.5s_ease-out]" 
+                />
               </div>
             </div>
           </div>
