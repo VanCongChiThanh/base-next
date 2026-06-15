@@ -26,6 +26,7 @@ const ROLE_OPTIONS = [
 function getNextRole(current: Role): Role {
   if (current === Role.ADMIN) return Role.USER;
   if (current === Role.USER) return Role.ORGANIZATION;
+  if (current === Role.ORGANIZATION) return Role.RECRUITER;
   return Role.ADMIN;
 }
 
@@ -215,7 +216,9 @@ export default function AdminUsersPage() {
               ? "purple"
               : user.role === Role.ORGANIZATION
                 ? "success"
-                : "info"
+                : user.role === Role.RECRUITER
+                  ? "warning"
+                  : "info"
           }
         >
           {getRoleLabel(user.role)}
