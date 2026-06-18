@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import {
   ArrowUpRight,
   CreditCard,
@@ -8,43 +9,64 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
+import {
+  organizationService,
+  FinanceStats,
+  Transaction,
+} from '@/services/organization.service';
+import { LoadingState, ErrorState } from '@/components/common';
 
-const transactions = [
-  {
-    id: 'TXN-001',
-    date: '2026-06-05',
-    description: 'Thanh toán Escrow - Vị trí UI/UX',
-    amount: '-15,000,000 ₫',
-    status: 'Completed',
-    type: 'Escrow',
-  },
-  {
-    id: 'TXN-002',
-    date: '2026-06-03',
-    description: 'Nạp tiền ví doanh nghiệp',
-    amount: '+50,000,000 ₫',
-    status: 'Completed',
-    type: 'Topup',
-  },
-  {
-    id: 'TXN-003',
-    date: '2026-06-01',
-    description: 'Gia hạn gói Doanh Nghiệp Premium',
-    amount: '-2,500,000 ₫',
-    status: 'Completed',
-    type: 'Subscription',
-  },
-  {
-    id: 'TXN-004',
-    date: '2026-05-28',
-    description: 'Thanh toán Escrow - Vị trí Marketing',
-    amount: '-8,000,000 ₫',
-    status: 'Completed',
-    type: 'Escrow',
-  },
-];
+const STATUS_MAP: Record<string, { label: string; className: string }> = {
+  PENDING: { label: 'Chờ xử lý', className: 'bg-amber-100 text-amber-800' },
+  FUNDED: { label: 'Đã ký quỹ', className: 'bg-blue-100 text-blue-800' },
+  PARTIALLY_RELEASED: { label: 'Giải ngân 1 phần', className: 'bg-indigo-100 text-indigo-800' },
+  FULLY_RELEASED: { label: 'Đã hoàn tất', className: 'bg-emerald-100 text-emerald-800' },
+  REFUND_PENDING: { label: 'Chờ hoàn tiền', className: 'bg-orange-100 text-orange-800' },
+  REFUNDED: { label: 'Đã hoàn tiền', className: 'bg-rose-100 text-rose-800' },
+  DISPUTED: { label: 'Tranh chấp', className: 'bg-red-100 text-red-800' },
+};
+
+function formatCurrency(value: number): string {
+  return value.toLocaleString('vi-VN') + ' ₫';
+}
 
 export default function OrgFinancePage() {
+  const [financeStats, setFinanceStats] = useState<FinanceStats | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(() => {
+    setLoading(true);
+    setError(null);
+
+    Promise.all([
+      organizationService.getFinanceStats(),
+      organizationService.getTransactions(),
+    ])
+      .then(([statsData, txData]) => {
+        setFinanceStats(statsData);
+        setTransactions(txData);
+      })
+      .catch((err) => {
+        console.error('Failed to load finance data', err);
+        setError('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (loading) {
+    return <LoadingState message="Đang tải dữ liệu tài chính..." />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={fetchData} />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -68,11 +90,13 @@ export default function OrgFinancePage() {
               <span className="text-indigo-100 font-medium">Số dư ví doanh nghiệp</span>
               <Wallet className="w-6 h-6 text-indigo-200" />
             </div>
-            <h2 className="text-3xl font-bold mb-1">125,500,000 ₫</h2>
+            <h2 className="text-3xl font-bold mb-1">
+              {formatCurrency(financeStats?.balance ?? 0)}
+            </h2>
             <div className="flex items-center mt-4 pt-4 border-t border-indigo-500/30">
               <TrendingUp className="w-4 h-4 mr-1 text-emerald-300" />
               <span className="text-sm text-indigo-100">
-                Đã nạp <span className="font-semibold text-white">50M ₫</span> tháng này
+                Tổng chi <span className="font-semibold text-white">{formatCurrency(financeStats?.monthlySpent ?? 0)}</span> qua Escrow
               </span>
             </div>
           </div>
@@ -80,15 +104,17 @@ export default function OrgFinancePage() {
 
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-slate-500 font-medium text-sm">Tổng chi trả (Tháng này)</span>
+            <span className="text-slate-500 font-medium text-sm">Tổng chi trả (Escrow)</span>
             <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
               <DollarSign className="w-4 h-4 text-rose-500" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">24,500,000 ₫</h2>
-          <div className="flex items-center text-sm font-medium text-rose-600">
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">
+            {formatCurrency(financeStats?.monthlySpent ?? 0)}
+          </h2>
+          <div className="flex items-center text-sm font-medium text-slate-500">
             <ArrowUpRight className="w-4 h-4 mr-1" />
-            +12% <span className="text-slate-500 font-normal ml-1">so với tháng trước</span>
+            Tổng giá trị Escrow đã tạo
           </div>
         </div>
 
@@ -99,7 +125,9 @@ export default function OrgFinancePage() {
               <CreditCard className="w-4 h-4 text-emerald-500" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">2,500,000 ₫</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">
+            {formatCurrency(financeStats?.monthlySubscription ?? 0)}
+          </h2>
           <div className="flex items-center text-sm font-medium text-emerald-600">
             <TrendingUp className="w-4 h-4 mr-1" />
             Đang sử dụng gói Premium
@@ -137,30 +165,46 @@ export default function OrgFinancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {transactions.map((tx) => {
-                const isIncome = tx.amount.startsWith('+');
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-500 text-sm">
+                    Chưa có giao dịch nào.
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((tx) => {
+                  const isIncome = tx.amount > 0;
+                  const statusInfo = STATUS_MAP[tx.status] ?? {
+                    label: tx.status,
+                    className: 'bg-slate-100 text-slate-800',
+                  };
 
-                return (
-                  <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-4 px-6 text-sm text-slate-500 font-medium">{tx.id}</td>
-                    <td className="py-4 px-6 text-sm text-slate-500">{tx.date}</td>
-                    <td className="py-4 px-6 text-sm text-slate-900">{tx.description}</td>
-                    <td className="py-4 px-6 text-sm text-slate-500">{tx.type}</td>
-                    <td className="py-4 px-6 text-sm">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                        {tx.status}
-                      </span>
-                    </td>
-                    <td
-                      className={`py-4 px-6 text-sm font-medium text-right ${
-                        isIncome ? 'text-emerald-600' : 'text-slate-900'
-                      }`}
-                    >
-                      {tx.amount}
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-4 px-6 text-sm text-slate-500 font-medium">
+                        {tx.id.substring(0, 8).toUpperCase()}
+                      </td>
+                      <td className="py-4 px-6 text-sm text-slate-500">{tx.date}</td>
+                      <td className="py-4 px-6 text-sm text-slate-900">{tx.description}</td>
+                      <td className="py-4 px-6 text-sm text-slate-500">{tx.type}</td>
+                      <td className="py-4 px-6 text-sm">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}
+                        >
+                          {statusInfo.label}
+                        </span>
+                      </td>
+                      <td
+                        className={`py-4 px-6 text-sm font-medium text-right ${
+                          isIncome ? 'text-emerald-600' : 'text-slate-900'
+                        }`}
+                      >
+                        {isIncome ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
