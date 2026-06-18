@@ -17,6 +17,7 @@ import {
 import { LoadingState, ErrorState } from '@/components/common';
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
+  // Escrow statuses
   PENDING: { label: 'Chờ xử lý', className: 'bg-amber-100 text-amber-800' },
   FUNDED: { label: 'Đã ký quỹ', className: 'bg-blue-100 text-blue-800' },
   PARTIALLY_RELEASED: { label: 'Giải ngân 1 phần', className: 'bg-indigo-100 text-indigo-800' },
@@ -24,6 +25,18 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   REFUND_PENDING: { label: 'Chờ hoàn tiền', className: 'bg-orange-100 text-orange-800' },
   REFUNDED: { label: 'Đã hoàn tiền', className: 'bg-rose-100 text-rose-800' },
   DISPUTED: { label: 'Tranh chấp', className: 'bg-red-100 text-red-800' },
+  // Payment statuses
+  PAYMENT_CONFIRMED: { label: 'Đã thanh toán', className: 'bg-emerald-100 text-emerald-800' },
+  ESCROW_HELD: { label: 'Đang giữ', className: 'bg-blue-100 text-blue-800' },
+  ESCROW_RELEASED: { label: 'Đã giải ngân', className: 'bg-emerald-100 text-emerald-800' },
+  ESCROW_REFUNDED: { label: 'Đã hoàn tiền', className: 'bg-rose-100 text-rose-800' },
+};
+
+const TYPE_MAP: Record<string, string> = {
+  Escrow: 'Ký quỹ',
+  FINAL_PAYMENT: 'Thanh toán cuối',
+  ESCROW_DEPOSIT: 'Ký quỹ Escrow',
+  MILESTONE_RELEASE: 'Giải ngân milestone',
 };
 
 function formatCurrency(value: number): string {
@@ -96,7 +109,7 @@ export default function OrgFinancePage() {
             <div className="flex items-center mt-4 pt-4 border-t border-indigo-500/30">
               <TrendingUp className="w-4 h-4 mr-1 text-emerald-300" />
               <span className="text-sm text-indigo-100">
-                Tổng chi <span className="font-semibold text-white">{formatCurrency(financeStats?.monthlySpent ?? 0)}</span> qua Escrow
+                Tổng chi <span className="font-semibold text-white">{formatCurrency(financeStats?.totalSpent ?? 0)}</span>
               </span>
             </div>
           </div>
@@ -104,17 +117,23 @@ export default function OrgFinancePage() {
 
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-slate-500 font-medium text-sm">Tổng chi trả (Escrow)</span>
+            <span className="text-slate-500 font-medium text-sm">Tổng chi trả</span>
             <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
               <DollarSign className="w-4 h-4 text-rose-500" />
             </div>
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2">
-            {formatCurrency(financeStats?.monthlySpent ?? 0)}
+            {formatCurrency(financeStats?.totalSpent ?? 0)}
           </h2>
-          <div className="flex items-center text-sm font-medium text-slate-500">
-            <ArrowUpRight className="w-4 h-4 mr-1" />
-            Tổng giá trị Escrow đã tạo
+          <div className="text-xs text-slate-500 space-y-0.5">
+            <div className="flex items-center">
+              <ArrowUpRight className="w-3 h-3 mr-1" />
+              Escrow: {formatCurrency(financeStats?.totalEscrowSpent ?? 0)}
+            </div>
+            <div className="flex items-center">
+              <ArrowUpRight className="w-3 h-3 mr-1" />
+              Thanh toán: {formatCurrency(financeStats?.totalPaymentSpent ?? 0)}
+            </div>
           </div>
         </div>
 
@@ -186,7 +205,7 @@ export default function OrgFinancePage() {
                       </td>
                       <td className="py-4 px-6 text-sm text-slate-500">{tx.date}</td>
                       <td className="py-4 px-6 text-sm text-slate-900">{tx.description}</td>
-                      <td className="py-4 px-6 text-sm text-slate-500">{tx.type}</td>
+                      <td className="py-4 px-6 text-sm text-slate-500">{TYPE_MAP[tx.type] ?? tx.type}</td>
                       <td className="py-4 px-6 text-sm">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}

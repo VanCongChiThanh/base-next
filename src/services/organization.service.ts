@@ -10,7 +10,9 @@ export interface DashboardStats {
 
 export interface FinanceStats {
   balance: number;
-  monthlySpent: number;
+  totalEscrowSpent: number;
+  totalPaymentSpent: number;
+  totalSpent: number;
   monthlySubscription: number;
 }
 
