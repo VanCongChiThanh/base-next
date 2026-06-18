@@ -1780,9 +1780,6 @@ export default function JobDetailPageClient({
               {/* AI Scam Check & Save */}
               {!isEmployer && isAuthenticated && (
                 <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl border border-indigo-100 p-5">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <span>🛡️</span> Công cụ AI
-                  </h3>
                   <div className="space-y-2">
                     <button
                       onClick={handleToggleSave}
