@@ -194,7 +194,7 @@ export default function EmployerProfileClient({ id }: { id: string }) {
                     </div>
                     {job.salaryPerHour && (
                       <div className="mt-3 font-semibold text-emerald-600">
-                        {job.salaryPerHour.toLocaleString('vi-VN')} đ/giờ
+                        {job.salaryPerHour.toLocaleString('vi-VN')} đ/{job.salaryType === "FIXED" ? "công" : "giờ"}
                       </div>
                     )}
                   </Link>

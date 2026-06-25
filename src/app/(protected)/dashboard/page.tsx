@@ -276,7 +276,7 @@ export default function DashboardPage() {
                               {Number(job.salaryPerHour).toLocaleString(
                                 "vi-VN",
                               )}
-                              đ/giờ
+                              đ/{job.salaryType === "FIXED" ? "công" : "giờ"}
                             </span>
                             <span className="text-blue-200">|</span>
                             <span>Cần {job.requiredWorkers} người</span>

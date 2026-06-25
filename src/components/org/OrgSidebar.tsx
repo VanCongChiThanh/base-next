@@ -67,13 +67,6 @@ export function OrgSidebar() {
           <Home className="w-5 h-5 mr-3 text-slate-500" />
           Trang chủ
         </Link>
-        <Link
-          href="/org/settings"
-          className="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition-colors"
-        >
-          <Settings className="w-5 h-5 mr-3 text-slate-500" />
-          Cài đặt
-        </Link>
         <button
           onClick={logout}
           className="flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
