@@ -334,7 +334,7 @@ export default function UserProfileClient({ id }: { id: string }) {
                     </div>
                     {job.salaryPerHour ? (
                       <span className="shrink-0 text-sm font-bold text-blue-600 whitespace-nowrap">
-                        {Number(job.salaryPerHour).toLocaleString("vi-VN")}đ/giờ
+                        {Number(job.salaryPerHour).toLocaleString("vi-VN")}đ/{job.salaryType === "FIXED" ? "công" : "giờ"}
                       </span>
                     ) : null}
                   </Link>

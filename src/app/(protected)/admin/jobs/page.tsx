@@ -97,7 +97,7 @@ export default function AdminJobsPage() {
                       <td className="px-4 py-3 font-medium text-gray-900 max-w-[150px] md:max-w-[200px] truncate">{job.title}</td>
                       <td className="hidden md:table-cell px-4 py-3 text-gray-600">{job.employer?.firstName} {job.employer?.lastName}</td>
                       <td className="hidden lg:table-cell px-4 py-3 text-gray-600">{job.category?.name || "—"}</td>
-                      <td className="hidden sm:table-cell px-4 py-3 text-gray-600 whitespace-nowrap">{Number(job.salaryPerHour).toLocaleString("vi-VN")}đ/h</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-gray-600 whitespace-nowrap">{Number(job.salaryPerHour).toLocaleString("vi-VN")}đ/{job.salaryType === "FIXED" ? "công" : "h"}</td>
                       <td className="px-4 py-3"><Badge variant={badge.variant}>{badge.label}</Badge></td>
                       <td className="hidden md:table-cell px-4 py-3 text-gray-500 whitespace-nowrap">{formatRelativeTime(job.createdAt)}</td>
                       <td className="px-4 py-3 text-right">
