@@ -54,27 +54,22 @@ function StatsSection() {
   const satisfaction = useCountUp(98, 1800, started);
 
   const stats = [
-    { value: jobs, suffix: "+", label: "Công việc", icon: "M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z", color: "from-blue-500 to-sky-400" },
-    { value: workers, suffix: "+", label: "Người tìm việc", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z", color: "from-violet-500 to-purple-400" },
-    { value: cities, suffix: "", label: "Tỉnh/thành phố", icon: "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z", color: "from-emerald-500 to-teal-400" },
-    { value: satisfaction, suffix: "%", label: "Hài lòng", icon: "M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z", color: "from-amber-500 to-orange-400" },
+    { value: jobs, suffix: "+", label: "Công việc" },
+    { value: workers, suffix: "+", label: "Người tìm việc" },
+    { value: cities, suffix: "", label: "Tỉnh/thành phố" },
+    { value: satisfaction, suffix: "%", label: "Hài lòng" },
   ];
 
   return (
-    <section className="py-14 bg-white border-y border-blue-50" ref={ref}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+    <section className="py-20 bg-white" ref={ref}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 md:gap-8">
           {stats.map((stat) => (
-            <div key={stat.label} className="text-center group">
-              <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.color} mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={stat.icon} />
-                </svg>
-              </div>
-              <p className="text-3xl font-extrabold text-gray-900 tabular-nums">
+            <div key={stat.label} className="text-center">
+              <p className="text-4xl md:text-5xl font-extrabold tracking-tight text-blue-600 mb-2 tabular-nums">
                 {stat.value >= 1000 ? `${Math.floor(stat.value / 1000)}K` : stat.value}{stat.suffix}
               </p>
-              <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+              <p className="text-sm md:text-base font-medium text-gray-500 uppercase tracking-wider">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -180,50 +175,108 @@ export default function HomePageClient() {
       <main className="flex-1 bg-white">
         
         {/* Section 1: Hero */}
-        <section className="relative pt-20 pb-0 overflow-hidden bg-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-gray-900 mb-6 text-center leading-[1.2]">
-              <div className="mb-2">Tìm việc</div>
-              <div className="h-[1.2em] overflow-hidden text-blue-600 block m-0 p-0 relative">
-                <div style={{ animation: 'textCarouselFix 12s infinite cubic-bezier(0.4, 0, 0.2, 1)' }}>
-                  <div className="h-[1.2em] flex items-center justify-center">dọn dẹp,</div>
-                  <div className="h-[1.2em] flex items-center justify-center">giao hàng,</div>
-                  <div className="h-[1.2em] flex items-center justify-center">phục vụ,</div>
-                  <div className="h-[1.2em] flex items-center justify-center">lập trình,</div>
-                  <div className="h-[1.2em] flex items-center justify-center">dọn dẹp,</div>
+        <section className="pt-8 pb-16 bg-white px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[1400px] mx-auto relative">
+            <div className="relative bg-gradient-to-br from-blue-600 to-blue-800 rounded-[2.5rem] md:rounded-[3.5rem] pt-12 md:pt-20 px-4 md:px-12 flex flex-col items-center overflow-hidden">
+              {/* Background Watermark/Icon */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-[0.05] pointer-events-none">
+                <svg viewBox="0 0 100 100" className="w-[600px] h-[600px] md:w-[800px] md:h-[800px] text-white" fill="currentColor">
+                  <path d="M50 0 L100 50 L50 100 L0 50 Z" />
+                  <circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" strokeWidth="4" />
+                </svg>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[44px] font-semibold text-white text-center leading-tight max-w-4xl relative z-10 mb-8 md:mb-16">
+                Kết nối việc làm thời vụ dễ dàng, nhanh chóng và an toàn
+              </h1>
+
+              <div className="relative w-full max-w-5xl mt-4 md:mt-8 flex justify-center pb-12 md:pb-24">
+                {/* Main Image Container */}
+                <div className="relative z-10 w-full max-w-[800px] h-[250px] sm:h-[350px] md:h-[400px] rounded-t-3xl overflow-hidden shadow-2xl bg-white/5 backdrop-blur-sm border border-white/10 flex items-end justify-center">
+                  <img src="/img/landing/hero-main.jpg" alt="Professionals" className="w-full h-full object-cover object-top opacity-90 mix-blend-luminosity" />
+                </div>
+
+                {/* Floating Card Left */}
+                <div className="absolute left-0 md:left-[-2rem] lg:left-[-4rem] top-[10%] md:top-[20%] z-20 bg-white rounded-[1.5rem] shadow-xl p-4 md:p-5 w-[200px] md:w-[240px] hidden sm:block transform transition-transform hover:-translate-y-2 border border-gray-100">
+                  <div className="flex items-center gap-1 text-sm font-semibold mb-3 text-gray-700">
+                    <span className="text-yellow-400">★</span> 5.0
+                  </div>
+                  <div className="flex justify-center mb-3">
+                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden bg-gray-200 border-2 border-white shadow-sm">
+                      <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Nguyễn Thị Mai" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-center text-xs md:text-sm mb-1 uppercase tracking-wider text-gray-800">Nguyễn Thị Mai</h3>
+                  <p className="text-[10px] md:text-xs text-gray-500 text-center mb-4 h-8 md:h-10 line-clamp-2">Reader Tarot & Tư vấn tâm lý online</p>
+                  <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 md:py-2.5 rounded-xl transition-colors text-sm shadow-md shadow-blue-500/30">
+                    Thuê Ngay
+                  </button>
+                </div>
+
+                {/* Floating Card Right */}
+                <div className="absolute right-0 md:right-[-2rem] lg:right-[-4rem] top-[30%] md:top-[40%] z-20 bg-white rounded-[1.5rem] shadow-xl p-4 md:p-5 w-[200px] md:w-[240px] hidden sm:block transform transition-transform hover:-translate-y-2 border border-gray-100">
+                  <div className="flex items-center gap-1 text-sm font-semibold mb-3 text-gray-700">
+                    <span className="text-yellow-400">★</span> 5.0
+                  </div>
+                  <div className="flex justify-center mb-3">
+                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden bg-gray-200 border-2 border-white shadow-sm">
+                      <img src="/img/landing/cat-serving.jpg" alt="Nhà hàng Ocean" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-center text-xs md:text-sm mb-1 uppercase tracking-wider text-gray-800">Nhà hàng Ocean</h3>
+                  <p className="text-[10px] md:text-xs text-gray-500 text-center mb-4 h-8 md:h-10 line-clamp-2">Phục vụ nhà hàng tiệc cưới cuối tuần</p>
+                  <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 md:py-2.5 rounded-xl transition-colors text-sm shadow-md shadow-blue-500/30">
+                    Ứng Tuyển
+                  </button>
                 </div>
               </div>
-              <div className="mt-2">dễ dàng.</div>
-            </h1>
-
-            <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-6 relative">
-              <div className="relative flex items-center w-full h-16 rounded-2xl bg-white shadow-xl shadow-blue-100/50 border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all">
-                <div className="pl-6 flex items-center pointer-events-none">
-                  <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </div>
+            
+            {/* Search Bar Container */}
+            <div className="relative -mt-8 sm:-mt-12 md:-mt-14 z-30 max-w-[95%] md:max-w-4xl mx-auto">
+              <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center bg-white rounded-3xl md:rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-2 md:p-2.5 gap-2 md:gap-3 border border-gray-100">
+                
+                {/* Location Input */}
+                <div className="flex-1 flex items-center bg-gray-100/50 hover:bg-gray-100 md:bg-transparent md:hover:bg-transparent rounded-full md:rounded-none px-5 py-3 w-full transition-all">
+                  <svg className="w-5 h-5 text-gray-400 mr-3 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                   </svg>
+                  <input 
+                    type="text" 
+                    placeholder="Địa điểm" 
+                    className="bg-transparent border-none outline-none w-full text-gray-700 placeholder-gray-500 text-sm md:text-base focus:ring-0 px-0"
+                  />
                 </div>
-                <input
-                  type="text"
-                  className="w-full h-full pl-4 pr-32 bg-transparent border-none focus:ring-0 text-lg text-gray-900 placeholder-gray-400 outline-none"
-                  placeholder="Mô tả công việc bạn cần..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute right-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors">
-                  Tìm kiếm
+
+                <div className="hidden md:block w-px h-8 bg-gray-200"></div>
+
+                {/* Job Title Input */}
+                <div className="flex-[1.5] flex items-center bg-gray-100/50 hover:bg-gray-100 md:bg-transparent md:hover:bg-transparent rounded-full md:rounded-none px-5 py-3 w-full transition-all">
+                  <svg className="w-5 h-5 text-gray-400 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input 
+                    type="text" 
+                    placeholder="Tìm việc: Phục vụ, thiết kế website, tarot..." 
+                    className="bg-transparent border-none outline-none w-full text-gray-700 placeholder-gray-500 text-sm md:text-base focus:ring-0 px-0"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                {/* Menu Icon */}
+                <div className="px-3 hidden md:flex items-center justify-center">
+                   <svg className="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                   </svg>
+                </div>
+
+                {/* Search Button */}
+                <button type="submit" className="w-full md:w-[120px] bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 md:p-0 md:h-[60px] rounded-full transition-all flex items-center justify-center shrink-0 shadow-md shadow-blue-500/30 hover:shadow-lg mt-2 md:mt-0 font-medium">
+                  <span className="md:block hidden">Tìm kiếm</span>
+                  <span className="md:hidden font-medium text-base">Tìm kiếm</span>
                 </button>
-              </div>
-            </form>
-
-            <p className="text-gray-500 font-medium">
-              Kết nối người cần việc và người tìm việc nhanh chóng, an toàn và minh bạch
-            </p>
-          </div>
-
-          <div className="w-full mt-12 px-4 sm:px-12 md:px-24">
-            <div className="w-full h-[300px] sm:h-[400px] md:h-[500px] relative mx-auto semi-circle-clip overflow-hidden shadow-2xl">
-              <img src="/img/landing/hero-main.jpg" alt="GigWork Heroes" className="w-full h-full object-cover object-center" />
+              </form>
             </div>
           </div>
         </section>
@@ -353,33 +406,32 @@ export default function HomePageClient() {
         <StatsSection />
 
         {/* Section 6: How it works */}
-        <section className="py-20 bg-gradient-to-b from-white to-blue-50/30">
+        <section className="py-24 bg-gray-50/50 border-t border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <AnimatedSection className="text-center mb-14">
-              <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold mb-4 uppercase tracking-wide">Quy trình</span>
-              <h2 className="text-4xl font-bold text-gray-900">Cách hoạt động</h2>
-              <p className="mt-3 text-gray-500 text-lg">3 bước đơn giản để bắt đầu</p>
+            <AnimatedSection className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Cách hoạt động</h2>
+              <p className="mt-4 text-gray-500 text-lg">3 bước đơn giản để bắt đầu cùng GigWork</p>
             </AnimatedSection>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-              <div className="hidden md:block absolute top-[3.5rem] left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-blue-200 via-sky-300 to-emerald-200" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative max-w-5xl mx-auto">
+              {/* Subtle connecting line */}
+              <div className="hidden md:block absolute top-[2.5rem] left-[20%] right-[20%] h-[1px] bg-gray-200" />
+              
               {[
-                { step: "01", title: "Tạo hồ sơ", desc: "Đăng ký và hoàn thiện hồ sơ cá nhân với kỹ năng, kinh nghiệm của bạn.", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", color: "from-blue-500 to-blue-400" },
-                { step: "02", title: "Tìm & ứng tuyển", desc: "Duyệt danh sách việc làm, lọc theo khu vực & danh mục, nộp đơn nhanh chóng.", icon: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z", color: "from-sky-500 to-sky-400" },
-                { step: "03", title: "Làm việc & nhận tiền", desc: "Hoàn thành công việc, nhận đánh giá tốt và xây dựng uy tín trên nền tảng.", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1", color: "from-emerald-500 to-emerald-400" },
+                { step: "1", title: "Tạo hồ sơ", desc: "Đăng ký và hoàn thiện hồ sơ cá nhân với kỹ năng, kinh nghiệm của bạn.", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" },
+                { step: "2", title: "Tìm & ứng tuyển", desc: "Duyệt danh sách việc làm, lọc theo khu vực & danh mục, nộp đơn nhanh chóng.", icon: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" },
+                { step: "3", title: "Làm việc & nhận tiền", desc: "Hoàn thành công việc, nhận đánh giá tốt và xây dựng uy tín trên nền tảng.", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" },
               ].map((item) => (
-                <AnimatedSection key={item.step}>
-                  <div className="card-hover relative bg-white rounded-3xl border border-blue-100/80 p-8 shadow-sm hover:shadow-xl hover:shadow-blue-100/60">
-                    <div className="flex items-center gap-4 mb-5">
-                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg`}>
-                        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                        </svg>
-                      </div>
-                      <span className="text-5xl font-black text-blue-50 select-none">{item.step}</span>
+                <AnimatedSection key={item.step} className="relative z-10">
+                  <div className="flex flex-col items-center text-center group">
+                    <div className="w-20 h-20 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center mb-6 relative transition-all duration-300 group-hover:shadow-md group-hover:border-blue-200 group-hover:-translate-y-1">
+                      <span className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-blue-100 text-blue-600 text-sm font-bold flex items-center justify-center border-4 border-white">{item.step}</span>
+                      <svg className="w-8 h-8 text-gray-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
+                      </svg>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                    <p className="text-gray-500 leading-relaxed">{item.desc}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
+                    <p className="text-gray-500 leading-relaxed max-w-[280px] mx-auto">{item.desc}</p>
                   </div>
                 </AnimatedSection>
               ))}
@@ -388,30 +440,35 @@ export default function HomePageClient() {
         </section>
 
         {/* Section 7: CTA */}
-        <section className="py-20 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #1d4ed8, #2563eb, #0284c7)" }}>
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-          </div>
-          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <section className="py-24 bg-white">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <AnimatedSection>
-              <h2 className="text-4xl font-bold text-white mb-4">Sẵn sàng bắt đầu?</h2>
-              <p className="text-blue-100 mb-10 text-xl">Tham gia hàng ngàn người đang sử dụng GigWork mỗi ngày</p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                {!isAuthenticated ? (
-                  <>
-                    <Link href="/register" className="w-full sm:w-auto px-10 py-4 text-base font-bold text-blue-600 bg-white rounded-2xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                      Đăng ký miễn phí
-                    </Link>
-                    <Link href="/jobs" className="w-full sm:w-auto px-10 py-4 text-base font-semibold text-white border-2 border-white/30 rounded-2xl hover:bg-white/10 hover:-translate-y-1 transition-all duration-300">
-                      Xem việc làm
-                    </Link>
-                  </>
-                ) : (
-                  <Link href="/jobs" className="w-full sm:w-auto px-10 py-4 text-base font-bold text-blue-600 bg-white rounded-2xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                    Khám phá việc làm →
-                  </Link>
-                )}
+              <div className="bg-blue-600 rounded-[2.5rem] p-10 md:p-20 text-center relative overflow-hidden shadow-2xl shadow-blue-600/20">
+                {/* Clean, subtle pattern instead of loud blurs */}
+                <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+                
+                <div className="relative z-10">
+                  <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Sẵn sàng bắt đầu?</h2>
+                  <p className="text-blue-100 mb-10 text-lg md:text-xl max-w-2xl mx-auto">
+                    Tham gia hàng ngàn người đang sử dụng GigWork mỗi ngày để tìm việc và tuyển dụng.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    {!isAuthenticated ? (
+                      <>
+                        <Link href="/register" className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold text-blue-600 bg-white rounded-full hover:bg-gray-50 transition-colors shadow-sm">
+                          Đăng ký miễn phí
+                        </Link>
+                        <Link href="/jobs" className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold text-white border border-white/30 rounded-full hover:bg-white/10 transition-colors">
+                          Xem việc làm
+                        </Link>
+                      </>
+                    ) : (
+                      <Link href="/jobs" className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold text-blue-600 bg-white rounded-full hover:bg-gray-50 transition-colors shadow-sm">
+                        Khám phá việc làm →
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </div>
             </AnimatedSection>
           </div>
