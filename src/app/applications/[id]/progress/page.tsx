@@ -11,6 +11,7 @@ import { ConfirmModal } from "@/components/common";
 import { Navbar } from "@/components/layout/navbar";
 import { BankAccountReminder } from "@/components/profile";
 import { paymentService } from "@/services/payment.service";
+import { toast } from "react-hot-toast"
 
 function useLiveProgress(applicationId: string) {
   const [progress, setProgress] = useState<ApplicationProgress | null>(null);
@@ -166,10 +167,10 @@ export default function ApplicationProgressPage() {
     setShowRefundModal(false);
     try {
       await paymentService.requestRefund(progress.jobId, progress.applicationId, refundReason);
-      alert("Đã gửi yêu cầu hoàn tiền thành công. Quản trị viên sẽ xử lý sớm.");
+      toast.success("Đã gửi yêu cầu hoàn tiền thành công. Quản trị viên sẽ xử lý sớm.");
       await refresh();
     } catch (e: any) {
-      alert("Lỗi: " + (e?.response?.data?.message || e.message || "Không thể yêu cầu hoàn tiền"));
+      toast.error("Lỗi: " + (e?.response?.data?.message || e.message || "Không thể yêu cầu hoàn tiền"));
     } finally {
       setActionLoading(false);
       setRefundReason("");
