@@ -58,6 +58,7 @@ export default function AdminPaymentsPage() {
   const [escrowLoading, setEscrowLoading] = useState(true);
 
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; milestoneId: string | null }>({ isOpen: false, milestoneId: null });
+  const [qrModal, setQrModal] = useState<{ isOpen: boolean; url: string }>({ isOpen: false, url: "" });
   const [isReleasing, setIsReleasing] = useState(false);
 
   const fetchPayments = useCallback(async () => {
@@ -241,6 +242,14 @@ export default function AdminPaymentsPage() {
                           <div className="text-sm">
                             <div className="font-medium text-gray-900">{bank.bankName}</div>
                             <div className="text-gray-600">{bank.accountNumber} - {bank.accountName}</div>
+                            {bank.qrCodeUrl && (
+                              <button
+                                onClick={() => setQrModal({ isOpen: true, url: bank.qrCodeUrl! })}
+                                className="mt-1 text-xs text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1"
+                              >
+                                <span>📷</span> Xem mã QR
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <span className="text-red-500 text-xs font-medium">Chưa liên kết NH</span>
@@ -291,6 +300,7 @@ export default function AdminPaymentsPage() {
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Mã Escrow</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Công việc</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Tài khoản nhận hoàn tiền</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Tổng tiền</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Trạng thái</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">Hành động</th>
@@ -299,15 +309,38 @@ export default function AdminPaymentsPage() {
             <tbody className="divide-y divide-gray-100">
               {escrowLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}><td colSpan={5} className="px-4 py-3"><div className="h-5 bg-gray-50 rounded animate-pulse" /></td></tr>
+                  <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-5 bg-gray-50 rounded animate-pulse" /></td></tr>
                 ))
               ) : escrows.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-400">Không có dữ liệu</td></tr>
+                <tr><td colSpan={6} className="px-4 py-12 text-center text-gray-400">Không có dữ liệu</td></tr>
               ) : (
-                escrows.map((e) => (
+                escrows.map((e) => {
+                  const bank = e.employer?.bankAccounts?.find((b: any) => b.isDefault) || e.employer?.bankAccounts?.[0];
+                  return (
                   <tr key={e.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs">{e.id.split('-')[0]}...</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{e.job?.title || "—"}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {e.job?.title || "—"}
+                      <div className="text-xs text-gray-500 font-normal mt-0.5">Nhà tuyển dụng: {e.employer?.firstName} {e.employer?.lastName}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {bank ? (
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-900">{bank.bankName}</div>
+                          <div className="text-gray-600">{bank.accountNumber} - {bank.accountName}</div>
+                          {bank.qrCodeUrl && (
+                            <button
+                              onClick={() => setQrModal({ isOpen: true, url: bank.qrCodeUrl! })}
+                              className="mt-1 text-xs text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1"
+                            >
+                              <span>📷</span> Xem mã QR
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-red-500 text-xs font-medium">Chưa liên kết NH</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-semibold text-emerald-600">
                       {Number(e.totalAmount).toLocaleString('vi-VN')} ₫
                     </td>
@@ -323,7 +356,7 @@ export default function AdminPaymentsPage() {
                       )}
                     </td>
                   </tr>
-                ))
+                )})
               )}
             </tbody>
           </table>
@@ -387,6 +420,33 @@ export default function AdminPaymentsPage() {
         variant="primary"
         isLoading={isReleasing}
       />
+      
+      {qrModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col transform transition-all">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="text-base font-semibold text-gray-900">Mã QR Thanh Toán</h3>
+              <button onClick={() => setQrModal({ isOpen: false, url: "" })} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 flex flex-col items-center justify-center">
+              <div className="relative w-64 h-64 border-2 border-dashed border-gray-200 rounded-xl overflow-hidden p-2">
+                <img src={qrModal.url} alt="QR Code" className="w-full h-full object-contain" />
+              </div>
+              <p className="mt-4 text-sm text-gray-500 text-center">Quét mã QR để thực hiện chuyển khoản.</p>
+            </div>
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+              <button
+                onClick={() => setQrModal({ isOpen: false, url: "" })}
+                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
