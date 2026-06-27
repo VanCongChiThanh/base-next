@@ -58,8 +58,10 @@ export default function AdminPaymentsPage() {
   const [escrowLoading, setEscrowLoading] = useState(true);
 
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; milestoneId: string | null }>({ isOpen: false, milestoneId: null });
+  const [refundConfirmModal, setRefundConfirmModal] = useState<{ isOpen: boolean; escrowId: string | null }>({ isOpen: false, escrowId: null });
   const [qrModal, setQrModal] = useState<{ isOpen: boolean; url: string }>({ isOpen: false, url: "" });
   const [isReleasing, setIsReleasing] = useState(false);
+  const [isRefunding, setIsRefunding] = useState(false);
 
   const fetchPayments = useCallback(async () => {
     setPaymentLoading(true);
@@ -122,14 +124,18 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  const handleRefundEscrow = async (escrowId: string) => {
-    if (!confirm(`Xác nhận hoàn tiền cho khoản escrow này?`)) return;
+  const handleRefundEscrow = async () => {
+    if (!refundConfirmModal.escrowId) return;
+    setIsRefunding(true);
     try {
-      await adminService.refundEscrow(escrowId, "Admin đã hoàn tiền");
+      await adminService.refundEscrow(refundConfirmModal.escrowId, "Admin đã hoàn tiền");
       toast.success("Hoàn tiền thành công");
       fetchEscrows();
     } catch (err: any) {
       toast.error(err.message || "Lỗi khi hoàn tiền");
+    } finally {
+      setIsRefunding(false);
+      setRefundConfirmModal({ isOpen: false, escrowId: null });
     }
   };
 
@@ -348,7 +354,7 @@ export default function AdminPaymentsPage() {
                     <td className="px-4 py-3 text-right">
                       {e.status === "REFUND_PENDING" && (
                         <button 
-                          onClick={() => handleRefundEscrow(e.id)}
+                          onClick={() => setRefundConfirmModal({ isOpen: true, escrowId: e.id })}
                           className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
                         >
                           Hoàn tiền
@@ -419,6 +425,17 @@ export default function AdminPaymentsPage() {
         confirmLabel="Giải ngân"
         variant="primary"
         isLoading={isReleasing}
+      />
+
+      <ConfirmModal
+        isOpen={refundConfirmModal.isOpen}
+        onClose={() => setRefundConfirmModal({ isOpen: false, escrowId: null })}
+        onConfirm={handleRefundEscrow}
+        title="Xác nhận hoàn tiền"
+        message="Xác nhận bạn đã chuyển khoản số tiền ký quỹ lại cho Nhà tuyển dụng?"
+        confirmLabel="Hoàn tiền"
+        variant="danger"
+        isLoading={isRefunding}
       />
       
       {qrModal.isOpen && (
