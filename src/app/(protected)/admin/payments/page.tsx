@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { adminService } from "@/services/admin.service";
 import { SelectFilter, Pagination, Badge } from "@/components/admin";
 import { ConfirmModal } from "@/components/common/confirm-modal";
-import { PaymentConfirmation, Milestone } from "@/types";
+import { PaymentConfirmation, Milestone, BankAccount } from "@/types";
 import { formatRelativeTime } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -315,7 +315,7 @@ export default function AdminPaymentsPage() {
                 <tr><td colSpan={6} className="px-4 py-12 text-center text-gray-400">Không có dữ liệu</td></tr>
               ) : (
                 escrows.map((e) => {
-                  const bank = e.employer?.bankAccounts?.find((b: any) => b.isDefault) || e.employer?.bankAccounts?.[0];
+                  const bank = e.employer?.bankAccounts?.find((b: BankAccount) => b.isDefault) || e.employer?.bankAccounts?.[0];
                   return (
                   <tr key={e.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs">{e.id.split('-')[0]}...</td>
