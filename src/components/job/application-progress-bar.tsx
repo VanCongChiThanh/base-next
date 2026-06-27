@@ -18,6 +18,7 @@ interface Props {
   onMarkPaid?: () => void;
   onConfirmReceipt?: () => void;
   onRequestRefund?: () => void;
+  escrowStatus?: string | null;
 }
 
 const STEP_ICONS: Record<string, string> = {
@@ -152,6 +153,7 @@ export function ApplicationProgressBar({
   onMarkPaid,
   onConfirmReceipt,
   onRequestRefund,
+  escrowStatus,
 }: Props) {
   const [loggedHoursInput, setLoggedHoursInput] = useState("");
   const [showLogHoursModal, setShowLogHoursModal] = useState(false);
@@ -436,6 +438,17 @@ export function ApplicationProgressBar({
           {/* Actions */}
           <div className="pt-2">
             <div className="space-y-3">
+              {/* REFUND PENDING ALERT */}
+              {(escrowStatus === 'REFUND_PENDING' || escrowStatus === 'REFUNDED') && viewAs === "worker" && (
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-sm font-medium text-amber-900 text-center">
+                    {escrowStatus === 'REFUND_PENDING'
+                      ? '⚠️ Nhà tuyển dụng đã yêu cầu hoàn tiền ký quỹ. Bạn không thể thực hiện thao tác cho đến khi được giải quyết.'
+                      : '❌ Khoản ký quỹ đã được hoàn tiền. Công việc này đã kết thúc.'}
+                  </p>
+                </div>
+              )}
+
               {/* 1. INITIAL ACTIONS (IN_PROGRESS or ASSIGNED) */}
               {(isAssigned || isInProgress) && (
                 <>

@@ -87,6 +87,8 @@ export default function JobDetailPageClient({
   const [showBankModal, setShowBankModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [refundAppId, setRefundAppId] = useState<string | null>(null);
+  const [refundReason, setRefundReason] = useState("");
 
   const isEmployer = user && job && (user.id === job.employerId || user.id === (job as any).postedById);
   const isWorkerAndAuthenticated = !isEmployer && isAuthenticated && user?.role === "USER";
@@ -280,6 +282,23 @@ export default function JobDetailPageClient({
       setError(getErrorMessage(err as ApiError));
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleRequestRefund = async () => {
+    if (!refundAppId || !refundReason.trim() || !job) return;
+    setActionLoading("refund_" + refundAppId);
+    try {
+      await paymentService.requestRefund(job.id, refundAppId, refundReason);
+      setSuccess("Đã gửi yêu cầu hoàn tiền. Quản trị viên sẽ xử lý sớm.");
+      const apps = await jobService.getJobApplications(job.id);
+      setApplications(apps);
+    } catch (err) {
+      setError(getErrorMessage(err as ApiError));
+    } finally {
+      setActionLoading(null);
+      setRefundAppId(null);
+      setRefundReason("");
     }
   };
 
@@ -763,6 +782,16 @@ export default function JobDetailPageClient({
                             {app.status === ApplicationStatus.ACCEPTED && isEmployer && (
                               <Link href={`/applications/${app.id}/progress`} className="px-3 py-1.5 text-xs font-medium bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">Chi tiết</Link>
                             )}
+                            {/* Nút Yêu cầu hoàn tiền: hiển thị khi ESCROW + worker chưa check-in hoặc worker đã huỷ/từ chối */}
+                            {app.status === ApplicationStatus.ACCEPTED && isEmployer && job.paymentMethod === PaymentMethod.ESCROW && app.assignment && (app.assignment.status === "ASSIGNED" || app.assignment.status === "CANCELLED") && (
+                              <button
+                                onClick={() => setRefundAppId(app.id)}
+                                disabled={actionLoading === "refund_" + app.id}
+                                className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                              >
+                                {actionLoading === "refund_" + app.id ? "Đang xử lý..." : "💰 Hoàn tiền"}
+                              </button>
+                            )}
                             {/* Tiến trình UI has been merged into this page */}
                             {app.status === ApplicationStatus.ACCEPTED && job.paymentMethod === PaymentMethod.P2P && (
                               <button onClick={() => setShowBankModal(true)} className="px-3 py-1.5 text-xs font-medium bg-purple-50 border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors">🏦 Ngân hàng</button>
@@ -933,6 +962,41 @@ export default function JobDetailPageClient({
           variant="success"
           isLoading={actionLoading === "complete"}
         />
+
+        {/* Modal Yêu cầu hoàn tiền Escrow */}
+        {refundAppId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">💰 Yêu cầu hoàn tiền</h3>
+              <p className="text-sm text-gray-600 mb-4">Ứng viên chưa xác nhận làm việc. Vui lòng cho biết lý do yêu cầu hoàn tiền khoản ký quỹ.</p>
+              <div className="space-y-2 mb-6">
+                <label className="text-sm font-semibold text-gray-700">Lý do</label>
+                <textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="Nhập lý do hoàn tiền..."
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setRefundAppId(null); setRefundReason(""); }}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Huỷ
+                </button>
+                <button
+                  onClick={handleRequestRefund}
+                  disabled={actionLoading === "refund_" + refundAppId || !refundReason.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {actionLoading === "refund_" + refundAppId ? "Đang gửi..." : "Xác nhận hoàn tiền"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }

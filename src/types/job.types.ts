@@ -67,6 +67,7 @@ export interface ApplicationProgress {
     loggedHours: number | null;
     hoursSubmittedBy: string | null;
   } | null;
+  escrowStatus?: string | null;
 }
 
 export interface ApplicationChatSender {
