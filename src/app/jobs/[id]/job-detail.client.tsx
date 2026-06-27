@@ -783,7 +783,7 @@ export default function JobDetailPageClient({
                               <Link href={`/applications/${app.id}/progress`} className="px-3 py-1.5 text-xs font-medium bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">Chi tiết</Link>
                             )}
                             {/* Nút Yêu cầu hoàn tiền: hiển thị khi ESCROW + worker chưa check-in hoặc worker đã huỷ/từ chối */}
-                            {app.status === ApplicationStatus.ACCEPTED && isEmployer && job.paymentMethod === PaymentMethod.ESCROW && app.assignment && (app.assignment.status === "ASSIGNED" || app.assignment.status === "CANCELLED") && (
+                            {(app.status === ApplicationStatus.ACCEPTED || app.status === ApplicationStatus.CANCELLED || app.status === ApplicationStatus.REJECTED) && isEmployer && (job.paymentMethod === PaymentMethod.ESCROW || (job as any).paymentMethod === 'ESCROW') && app.assignment && (app.assignment.status === "ASSIGNED" || app.assignment.status === "CANCELLED") && (
                               <button
                                 onClick={() => setRefundAppId(app.id)}
                                 disabled={actionLoading === "refund_" + app.id}
