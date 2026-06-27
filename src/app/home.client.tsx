@@ -284,7 +284,7 @@ export default function HomePageClient() {
         {/* Section 2: Categories */}
         <section className="py-20 bg-gray-50/50">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Chuyên gia cho mọi công việc tại</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Ứng viên sẵn sàng cho mọi công việc tại</h2>
             <h2 className="text-3xl md:text-4xl font-bold text-blue-600 mb-10">Khu vực của bạn.</h2>
 
             {/* Tabs */}
@@ -322,7 +322,7 @@ export default function HomePageClient() {
                 <div className="absolute bottom-6 left-8 text-left">
                   <h3 className="text-3xl md:text-4xl font-bold text-white mb-2">{activeCategory.name}</h3>
                   <Link href={`/jobs?category=${activeCategory.id}`} className="inline-flex items-center gap-2 text-white font-medium hover:text-blue-300 transition-colors">
-                    Xem chuyên gia <span aria-hidden="true">&rarr;</span>
+                    Xem hồ sơ ứng viên <span aria-hidden="true">&rarr;</span>
                   </Link>
                 </div>
               </AnimatedSection>

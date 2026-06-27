@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth, useChat } from "@/contexts";
 import { jobService, reviewService } from "@/services";
-import { ApplicationProgress, Review } from "@/types";
+import { ApplicationProgress, Review, Escrow, EscrowStatus } from "@/types";
 import { ApplicationProgressBar } from "@/components/job";
 import { ReviewSection } from "@/components/job";
 import { ConfirmModal } from "@/components/common";
@@ -48,6 +48,7 @@ export default function ApplicationProgressPage() {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundReason, setRefundReason] = useState("");
   const [workerReviews, setWorkerReviews] = useState<Review[]>([]);
+  const [escrowData, setEscrowData] = useState<Escrow | null>(null);
 
   // Load worker reviews when progress is available
   useEffect(() => {
@@ -68,6 +69,17 @@ export default function ApplicationProgressPage() {
       );
     }
   }, [searchParams, progress, openChat]);
+
+  // Fetch escrow data to check refund status
+  useEffect(() => {
+    if (progress?.paymentMethod === 'ESCROW') {
+      paymentService.getEscrowByJob(progress.jobId)
+        .then(setEscrowData)
+        .catch(() => {});
+    }
+  }, [progress?.paymentMethod, progress?.jobId]);
+
+  const isRefundPending = escrowData?.status === EscrowStatus.REFUND_PENDING || escrowData?.status === EscrowStatus.REFUNDED;
 
   const handleCheckIn = async () => {
     if (!progress) return;
@@ -301,16 +313,17 @@ export default function ApplicationProgressPage() {
 
         <ApplicationProgressBar
           progress={progress}
-          onCheckIn={handleCheckIn}
-          onComplete={() => setShowCompleteConfirm(true)}
+          onCheckIn={isRefundPending ? undefined : handleCheckIn}
+          onComplete={isRefundPending ? undefined : () => setShowCompleteConfirm(true)}
           onCancel={() => setShowCancelConfirm(true)}
           isLoading={actionLoading}
           viewAs={viewAs}
-          onLogHours={handleLogHours}
-          onConfirmHours={handleConfirmHours}
+          onLogHours={isRefundPending ? undefined : handleLogHours}
+          onConfirmHours={isRefundPending ? undefined : handleConfirmHours}
           onMarkPaid={handleMarkPaid}
           onConfirmReceipt={handleConfirmReceipt}
           onRequestRefund={progress.paymentMethod === 'ESCROW' ? () => setShowRefundModal(true) : undefined}
+          escrowStatus={escrowData?.status ?? null}
         />
 
         {/* Review Section for Employer to review Worker */}
