@@ -220,6 +220,7 @@ export interface JobApplication {
   };
   job?: Job;
   assignment?: JobAssignment;
+  escrow?: any;
 }
 
 export interface JobAssignment {

@@ -783,7 +783,7 @@ export default function JobDetailPageClient({
                               <Link href={`/applications/${app.id}/progress`} className="px-3 py-1.5 text-xs font-medium bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors">Chi tiết</Link>
                             )}
                             {/* Nút Yêu cầu hoàn tiền: hiển thị khi ESCROW + worker chưa check-in hoặc worker đã huỷ/từ chối */}
-                            {(app.status === ApplicationStatus.ACCEPTED || app.status === ApplicationStatus.CANCELLED || app.status === ApplicationStatus.REJECTED) && isEmployer && (job.paymentMethod === PaymentMethod.ESCROW || (job as any).paymentMethod === 'ESCROW') && (!app.assignment || app.assignment.status === "ASSIGNED" || app.assignment.status === "CANCELLED") && (
+                            {(app.status === ApplicationStatus.ACCEPTED || app.status === ApplicationStatus.CANCELLED || app.status === ApplicationStatus.REJECTED) && isEmployer && (job.paymentMethod === PaymentMethod.ESCROW || (job as any).paymentMethod === 'ESCROW') && (!app.assignment || app.assignment.status === "ASSIGNED" || app.assignment.status === "CANCELLED") && (!app.escrow || (app.escrow.status !== 'REFUND_PENDING' && app.escrow.status !== 'REFUNDED')) && (
                               <button
                                 onClick={() => setRefundAppId(app.id)}
                                 disabled={actionLoading === "refund_" + app.id}
@@ -791,6 +791,18 @@ export default function JobDetailPageClient({
                               >
                                 {actionLoading === "refund_" + app.id ? "Đang xử lý..." : "💰 Hoàn tiền"}
                               </button>
+                            )}
+
+                            {app.escrow?.status === 'REFUND_PENDING' && isEmployer && (
+                              <span className="px-3 py-1.5 text-xs font-medium text-amber-600 bg-amber-50 border border-amber-100 rounded-lg">
+                                Đang chờ hoàn tiền
+                              </span>
+                            )}
+                            
+                            {app.escrow?.status === 'REFUNDED' && isEmployer && (
+                              <span className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg">
+                                Đã hoàn tiền
+                              </span>
                             )}
                             {/* Tiến trình UI has been merged into this page */}
                             {app.status === ApplicationStatus.ACCEPTED && job.paymentMethod === PaymentMethod.P2P && (
